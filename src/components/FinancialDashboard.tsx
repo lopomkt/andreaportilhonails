@@ -77,57 +77,7 @@ export function FinancialDashboard() {
   // Get revenue data for charts
   const revenueData = getRevenueData();
   return <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(currentMonthRevenue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Serviços confirmados no mês atual
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Projetada</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(projectedRevenue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Agendamentos futuros confirmados
-            </p>
-          </CardContent>
-        </Card>
-        {/* Additional cards would go here */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Agendamentos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{appointments.filter(a => a.status === "confirmed").length}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de agendamentos confirmados
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageClientValue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor médio por cliente
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      
 
       
     </div>;
