@@ -77,72 +77,7 @@ export function FinancialDashboard() {
   // Get revenue data for charts
   const revenueData = getRevenueData();
   return <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Receita do Mês
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(currentMonthRevenue)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +2% em relação ao mês anterior
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Receita Prevista
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(projectedRevenue)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Próximos agendamentos confirmados
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Média por Cliente
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(averageClientValue)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Por cliente neste mês
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Próximos Agendamentos
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {appointments.filter(appt => new Date(appt.date) > new Date() && appt.status !== "canceled").length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Confirmados e pendentes
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      
       
       
     </div>;
