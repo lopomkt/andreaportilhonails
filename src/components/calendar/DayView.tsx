@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -5,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell } from "lucide-react";
+import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { AppointmentFormWrapper } from "@/components/AppointmentFormWrapper";
@@ -40,6 +41,8 @@ export const DayView: React.FC<DayViewProps> = ({
   const [status, setStatus] = useState<AppointmentStatus>("pending");
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const { toast } = useToast();
   
   const {
@@ -118,6 +121,8 @@ export const DayView: React.FC<DayViewProps> = ({
   const handleSaveChanges = async () => {
     if (!selectedAppointment) return;
     
+    setIsSaving(true);
+    
     try {
       // Create appointment date with selected time
       const dateWithTime = new Date(appointmentDate);
@@ -139,7 +144,7 @@ export const DayView: React.FC<DayViewProps> = ({
           title: "Sucesso",
           description: "Agendamento atualizado com sucesso",
         });
-        refetchAppointments();
+        await refetchAppointments();
       } else {
         toast({
           title: "Erro",
@@ -154,15 +159,18 @@ export const DayView: React.FC<DayViewProps> = ({
         description: "Ocorreu um erro ao salvar as alterações",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
+      setManageModalOpen(false);
+      setConfirmSaveOpen(false);
+      setSelectedAppointment(null);
     }
-    
-    setManageModalOpen(false);
-    setConfirmSaveOpen(false);
-    setSelectedAppointment(null);
   };
   
   const handleSendMessage = async (type: 'confirmation' | 'reminder') => {
     if (!selectedAppointment || !selectedAppointment.client) return;
+    
+    setIsSendingMessage(true);
     
     try {
       // Get template from configs
@@ -178,6 +186,7 @@ export const DayView: React.FC<DayViewProps> = ({
           description: "Cliente ou serviço não encontrado",
           variant: "destructive",
         });
+        setIsSendingMessage(false);
         return;
       }
       
@@ -197,11 +206,27 @@ export const DayView: React.FC<DayViewProps> = ({
         .replace(/{{hora}}/g, formattedTime)
         .replace(/{{preço}}/g, price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
       
+      // Add type-specific message
+      if (type === 'confirmation') {
+        message = "✅ *CONFIRMAÇÃO DE HORÁRIO* ✅\n\n" + message;
+      } else {
+        message = "⏰ *LEMBRETE DE AGENDAMENTO* ⏰\n\n" + message;
+      }
+      
       // Encode message for URL
       const encodedMessage = encodeURIComponent(message);
       
+      // Get phone number
+      const phoneNumber = client.telefone?.replace(/\D/g, '') || '';
+      
       // Open WhatsApp Web
-      window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+
+      // Update status to confirmed if it's a confirmation message
+      if (type === 'confirmation' && status !== 'confirmed') {
+        setStatus('confirmed');
+        setIsFormDirty(true);
+      }
       
     } catch (error) {
       console.error("Error sending message:", error);
@@ -210,6 +235,8 @@ export const DayView: React.FC<DayViewProps> = ({
         description: "Ocorreu um erro ao preparar a mensagem",
         variant: "destructive",
       });
+    } finally {
+      setIsSendingMessage(false);
     }
   };
   
@@ -493,16 +520,18 @@ export const DayView: React.FC<DayViewProps> = ({
               <Button 
                 className="flex-1 gap-2 bg-green-500 hover:bg-green-600 text-white py-6" 
                 onClick={() => handleSendMessage('confirmation')}
+                disabled={isSendingMessage}
               >
-                <MessageSquare className="h-4 w-4" />
-                Enviar Confirmação
+                {isSendingMessage ? <Loader className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4" />}
+                WhatsApp: Confirmar
               </Button>
               <Button 
                 className="flex-1 gap-2 bg-blue-500 hover:bg-blue-600 text-white py-6" 
                 onClick={() => handleSendMessage('reminder')}
+                disabled={isSendingMessage}
               >
-                <Bell className="h-4 w-4" />
-                Enviar Lembrete
+                {isSendingMessage ? <Loader className="h-4 w-4 animate-spin mr-2" /> : <Bell className="h-4 w-4" />}
+                WhatsApp: Lembrete
               </Button>
             </div>
           </div>
@@ -520,7 +549,9 @@ export const DayView: React.FC<DayViewProps> = ({
                   setManageModalOpen(false);
                 }
               }}
+              disabled={isSaving}
             >
+              {isSaving ? <Loader className="h-4 w-4 animate-spin mr-2" /> : null}
               Concluir
             </Button>
           </DialogFooter>
@@ -544,7 +575,8 @@ export const DayView: React.FC<DayViewProps> = ({
             }}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleSaveChanges}>
+            <AlertDialogAction onClick={handleSaveChanges} disabled={isSaving}>
+              {isSaving ? <Loader className="h-4 w-4 animate-spin mr-2" /> : null}
               Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>

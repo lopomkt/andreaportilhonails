@@ -18,10 +18,11 @@ interface Client {
 interface ClientAutocompleteProps {
   onClientSelect: (client: { id: string; name: string }) => void;
   selectedClient?: { id: string; name: string } | null;
+  initialQuery?: string;
 }
 
-export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAutocompleteProps) {
-  const [query, setQuery] = useState('');
+export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuery = '' }: ClientAutocompleteProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [isOpen, setIsOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,8 +36,11 @@ export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAut
     // If there's a selected client, set the query to the client name
     if (selectedClient) {
       setQuery(selectedClient.name);
+    } else if (initialQuery) {
+      setQuery(initialQuery);
+      searchClients(initialQuery);
     }
-  }, [selectedClient]);
+  }, [selectedClient, initialQuery]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -74,7 +78,7 @@ export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAut
       const { data, error } = await supabase
         .from('clientes')
         .select('id, nome, telefone')
-        .ilike('nome', `%${searchQuery}%`)
+        .or(`nome.ilike.%${searchQuery}%,telefone.ilike.%${searchQuery}%`)
         .order('nome', { ascending: true })
         .limit(10);
       
@@ -154,7 +158,7 @@ export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAut
           value={query}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
-          placeholder="Digite o nome do cliente"
+          placeholder="Digite o nome ou telefone do cliente"
           className="w-full"
         />
         <Button 
@@ -190,7 +194,10 @@ export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAut
                 onClick={() => handleSelectClient(client)}
                 className="px-4 py-2 hover:bg-muted cursor-pointer"
               >
-                {client.nome}
+                <div className="flex justify-between">
+                  <span>{client.nome}</span>
+                  <span className="text-sm text-muted-foreground">{client.telefone}</span>
+                </div>
               </li>
             ))}
             
@@ -200,7 +207,7 @@ export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAut
                 className="px-4 py-2 hover:bg-rose-100 cursor-pointer flex items-center text-rose-500 font-medium border-t"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Cadastrar novo cliente
+                Cadastrar novo cliente: {query}
               </li>
             )}
           </ul>
@@ -218,6 +225,7 @@ export function ClientAutocomplete({ onClientSelect, selectedClient }: ClientAut
           <ClientForm
             onSuccess={handleClientFormSuccess}
             onCancel={handleClientFormCancel}
+            initialName={query}
           />
         </DialogContent>
       </Dialog>

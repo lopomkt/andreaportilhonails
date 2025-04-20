@@ -6,13 +6,14 @@ import { DayView } from "@/components/calendar/DayView";
 import { WeekView } from "@/components/calendar/WeekView";
 import { MonthView } from "@/components/calendar/MonthView";
 import { Button } from "@/components/ui/button";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { AppointmentFormWrapper } from "@/components/AppointmentFormWrapper";
 import { useLocation, useNavigate } from "react-router-dom";
+import { BlockedDateForm } from "@/components/BlockedDateForm";
 
 const LoadingView = () => <div className="flex items-center justify-center p-8">
     <div className="animate-pulse space-y-4 w-full">
@@ -29,6 +30,7 @@ export default function CalendarPage() {
   const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week");
   const [openAppointmentDialog, setOpenAppointmentDialog] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const location = useLocation();
@@ -38,6 +40,7 @@ export default function CalendarPage() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const dateParam = searchParams.get('date');
+    const viewParam = searchParams.get('view');
     
     if (dateParam) {
       try {
@@ -45,9 +48,9 @@ export default function CalendarPage() {
         // Check if date is valid
         if (!isNaN(parsedDate.getTime())) {
           setCurrentDate(parsedDate);
-          // If coming from month view, switch to day view
-          if (searchParams.get('view') === 'day') {
-            setCalendarView('day');
+          // If coming from month view with view parameter, switch to that view
+          if (viewParam && (viewParam === 'day' || viewParam === 'week' || viewParam === 'month')) {
+            setCalendarView(viewParam as "day" | "week" | "month");
           }
         }
       } catch (e) {
@@ -88,6 +91,10 @@ export default function CalendarPage() {
     }, 100);
   };
   
+  const handleOpenBlockedDateDialog = () => {
+    setOpenBlockedDateDialog(true);
+  };
+  
   return <div className="p-4 space-y-6 animate-fade-in px-[5px]">
       <Card className="border-rose-100 shadow-soft">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -96,10 +103,19 @@ export default function CalendarPage() {
             <CardDescription className="text-sm">Gerencie seus Agendamentos</CardDescription>
           </div>
           
-          <Button className="bg-rose-500 text-white shadow-soft hover:bg-rose-600" onClick={() => setOpenAppointmentDialog(true)}>
-            <CalendarClock className="mr-2 h-4 w-4" />
-            {isMobile ? "Agendar" : "Novo Agendamento"}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              className="bg-gray-500 text-white shadow-soft hover:bg-gray-600" 
+              onClick={handleOpenBlockedDateDialog}
+            >
+              <Lock className="mr-2 h-4 w-4" />
+              {isMobile ? "Bloquear" : "Bloquear Horário"}
+            </Button>
+            <Button className="bg-rose-500 text-white shadow-soft hover:bg-rose-600" onClick={() => setOpenAppointmentDialog(true)}>
+              <CalendarClock className="mr-2 h-4 w-4" />
+              {isMobile ? "Agendar" : "Novo Agendamento"}
+            </Button>
+          </div>
         </CardHeader>
         
         <CardContent className="p-0">
@@ -146,8 +162,30 @@ export default function CalendarPage() {
             </DialogDescription>
           </DialogHeader>
           <AppointmentFormWrapper>
-            <AppointmentForm onSuccess={() => setOpenAppointmentDialog(false)} />
+            <AppointmentForm 
+              onSuccess={() => setOpenAppointmentDialog(false)} 
+              initialDate={currentDate}
+            />
           </AppointmentFormWrapper>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Blocked Date Dialog */}
+      <Dialog open={openBlockedDateDialog} onOpenChange={setOpenBlockedDateDialog}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-rose-700 flex items-center">
+              <span className="mr-2">🔒</span>
+              Bloquear Horário
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados para bloquear um horário
+            </DialogDescription>
+          </DialogHeader>
+          <BlockedDateForm 
+            onSuccess={() => setOpenBlockedDateDialog(false)}
+            initialDate={currentDate}
+          />
         </DialogContent>
       </Dialog>
     </div>;

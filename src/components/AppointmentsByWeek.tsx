@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ export function AppointmentsByWeek({
 
   // Navigate to calendar view for a specific date
   const navigateToDate = (date: Date) => {
-    navigate(`/calendario?date=${format(date, 'yyyy-MM-dd')}`);
+    navigate(`/calendario?date=${format(date, 'yyyy-MM-dd')}&view=day`);
   };
   return <Card className="card-premium">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
