@@ -1,19 +1,33 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
-import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { Switch } from "@/components/ui/switch";
-import { Loader } from 'lucide-react';
+import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
+import { Loader2 } from 'lucide-react';
+
+const formSchema = z.object({
+  date: z.date({
+    required_error: "Uma data é necessária.",
+  }),
+  reason: z.string().optional(),
+  allDay: z.boolean().default(false).optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface BlockedDateFormProps {
   onSuccess?: () => void;
@@ -21,159 +35,155 @@ interface BlockedDateFormProps {
 }
 
 export function BlockedDateForm({ onSuccess, initialDate }: BlockedDateFormProps) {
-  const [date, setDate] = useState<Date>(initialDate || new Date());
-  const [time, setTime] = useState(format(new Date(), 'HH:mm'));
-  const [reason, setReason] = useState('');
-  const [isAllDay, setIsAllDay] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { refetchBlockedDates } = useSupabaseData();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isSubmitting) return; // Prevent multiple submissions
-    
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      date: initialDate || new Date(),
+      reason: '',
+      allDay: false,
+    },
+  });
+
+  async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
-    
     try {
-      // Set the time for the date if it's not an all-day block
-      const dateWithTime = new Date(date);
-      
-      if (!isAllDay) {
-        const [hours, minutes] = time.split(':').map(Number);
-        dateWithTime.setHours(hours, minutes, 0, 0);
-      } else {
-        // For all-day blocks, set time to 00:00
-        dateWithTime.setHours(0, 0, 0, 0);
-      }
-      
-      const blockedDate = await appointmentService.createBlockedDate({
-        date: dateWithTime,
-        reason: reason,
-        allDay: isAllDay
+      const success = await BlockedDateService.create({
+        date: data.date.toISOString(),
+        reason: data.reason,
+        allDay: data.allDay
       });
-      
-      if (blockedDate) {
+
+      if (success) {
         toast({
           title: "Sucesso",
-          description: "Horário bloqueado com sucesso",
+          description: "Data bloqueada com sucesso!",
         });
-        
-        // Refresh blocked dates data
         await refetchBlockedDates();
-        
-        // Reset form
-        if (!initialDate) {
-          setDate(new Date());
-        }
-        setTime(format(new Date(), 'HH:mm'));
-        setReason('');
-        setIsAllDay(true);
-        
-        // Call onSuccess callback if provided
-        if (onSuccess) {
-          onSuccess();
-        }
+        if (onSuccess) onSuccess();
       } else {
         toast({
           title: "Erro",
-          description: "Não foi possível bloquear o horário",
+          description: "Ocorreu um erro ao bloquear a data. Tente novamente.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Error blocking date:", error);
+      console.error("Failed to create blocked date:", error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao bloquear o horário",
+        description: "Ocorreu um erro ao bloquear a data. Tente novamente.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Date selection */}
-      <div className="space-y-2">
-        <Label htmlFor="date">Data</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              id="date"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !date && "text-muted-foreground"
-              )}
-            >
-              {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(newDate) => newDate && setDate(newDate)}
-              initialFocus
-              className={cn("p-3 pointer-events-auto")}
-              locale={ptBR}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      
-      {/* All-day toggle */}
-      <div className="flex items-center justify-between">
-        <Label htmlFor="all-day" className="cursor-pointer">Dia inteiro</Label>
-        <Switch 
-          id="all-day" 
-          checked={isAllDay}
-          onCheckedChange={setIsAllDay}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Data*</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP", { locale: ptBR })
+                      ) : (
+                        <span>Selecione uma data</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date < new Date(new Date().setDate(new Date().getDate() - 1))
+                    }
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      {/* Time selection (only if not all day) */}
-      {!isAllDay && (
-        <div className="space-y-2">
-          <Label htmlFor="time">Horário</Label>
-          <Input
-            id="time"
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
-        </div>
-      )}
-      
-      {/* Reason */}
-      <div className="space-y-2">
-        <Label htmlFor="reason">Motivo (opcional)</Label>
-        <Textarea
-          id="reason"
-          placeholder="Motivo do bloqueio"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={3}
+
+        <FormField
+          control={form.control}
+          name="allDay"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-md border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel className="text-sm">Dia todo</FormLabel>
+                <FormDescription>
+                  Bloquear o dia inteiro.
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
         />
-      </div>
-      
-      {/* Submit button */}
-      <Button 
-        type="submit" 
-        className="w-full bg-rose-500 hover:bg-rose-600 text-white"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader className="mr-2 h-4 w-4 animate-spin" />
-            Salvando...
-          </>
-        ) : "Bloquear Horário"}
-      </Button>
-    </form>
+
+        <FormField
+          control={form.control}
+          name="reason"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Motivo</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Motivo do bloqueio"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" disabled={isSubmitting} className="w-full bg-gray-500 hover:bg-gray-600 text-white">
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Bloquear data
+        </Button>
+      </form>
+    </Form>
   );
 }
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { FormDescription } from "@/components/ui/form"

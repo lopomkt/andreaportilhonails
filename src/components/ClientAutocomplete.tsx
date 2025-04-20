@@ -215,7 +215,7 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
       )}
       
       <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
             <DialogDescription>

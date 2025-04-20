@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -5,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader } from "lucide-react";
+import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader2, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { AppointmentFormWrapper } from "@/components/AppointmentFormWrapper";
@@ -16,6 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Appointment, AppointmentStatus, Client, Service } from '@/types';
+import { BlockedDateForm } from '@/components/BlockedDateForm';
 import { cn } from "@/lib/utils";
 import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +44,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const { toast } = useToast();
   
   const {
@@ -49,7 +52,8 @@ export const DayView: React.FC<DayViewProps> = ({
     blockedDates,
     clients,
     services,
-    refetchAppointments
+    refetchAppointments,
+    refetchBlockedDates
   } = useSupabaseData();
   
   const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), date));
@@ -227,6 +231,10 @@ export const DayView: React.FC<DayViewProps> = ({
     }
   };
   
+  const handleOpenBlockedDateDialog = () => {
+    setOpenBlockedDateDialog(true);
+  };
+
   return <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex justify-between items-center py-0 my-[24px] px-[16px]">
         <h2 className="font-bold text-lg md:text-2xl">
@@ -234,15 +242,25 @@ export const DayView: React.FC<DayViewProps> = ({
           locale: ptBR
         })}
         </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-1"
-        >
-          <Filter className="h-4 w-4" />
-          Filtrar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-1"
+          >
+            <Filter className="h-4 w-4" />
+            Filtrar
+          </Button>
+          <Button
+            className="bg-gray-500 text-white shadow-soft hover:bg-gray-600 flex items-center gap-1" 
+            size="sm"
+            onClick={handleOpenBlockedDateDialog}
+          >
+            <Lock className="h-4 w-4" />
+            Bloquear
+          </Button>
+        </div>
       </div>
       
       {showFilters && (
@@ -268,7 +286,7 @@ export const DayView: React.FC<DayViewProps> = ({
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-medium">
-                        {block.dia_todo ? 'Dia inteiro' : format(new Date(block.date), 'HH:mm')}
+                        {block.allDay ? 'Dia inteiro' : format(new Date(block.date), 'HH:mm')}
                       </h4>
                       <p className="text-sm text-muted-foreground">{block.reason || block.motivo || 'Sem motivo especificado'}</p>
                     </div>
@@ -495,7 +513,7 @@ export const DayView: React.FC<DayViewProps> = ({
                 onClick={() => handleSendMessage('confirmation')}
                 disabled={isSendingMessage}
               >
-                {isSendingMessage ? <Loader className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4" />}
+                {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4" />}
                 WhatsApp: Confirmar
               </Button>
               <Button 
@@ -503,7 +521,7 @@ export const DayView: React.FC<DayViewProps> = ({
                 onClick={() => handleSendMessage('reminder')}
                 disabled={isSendingMessage}
               >
-                {isSendingMessage ? <Loader className="h-4 w-4 animate-spin mr-2" /> : <Bell className="h-4 w-4" />}
+                {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Bell className="h-4 w-4" />}
                 WhatsApp: Lembrete
               </Button>
             </div>
@@ -524,10 +542,37 @@ export const DayView: React.FC<DayViewProps> = ({
               }}
               disabled={isSaving}
             >
-              {isSaving ? <Loader className="h-4 w-4 animate-spin mr-2" /> : null}
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Concluir
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Blocked Date Dialog */}
+      <Dialog open={openBlockedDateDialog} onOpenChange={setOpenBlockedDateDialog}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-rose-700 flex items-center">
+              <span className="mr-2">🔒</span>
+              Bloquear Horário
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados para bloquear um horário
+            </DialogDescription>
+          </DialogHeader>
+          <BlockedDateForm 
+            onSuccess={() => {
+              // This function is called after successfully creating a blocked date
+              refetchBlockedDates(); // Refresh data
+              setOpenBlockedDateDialog(false); // Close dialog
+              toast({
+                title: "Sucesso",
+                description: "Horário bloqueado com sucesso",
+              });
+            }}
+            initialDate={date}
+          />
         </DialogContent>
       </Dialog>
       
@@ -548,7 +593,7 @@ export const DayView: React.FC<DayViewProps> = ({
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleSaveChanges} disabled={isSaving}>
-              {isSaving ? <Loader className="h-4 w-4 animate-spin mr-2" /> : null}
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -12,9 +12,10 @@ import { ptBR } from "date-fns/locale";
 import { Client, Service, Appointment, AppointmentStatus } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Check, AlertTriangle } from "lucide-react";
+import { Check, AlertTriangle, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency, formatDuration } from "@/lib/formatters";
+import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -44,7 +45,8 @@ export function AppointmentForm({
     appointments, 
     addAppointment, 
     updateAppointment,
-    blockedDates
+    blockedDates,
+    refetchAppointments
   } = useData();
 
   const [clientId, setClientId] = useState(initialClientId || appointment?.clientId || "");
@@ -58,8 +60,13 @@ export function AppointmentForm({
   const [price, setPrice] = useState(initialPrice || appointment?.price || 0);
   const [hasConflict, setHasConflict] = useState(false);
   const [conflictDetails, setConflictDetails] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string } | null>(
+    clientId && clients.find(c => c.id === clientId) 
+      ? { id: clientId, name: clients.find(c => c.id === clientId)?.name || "" }
+      : null
+  );
 
-  const selectedClient = clients.find(c => c.id === clientId);
   const selectedService = services.find(s => s.id === serviceId);
 
   useEffect(() => {
@@ -132,7 +139,7 @@ export function AppointmentForm({
       setHasConflict(false);
       setConflictDetails("");
     }
-  }, [date, time, serviceId, services, appointments, appointment, blockedDates]);
+  }, [date, time, serviceId, services, appointments, appointment, blockedDates, clients]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +161,8 @@ export function AppointmentForm({
       });
       return;
     }
+
+    setIsSubmitting(true);
     
     const appointmentDate = new Date(date);
     const [hours, minutes] = time.split(":").map(Number);
@@ -195,6 +204,9 @@ export function AppointmentForm({
         });
       }
       
+      // Make sure to refresh appointments
+      await refetchAppointments();
+      
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error saving appointment:", error);
@@ -203,31 +215,27 @@ export function AppointmentForm({
         description: "Ocorreu um erro ao salvar o agendamento. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleClientSelect = (client: { id: string; name: string }) => {
+    setClientId(client.id);
+    setSelectedClient(client);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="client">Cliente <span className="text-red-500">*</span></Label>
-          <Select 
-            value={clientId} 
-            onValueChange={setClientId}
-          >
-            <SelectTrigger id="client">
-              <SelectValue placeholder="Selecione um cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              {clients.map(client => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
+      <div className="space-y-2">
+        <Label htmlFor="client">Cliente <span className="text-red-500">*</span></Label>
+        <ClientAutocomplete 
+          onClientSelect={handleClientSelect} 
+          selectedClient={selectedClient} 
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div className="space-y-2">
           <Label htmlFor="service">Serviço <span className="text-red-500">*</span></Label>
           <Select 
@@ -359,8 +367,9 @@ export function AppointmentForm({
         <Button 
           type="submit" 
           className="bg-primary hover:bg-primary/90"
-          disabled={!clientId || !serviceId || !date || !time}
+          disabled={!clientId || !serviceId || !date || !time || isSubmitting}
         >
+          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
           {appointment ? "Atualizar Agendamento" : "Criar Agendamento"}
         </Button>
       </div>

@@ -56,7 +56,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
     const dayBlocks = blockedDates.filter(block => isSameDay(new Date(block.date), day));
 
     // Check if full day is blocked
-    const isFullDayBlocked = dayBlocks.some(block => block.dia_todo);
+    const isFullDayBlocked = dayBlocks.some(block => block.allDay);
 
     // Calculate occupied minutes
     let occupiedMinutes = 0;
@@ -91,7 +91,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
 
     // Add blocked time
     dayBlocks.forEach(block => {
-      if (block.dia_todo) {
+      if (block.allDay) {
         // Full day block takes the entire business hours
         occupiedMinutes = totalBusinessMinutes;
       }
@@ -120,10 +120,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
     setCurrentMonth(addMonths(currentMonth, 1));
   };
   
-  // Handle day click - make sure to switch to day view
+  // Handle day click - make sure to switch to day view and preserve exact same date
   const handleDayClick = (day: Date) => {
     if (day) {
-      onDaySelect(day);
+      // Create a new date object to avoid any reference issues
+      const selectedDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+      onDaySelect(selectedDate);
     }
   };
 

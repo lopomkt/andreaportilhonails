@@ -14,8 +14,9 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   nome: z.string().min(2, { message: 'Nome é obrigatório' }),
@@ -30,17 +31,20 @@ type FormValues = z.infer<typeof formSchema>;
 interface ClientFormProps {
   onSuccess?: (clientId: string, clientName: string) => void;
   onCancel?: () => void;
-  initialName?: string; // Add this line to accept initialName
+  initialName?: string;
 }
 
 export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [birthDay, setBirthDay] = useState<string>("");
+  const [birthMonth, setBirthMonth] = useState<string>("");
+  const [birthYear, setBirthYear] = useState<string>("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome: initialName, // Use initialName here
+      nome: initialName,
       telefone: '',
       observacoes: '',
       email: '',
@@ -54,6 +58,39 @@ export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientForm
       nameInput.focus();
     }
   }, []);
+
+  // Generate options for day, month, and year dropdowns
+  const daysOptions = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  
+  const monthsOptions = [
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const yearsOptions = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
+
+  // Update form with birthdate
+  useEffect(() => {
+    if (birthDay && birthMonth && birthYear) {
+      const dateString = `${birthYear}-${birthMonth}-${birthDay}`;
+      const birthDate = new Date(dateString);
+      
+      if (!isNaN(birthDate.getTime())) {
+        form.setValue('dataNascimento', birthDate);
+      }
+    }
+  }, [birthDay, birthMonth, birthYear, form]);
 
   // Format phone number as user types
   const formatPhone = (value: string) => {
@@ -72,6 +109,24 @@ export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientForm
     }
   };
 
+  const checkClientExists = async (name: string, phone: string) => {
+    try {
+      const formattedPhone = phone.replace(/\D/g, '');
+      
+      const { data } = await supabase
+        .from('clientes')
+        .select('id, nome, telefone')
+        .eq('nome', name)
+        .eq('telefone', formattedPhone)
+        .limit(1);
+      
+      return data && data.length > 0;
+    } catch (err) {
+      console.error("Error checking client existence:", err);
+      return false;
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     
@@ -85,6 +140,18 @@ export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientForm
       
       // Format phone number for storage (remove non-numeric characters)
       const formattedPhone = data.telefone.replace(/\D/g, '');
+      
+      // Check if client already exists
+      const clientExists = await checkClientExists(data.nome, formattedPhone);
+      if (clientExists) {
+        toast({
+          title: "Cliente já cadastrado",
+          description: "Já existe um cliente com este nome e telefone.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
       const { data: clientData, error } = await supabase
         .from('clientes')
@@ -174,48 +241,43 @@ export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientForm
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="dataNascimento"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Data de nascimento</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                      ) : (
-                        <span>Selecione uma data</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <FormItem className="flex flex-col">
+          <FormLabel>Data de nascimento</FormLabel>
+          <div className="flex gap-2">
+            <Select value={birthDay} onValueChange={setBirthDay}>
+              <SelectTrigger className="w-[80px]">
+                <SelectValue placeholder="Dia" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[250px]">
+                {daysOptions.map(day => (
+                  <SelectItem key={day} value={day}>{day}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={birthMonth} onValueChange={setBirthMonth}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthsOptions.map(month => (
+                  <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={birthYear} onValueChange={setBirthYear}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[250px]">
+                {yearsOptions.map(year => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </FormItem>
         
         <FormField
           control={form.control}
@@ -264,6 +326,7 @@ export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientForm
             disabled={isSubmitting}
             className="bg-rose-500 hover:bg-rose-600"
           >
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             {isSubmitting ? "Salvando..." : "Salvar cliente"}
           </Button>
         </div>

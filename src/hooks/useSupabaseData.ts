@@ -338,18 +338,32 @@ export const useSupabaseData = () => {
   }, [clients]);
 
   const fetchBlockedDates = async () => {
+    setLoading(true);
     try {
-      const blockedDatesData = await appointmentService.getBlockedDates();
-      setBlockedDates(blockedDatesData);
-      return blockedDatesData;
-    } catch (error) {
-      console.error('Error getting blocked dates:', error);
-      toast({
-        title: 'Erro ao carregar datas bloqueadas',
-        description: 'Ocorreu um erro ao carregar as datas bloqueadas. Por favor, tente novamente.',
-        variant: 'destructive',
-      });
+      const { data, error } = await supabase
+        .from('datas_bloqueadas')
+        .select('*')
+        .order('data', { ascending: true });
+      
+      if (error) {
+        console.error("Error fetching blocked dates:", error);
+        return [];
+      }
+      
+      const mappedData = data?.map(item => ({
+        id: item.id,
+        date: item.data,
+        reason: item.motivo || "",
+        allDay: item.dia_todo
+      })) || [];
+      
+      setBlockedDates(mappedData);
+      return mappedData;
+    } catch (err) {
+      console.error("Unexpected error fetching blocked dates:", err);
       return [];
+    } finally {
+      setLoading(false);
     }
   };
 
