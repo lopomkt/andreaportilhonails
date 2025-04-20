@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ export function AppointmentForm({
   const [clientId, setClientId] = useState(initialClientId || appointment?.clientId || "");
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
   const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
-  const [date, setDate] = useState<Date>(initialDate || (appointment ? new Date(appointment.date) : selectedDate));
+  const [date, setDate] = useState<Date>(initialDate || (appointment ? new Date(appointment.date) : new Date()));
   const [time, setTime] = useState(
     appointment ? format(new Date(appointment.date), "HH:mm") : "09:00"
   );

@@ -18,7 +18,6 @@ export const useSupabaseData = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Function to fetch appointments
   const fetchAppointments = async () => {
     try {
       const appointmentsData = await appointmentService.getAll();
@@ -36,22 +35,16 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Refetch appointments
   const refetchAppointments = useCallback(async () => {
     return await fetchAppointments();
   }, []);
 
-  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
         await fetchAppointments();
         
-        // For now, we'll use the mock data for clients and services
-        // Later we'll implement the actual Supabase service for these
-        
-        // Load blocked dates
         await fetchBlockedDates();
       } catch (error) {
         console.error('Error loading data:', error);
@@ -68,7 +61,6 @@ export const useSupabaseData = () => {
     loadData();
   }, []);
 
-  // Update dashboard stats
   const updateDashboardStats = useCallback((currentAppointments: Appointment[]) => {
     const today = new Date();
     const todayAppts = currentAppointments.filter(appt => 
@@ -82,8 +74,6 @@ export const useSupabaseData = () => {
       return diff >= 0 && diff < 7 && appt.status !== "canceled";
     }).length;
     
-    // For now, we're just calculating based on the appointments we have loaded
-    // Later we'll implement more sophisticated calculations
     const monthlyRevenue = currentAppointments.filter(appt => {
       const apptDate = new Date(appt.date);
       const month = apptDate.getMonth();
@@ -94,8 +84,6 @@ export const useSupabaseData = () => {
       return month === currentMonth && year === currentYear && appt.status !== "canceled";
     }).reduce((sum, appt) => sum + appt.price, 0);
     
-    // For inactive clients, we'll need a separate implementation
-    // For now, we'll use a placeholder value
     const inactiveClientsCount = 0;
     
     setDashboardStats({
@@ -106,7 +94,6 @@ export const useSupabaseData = () => {
     });
   }, []);
 
-  // Get appointments for a specific date
   const getAppointmentsForDate = useCallback((date: Date): Appointment[] => {
     return appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
@@ -114,14 +101,12 @@ export const useSupabaseData = () => {
     });
   }, [appointments]);
 
-  // Calculate daily revenue
   const calculateDailyRevenue = useCallback((date: Date): number => {
     return getAppointmentsForDate(date)
       .filter(appt => appt.status !== "canceled")
       .reduce((total, appt) => total + appt.price, 0);
   }, [getAppointmentsForDate]);
 
-  // Add appointment
   const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
     try {
       const newAppointment = await appointmentService.create(appointment);
@@ -145,7 +130,6 @@ export const useSupabaseData = () => {
     return null;
   }, [appointments, updateDashboardStats]);
 
-  // Update appointment
   const updateAppointment = useCallback(async (id: string, data: Partial<Appointment>) => {
     try {
       const success = await appointmentService.update(id, data);
@@ -171,7 +155,6 @@ export const useSupabaseData = () => {
     return false;
   }, [appointments, updateDashboardStats]);
 
-  // Delete appointment
   const deleteAppointment = useCallback(async (id: string) => {
     try {
       const success = await appointmentService.delete(id);
@@ -196,13 +179,11 @@ export const useSupabaseData = () => {
     return false;
   }, [appointments, updateDashboardStats]);
 
-  // Reschedule appointment
   const rescheduleAppointment = useCallback(async (id: string, newDate: Date) => {
     try {
       const appointment = appointments.find(appt => appt.id === id);
       if (!appointment) return false;
       
-      // Calculate new end time based on service duration
       const service = services.find(s => s.id === appointment.serviceId);
       const endTime = new Date(newDate);
       endTime.setMinutes(endTime.getMinutes() + (service?.durationMinutes || 60));
@@ -237,7 +218,6 @@ export const useSupabaseData = () => {
     return false;
   }, [appointments, services]);
 
-  // Change appointment status
   const changeAppointmentStatus = useCallback(async (id: string, status: AppointmentStatus, cancellationReason?: string) => {
     try {
       const success = await appointmentService.changeStatus(id, status, cancellationReason);
@@ -266,7 +246,6 @@ export const useSupabaseData = () => {
     return false;
   }, []);
 
-  // Generate WhatsApp link
   const generateWhatsAppLink = useCallback(async (data: WhatsAppMessageData) => {
     try {
       if (!data.client?.phone) {
@@ -285,7 +264,6 @@ export const useSupabaseData = () => {
       } else if (data.appointment) {
         const template = await appointmentService.getWhatsAppTemplate();
         
-        // Replace placeholders in the template
         const appointmentDate = new Date(data.appointment.date);
         message = template
           .replace('{{nome}}', data.client?.name || '')
@@ -319,7 +297,6 @@ export const useSupabaseData = () => {
     }
   }, []);
 
-  // Get WhatsApp template
   const getWhatsAppTemplate = useCallback(async () => {
     try {
       return await appointmentService.getWhatsAppTemplate();
@@ -329,7 +306,6 @@ export const useSupabaseData = () => {
     }
   }, []);
 
-  // Update WhatsApp template
   const updateWhatsAppTemplate = useCallback(async (template: string) => {
     try {
       const success = await appointmentService.updateWhatsAppTemplate(template);
@@ -351,21 +327,16 @@ export const useSupabaseData = () => {
     return false;
   }, []);
 
-  // Get top clients
   const getTopClients = useCallback((limit: number = 5): Client[] => {
     return [...clients]
       .sort((a, b) => b.totalSpent - a.totalSpent)
       .slice(0, limit);
   }, [clients]);
 
-  // Get inactive clients
   const getInactiveClients = useCallback((): Client[] => {
-    // For now, we'll return an empty array
-    // Later we'll implement the actual logic
     return [];
   }, [clients]);
 
-  // Fetch blocked dates from the API
   const fetchBlockedDates = async () => {
     try {
       const blockedDatesData = await appointmentService.getBlockedDates();
@@ -382,10 +353,8 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Add blocked date
   const addBlockedDate = useCallback(async (blockedDate: Omit<BlockedDate, "id">) => {
     try {
-      // Convert the date string to a Date object for the service
       const dateObj = typeof blockedDate.date === 'string' ? new Date(blockedDate.date) : new Date();
       
       const newBlockedDate = await appointmentService.createBlockedDate({
@@ -413,7 +382,6 @@ export const useSupabaseData = () => {
     return null;
   }, []);
 
-  // Delete blocked date
   const deleteBlockedDate = useCallback(async (id: string) => {
     try {
       const success = await appointmentService.deleteBlockedDate(id);
@@ -436,12 +404,14 @@ export const useSupabaseData = () => {
     return false;
   }, []);
 
-  // Refresh blocked dates data
+  const getBlockedDates = useCallback(async () => {
+    return await fetchBlockedDates();
+  }, []);
+
   const refetchBlockedDates = useCallback(async () => {
     return await fetchBlockedDates();
   }, []);
 
-  // Load blocked dates when component mounts
   useEffect(() => {
     getBlockedDates();
   }, []);
@@ -454,7 +424,6 @@ export const useSupabaseData = () => {
     loading,
     blockedDates,
     
-    // Appointment actions
     addAppointment,
     updateAppointment,
     deleteAppointment,
@@ -462,13 +431,11 @@ export const useSupabaseData = () => {
     changeAppointmentStatus,
     refetchAppointments,
     
-    // Blocked date actions
     addBlockedDate,
     deleteBlockedDate,
     getBlockedDates,
     refetchBlockedDates,
     
-    // Utility functions
     getAppointmentsForDate,
     getInactiveClients,
     getTopClients,
