@@ -1,5 +1,5 @@
 
-import { Tables, TablesRow, TablesInsert, TablesUpdate } from '../type-utils';
+import { Tables, TablesRow, TablesInsert, TablesUpdate } from './type-utils';
 
 // Type aliases for Supabase tables
 export type DbAppointment = TablesRow<'agendamentos'>;
