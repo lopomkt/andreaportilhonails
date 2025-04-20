@@ -1,42 +1,19 @@
 
-import { Database } from '../types';
+import { Tables, TablesRow, TablesInsert, TablesUpdate } from '../type-utils';
 
 // Type aliases for Supabase tables
-export type DbAppointment = Database['public']['Tables']['agendamentos']['Row'];
-export type DbClient = Database['public']['Tables']['clientes']['Row'];
-export type DbService = Database['public']['Tables']['servicos']['Row'];
-export type DbConfig = Database['public']['Tables']['configuracoes']['Row'];
+export type DbAppointment = TablesRow<'agendamentos'>;
+export type DbClient = TablesRow<'clientes'>;
+export type DbService = TablesRow<'servicos'>;
+export type DbConfig = TablesRow<'configuracoes'>;
 
 // Appointment-specific types for insert and update operations
-export type DbAppointmentInsert = Database['public']['Tables']['agendamentos']['Insert'];
-export type DbAppointmentUpdate = Database['public']['Tables']['agendamentos']['Update'];
+export type DbAppointmentInsert = TablesInsert<'agendamentos'>;
+export type DbAppointmentUpdate = TablesUpdate<'agendamentos'>;
 
 // Define type for blocked dates
-// For proper typing of the datas_bloqueadas table
-export interface DbBlockedDate {
-  id: string;
-  data: string;
-  motivo: string | null;
-  dia_todo: boolean;
-  valor?: string | null;
-  descricao?: string | null;
-}
+export interface DbBlockedDate extends TablesRow<'datas_bloqueadas'> {}
 
 // Define insert and update types for blocked dates
-export interface DbBlockedDateInsert {
-  id?: string;
-  data: string;
-  motivo?: string | null;
-  dia_todo?: boolean;
-  valor?: string | null;
-  descricao?: string | null;
-}
-
-export interface DbBlockedDateUpdate {
-  id?: string;
-  data?: string;
-  motivo?: string | null;
-  dia_todo?: boolean;
-  valor?: string | null;
-  descricao?: string | null;
-}
+export type DbBlockedDateInsert = TablesInsert<'datas_bloqueadas'>;
+export type DbBlockedDateUpdate = TablesUpdate<'datas_bloqueadas'>;

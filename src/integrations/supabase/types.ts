@@ -9,7 +9,186 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      agendamentos: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          data: string
+          hora_fim: string | null
+          id: string
+          motivo_cancelamento: string | null
+          observacoes: string | null
+          preco: number
+          servico_id: string
+          status: Database["public"]["Enums"]["status_agendamento"]
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          data: string
+          hora_fim?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          observacoes?: string | null
+          preco?: number
+          servico_id: string
+          status?: Database["public"]["Enums"]["status_agendamento"]
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          data?: string
+          hora_fim?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          observacoes?: string | null
+          preco?: number
+          servico_id?: string
+          status?: Database["public"]["Enums"]["status_agendamento"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes: {
+        Row: {
+          data_criacao: string | null
+          data_nascimento: string | null
+          data_ultimo_agendamento: string | null
+          email: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string
+          ultimo_agendamento: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          data_criacao?: string | null
+          data_nascimento?: string | null
+          data_ultimo_agendamento?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone: string
+          ultimo_agendamento?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          data_criacao?: string | null
+          data_nascimento?: string | null
+          data_ultimo_agendamento?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string
+          ultimo_agendamento?: string | null
+          valor_total?: number | null
+        }
+        Relationships: []
+      }
+      configuracoes: {
+        Row: {
+          descricao: string | null
+          id: string
+          updated_at: string | null
+          valor: string | null
+        }
+        Insert: {
+          descricao?: string | null
+          id: string
+          updated_at?: string | null
+          valor?: string | null
+        }
+        Update: {
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          valor?: string | null
+        }
+        Relationships: []
+      }
+      datas_bloqueadas: {
+        Row: {
+          data: string
+          descricao: string | null
+          dia_todo: boolean
+          id: string
+          motivo: string | null
+          valor: string | null
+        }
+        Insert: {
+          data: string
+          descricao?: string | null
+          dia_todo?: boolean
+          id?: string
+          motivo?: string | null
+          valor?: string | null
+        }
+        Update: {
+          data?: string
+          descricao?: string | null
+          dia_todo?: boolean
+          id?: string
+          motivo?: string | null
+          valor?: string | null
+        }
+        Relationships: []
+      }
+      mensagens_motivacionais: {
+        Row: {
+          id: string
+          mensagem: string
+        }
+        Insert: {
+          id?: string
+          mensagem: string
+        }
+        Update: {
+          id?: string
+          mensagem?: string
+        }
+        Relationships: []
+      }
+      servicos: {
+        Row: {
+          descricao: string | null
+          duracao_minutos: number
+          id: string
+          nome: string
+          preco: number
+        }
+        Insert: {
+          descricao?: string | null
+          duracao_minutos?: number
+          id?: string
+          nome: string
+          preco?: number
+        }
+        Update: {
+          descricao?: string | null
+          duracao_minutos?: number
+          id?: string
+          nome?: string
+          preco?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +197,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      status_agendamento: "confirmado" | "pendente" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +312,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      status_agendamento: ["confirmado", "pendente", "cancelado"],
+    },
   },
 } as const

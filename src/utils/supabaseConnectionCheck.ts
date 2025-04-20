@@ -1,35 +1,37 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast as toastFunc } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
+/**
+ * Verify the connection to Supabase by making a simple query
+ * @returns boolean indicating if the connection was successful
+ */
 export const verifySupabaseConnection = async (): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.from('configuracoes').select('id').limit(1);
-    
-    if (error) {
-      console.error('Supabase connection error:', error);
+    // Test the connection by fetching a single record from the configurations table
+    const { data, error } = await supabase
+      .from('configuracoes')
+      .select('id')
+      .limit(1);
       
-      // Use toast directly from the import
-      toastFunc({
+    if (error) {
+      console.error("Supabase connection error:", error);
+      toast({
         title: "Erro de conexão",
-        description: "Não foi possível conectar ao servidor. Tente novamente.",
+        description: "Não foi possível conectar ao banco de dados. Verifique sua conexão com a internet.",
         variant: "destructive",
       });
-      
       return false;
     }
     
     return true;
   } catch (err) {
-    console.error('Unexpected error verifying Supabase connection:', err);
-    
-    // Use toast directly from the import for the unexpected error
-    toastFunc({
+    console.error("Unexpected error verifying Supabase connection:", err);
+    toast({
       title: "Erro de conexão",
-      description: "Ocorreu um erro ao verificar a conexão com o servidor. Tente novamente.",
+      description: "Ocorreu um erro ao verificar a conexão com o banco de dados.",
       variant: "destructive",
     });
-    
     return false;
   }
 };
