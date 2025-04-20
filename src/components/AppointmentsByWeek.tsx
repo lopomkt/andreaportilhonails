@@ -107,7 +107,11 @@ export function AppointmentsByWeek({
         </div>
       
         <div className="grid grid-cols-7 gap-1">
-          {groupedAppointments.map((item, index) => {})}
+          {groupedAppointments.map((item, index) => (
+            <div key={index} className="text-center">
+              {/* Day content here */}
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>;

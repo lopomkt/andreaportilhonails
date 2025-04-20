@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -56,7 +55,6 @@ export const DayView: React.FC<DayViewProps> = ({
   const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), date));
   const dayBlocks = blockedDates.filter(block => isSameDay(new Date(block.date), date));
 
-  // Group appointments by hour
   const appointmentsByHour = dayAppointments.reduce((groups, appointment) => {
     const hour = format(new Date(appointment.date), 'HH:00');
     if (!groups[hour]) {
@@ -124,12 +122,10 @@ export const DayView: React.FC<DayViewProps> = ({
     setIsSaving(true);
     
     try {
-      // Create appointment date with selected time
       const dateWithTime = new Date(appointmentDate);
       const [hours, minutes] = appointmentTime.split(":").map(Number);
       dateWithTime.setHours(hours, minutes, 0, 0);
       
-      // Update appointment
       const success = await appointmentService.update(selectedAppointment.id, {
         clientId,
         serviceId,
@@ -173,10 +169,8 @@ export const DayView: React.FC<DayViewProps> = ({
     setIsSendingMessage(true);
     
     try {
-      // Get template from configs
       const template = await appointmentService.getWhatsAppTemplate();
       
-      // Current values from form
       const client = clients.find(c => c.id === clientId);
       const service = services.find(s => s.id === serviceId);
       
@@ -190,7 +184,6 @@ export const DayView: React.FC<DayViewProps> = ({
         return;
       }
       
-      // Format date for message
       const appointmentDateTime = new Date(appointmentDate);
       const [hours, minutes] = appointmentTime.split(":").map(Number);
       appointmentDateTime.setHours(hours, minutes, 0, 0);
@@ -198,7 +191,6 @@ export const DayView: React.FC<DayViewProps> = ({
       const formattedDate = format(appointmentDateTime, "dd/MM/yyyy", { locale: ptBR });
       const formattedTime = format(appointmentDateTime, "HH:mm", { locale: ptBR });
       
-      // Replace variables in template
       let message = template
         .replace(/{{nome}}/g, client.name)
         .replace(/{{servico}}/g, service.name)
@@ -206,23 +198,18 @@ export const DayView: React.FC<DayViewProps> = ({
         .replace(/{{hora}}/g, formattedTime)
         .replace(/{{preço}}/g, price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
       
-      // Add type-specific message
       if (type === 'confirmation') {
         message = "✅ *CONFIRMAÇÃO DE HORÁRIO* ✅\n\n" + message;
       } else {
         message = "⏰ *LEMBRETE DE AGENDAMENTO* ⏰\n\n" + message;
       }
       
-      // Encode message for URL
       const encodedMessage = encodeURIComponent(message);
       
-      // Get phone number
-      const phoneNumber = client.telefone?.replace(/\D/g, '') || '';
+      const phoneNumber = client.phone?.replace(/\D/g, '') || '';
       
-      // Open WhatsApp Web
       window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
 
-      // Update status to confirmed if it's a confirmation message
       if (type === 'confirmation' && status !== 'confirmed') {
         setStatus('confirmed');
         setIsFormDirty(true);
@@ -258,11 +245,9 @@ export const DayView: React.FC<DayViewProps> = ({
         </Button>
       </div>
       
-      {/* Filter section - hidden by default */}
       {showFilters && (
         <div className="bg-accent/10 p-4 rounded-lg mb-4">
           <h3 className="text-sm font-medium mb-2">Filtros</h3>
-          {/* Filter options would go here */}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" className="text-xs">Todos</Button>
             <Button variant="outline" size="sm" className="text-xs">Confirmados</Button>
@@ -272,7 +257,6 @@ export const DayView: React.FC<DayViewProps> = ({
         </div>
       )}
       
-      {/* Blocked times section */}
       {dayBlocks.length > 0 && <div className="mt-4 mb-6">
           <h3 className="text-md font-semibold mb-2 flex items-center">
             <CalendarX className="h-4 w-4 mr-2 text-orange-500" />
@@ -302,7 +286,6 @@ export const DayView: React.FC<DayViewProps> = ({
           </div>
         </div>}
       
-      {/* Appointments by hour */}
       {hours.length > 0 ? <div className="space-y-6">
           {hours.map(hour => <div key={hour} className="space-y-2">
               <h3 className="text-md font-semibold sticky top-16 bg-background py-1 z-10">
@@ -343,7 +326,6 @@ export const DayView: React.FC<DayViewProps> = ({
           <p className="text-muted-foreground">Nenhum agendamento para este dia.</p>
         </div>}
       
-      {/* Manage Appointment Dialog */}
       <Dialog open={manageModalOpen} onOpenChange={(open) => {
         if (!open && isFormDirty) {
           setConfirmSaveOpen(true);
@@ -364,7 +346,6 @@ export const DayView: React.FC<DayViewProps> = ({
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* Client field */}
             <div className="space-y-2">
               <Label htmlFor="client">Cliente</Label>
               <Select 
@@ -387,7 +368,6 @@ export const DayView: React.FC<DayViewProps> = ({
               </Select>
             </div>
             
-            {/* Date field */}
             <div className="space-y-2">
               <Label>Data</Label>
               <Popover>
@@ -419,7 +399,6 @@ export const DayView: React.FC<DayViewProps> = ({
               </Popover>
             </div>
             
-            {/* Time field */}
             <div className="space-y-2">
               <Label htmlFor="time">Horário</Label>
               <Input 
@@ -433,7 +412,6 @@ export const DayView: React.FC<DayViewProps> = ({
               />
             </div>
             
-            {/* Service field */}
             <div className="space-y-2">
               <Label htmlFor="service">Serviço</Label>
               <Select 
@@ -441,7 +419,6 @@ export const DayView: React.FC<DayViewProps> = ({
                 onValueChange={(value) => {
                   setServiceId(value);
                   
-                  // Update price based on selected service
                   const service = services.find(s => s.id === value);
                   if (service) {
                     setPrice(service.price);
@@ -463,7 +440,6 @@ export const DayView: React.FC<DayViewProps> = ({
               </Select>
             </div>
             
-            {/* Price field */}
             <div className="space-y-2">
               <Label htmlFor="price">Preço</Label>
               <Input 
@@ -479,7 +455,6 @@ export const DayView: React.FC<DayViewProps> = ({
               />
             </div>
             
-            {/* Notes field */}
             <div className="space-y-2">
               <Label htmlFor="notes">Observações</Label>
               <Textarea 
@@ -494,7 +469,6 @@ export const DayView: React.FC<DayViewProps> = ({
               />
             </div>
             
-            {/* Status field */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select 
@@ -515,7 +489,6 @@ export const DayView: React.FC<DayViewProps> = ({
               </Select>
             </div>
             
-            {/* WhatsApp Message buttons */}
             <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <Button 
                 className="flex-1 gap-2 bg-green-500 hover:bg-green-600 text-white py-6" 
@@ -558,7 +531,6 @@ export const DayView: React.FC<DayViewProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Confirmation Dialog */}
       <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -583,7 +555,6 @@ export const DayView: React.FC<DayViewProps> = ({
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Edit Appointment Dialog - keep for legacy support */}
       {selectedAppointment && !manageModalOpen && (
         <Dialog open={!!selectedAppointment && !manageModalOpen} onOpenChange={() => setSelectedAppointment(null)}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">

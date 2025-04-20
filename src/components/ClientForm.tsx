@@ -30,16 +30,17 @@ type FormValues = z.infer<typeof formSchema>;
 interface ClientFormProps {
   onSuccess?: (clientId: string, clientName: string) => void;
   onCancel?: () => void;
+  initialName?: string; // Add this line to accept initialName
 }
 
-export function ClientForm({ onSuccess, onCancel }: ClientFormProps) {
+export function ClientForm({ onSuccess, onCancel, initialName = '' }: ClientFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome: '',
+      nome: initialName, // Use initialName here
       telefone: '',
       observacoes: '',
       email: '',

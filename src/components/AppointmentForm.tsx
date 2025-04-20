@@ -16,28 +16,26 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatCurrency, formatDuration } from "@/lib/formatters";
 
 interface AppointmentFormProps {
-  appointment?: Appointment;
-  selectedDate?: Date;
-  // Add these props to match what we're passing from DayView
-  clientId?: string;
-  serviceId?: string;
-  date?: Date;
-  notes?: string;
-  price?: number;
-  status?: AppointmentStatus;
   onSuccess?: () => void;
+  appointment?: Appointment;
+  serviceId?: string;
+  clientId?: string;
+  date?: Date;
+  price?: number;
+  notes?: string;
+  status?: AppointmentStatus;
+  initialDate?: Date;
 }
 
 export function AppointmentForm({ 
-  appointment,
-  selectedDate = new Date(),
+  onSuccess, 
+  appointment, 
+  serviceId: initialServiceId, 
   clientId: initialClientId,
-  serviceId: initialServiceId,
   date: initialDate,
   notes: initialNotes,
   price: initialPrice,
-  status: initialStatus,
-  onSuccess 
+  status: initialStatus 
 }: AppointmentFormProps) {
   const { 
     clients, 
@@ -48,7 +46,6 @@ export function AppointmentForm({
     blockedDates
   } = useData();
 
-  // State for form fields
   const [clientId, setClientId] = useState(initialClientId || appointment?.clientId || "");
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
   const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
@@ -60,12 +57,10 @@ export function AppointmentForm({
   const [price, setPrice] = useState(initialPrice || appointment?.price || 0);
   const [hasConflict, setHasConflict] = useState(false);
   const [conflictDetails, setConflictDetails] = useState<string>("");
-  
-  // Selected client and service objects
+
   const selectedClient = clients.find(c => c.id === clientId);
   const selectedService = services.find(s => s.id === serviceId);
-  
-  // When service changes, update price
+
   useEffect(() => {
     if (serviceId) {
       const service = services.find(s => s.id === serviceId);
@@ -74,8 +69,7 @@ export function AppointmentForm({
       }
     }
   }, [serviceId, services]);
-  
-  // Check for appointment conflicts
+
   useEffect(() => {
     if (!date || !time || !serviceId) {
       setHasConflict(false);
@@ -94,7 +88,6 @@ export function AppointmentForm({
     
     const endDateTime = addMinutes(startDateTime, service.durationMinutes);
     
-    // Check for date blocking
     const isDateBlocked = blockedDates.some(blockedDate => 
       isSameDay(new Date(blockedDate.date), date) && blockedDate.allDay
     );
@@ -105,32 +98,21 @@ export function AppointmentForm({
       return;
     }
     
-    // Check for appointment conflicts
     const conflictingAppointments = appointments.filter(a => {
-      // Skip the current appointment when editing
       if (appointment && a.id === appointment.id) return false;
-      
-      // Skip canceled appointments
       if (a.status === "canceled") return false;
       
       const appointmentStart = new Date(a.date);
       
-      // Calculate appointment end time
       const appointmentService = services.find(s => s.id === a.serviceId);
       const appointmentDuration = appointmentService?.durationMinutes || 60;
       const appointmentEnd = addMinutes(appointmentStart, appointmentDuration);
       
-      // Check for overlap
       return (
-        // New appointment starts during an existing appointment
         (isAfter(startDateTime, appointmentStart) && isBefore(startDateTime, appointmentEnd)) ||
-        // New appointment ends during an existing appointment
         (isAfter(endDateTime, appointmentStart) && isBefore(endDateTime, appointmentEnd)) ||
-        // New appointment completely contains an existing appointment
         (isBefore(startDateTime, appointmentStart) && isAfter(endDateTime, appointmentEnd)) ||
-        // New appointment is completely contained by an existing appointment
         (isAfter(startDateTime, appointmentStart) && isBefore(endDateTime, appointmentEnd)) ||
-        // New appointment starts exactly at the same time as an existing appointment
         (startDateTime.getTime() === appointmentStart.getTime())
       );
     });
@@ -150,8 +132,7 @@ export function AppointmentForm({
       setConflictDetails("");
     }
   }, [date, time, serviceId, services, appointments, appointment, blockedDates]);
-  
-  // Handle form submission
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -173,18 +154,15 @@ export function AppointmentForm({
       return;
     }
     
-    // Create appointment date
     const appointmentDate = new Date(date);
     const [hours, minutes] = time.split(":").map(Number);
     appointmentDate.setHours(hours, minutes, 0, 0);
     
-    // Calculate end time
     const selectedService = services.find(s => s.id === serviceId);
     const endDateTime = addMinutes(appointmentDate, selectedService?.durationMinutes || 60);
     
     try {
       if (appointment) {
-        // Update existing appointment
         await updateAppointment(appointment.id, {
           clientId,
           serviceId,
@@ -200,7 +178,6 @@ export function AppointmentForm({
           description: "O agendamento foi atualizado com sucesso.",
         });
       } else {
-        // Create new appointment
         await addAppointment({
           clientId,
           serviceId,
@@ -217,7 +194,6 @@ export function AppointmentForm({
         });
       }
       
-      // Call success callback
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error saving appointment:", error);
@@ -228,7 +204,7 @@ export function AppointmentForm({
       });
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

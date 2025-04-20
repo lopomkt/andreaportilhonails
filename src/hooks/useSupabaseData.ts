@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Appointment, AppointmentStatus, BlockedDate, Client, DashboardStats, Service, WhatsAppMessageData } from '@/types';
 import { appointmentService } from '@/integrations/supabase/appointmentService';
@@ -438,8 +437,8 @@ export const useSupabaseData = () => {
   }, []);
 
   // Refresh blocked dates data
-  const getBlockedDates = useCallback(async () => {
-    return fetchBlockedDates();
+  const refetchBlockedDates = useCallback(async () => {
+    return await fetchBlockedDates();
   }, []);
 
   // Load blocked dates when component mounts
@@ -467,6 +466,7 @@ export const useSupabaseData = () => {
     addBlockedDate,
     deleteBlockedDate,
     getBlockedDates,
+    refetchBlockedDates,
     
     // Utility functions
     getAppointmentsForDate,
