@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,29 @@ export function AppointmentsByWeek({
         </div>
       
         <div className="grid grid-cols-7 gap-1">
-          {groupedAppointments.map((item, index) => {})}
+          {groupedAppointments.map((item, index) => (
+            <div 
+              key={index} 
+              className={`p-1 text-center rounded cursor-pointer hover:bg-rose-50 transition-colors ${
+                isSameDay(item.date, new Date()) ? 'bg-rose-100' : ''
+              }`}
+              onClick={() => navigateToDate(item.date)}
+            >
+              <div className="text-xs font-medium mb-1">
+                {format(item.date, 'EEE', { locale: ptBR })}
+              </div>
+              <div className={`text-sm font-bold ${
+                isSameDay(item.date, new Date()) ? 'text-rose-700' : ''
+              }`}>
+                {format(item.date, 'd')}
+              </div>
+              {item.count > 0 && (
+                <div className="mt-1 bg-rose-500 text-white text-xs rounded-full px-1 inline-block min-w-5">
+                  {item.count}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>;
