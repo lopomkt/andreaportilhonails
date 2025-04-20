@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Appointment, AppointmentStatus, BlockedDate, Client, DashboardStats, Service, WhatsAppMessageData } from '@/types';
 import { appointmentService } from '@/integrations/supabase/appointmentService';
@@ -18,19 +19,38 @@ export const useSupabaseData = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Function to fetch appointments
+  const fetchAppointments = async () => {
+    try {
+      const appointmentsData = await appointmentService.getAll();
+      setAppointments(appointmentsData);
+      updateDashboardStats(appointmentsData);
+      return appointmentsData;
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast({
+        title: 'Erro ao carregar agendamentos',
+        description: 'Ocorreu um erro ao carregar os agendamentos. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+      return [];
+    }
+  };
+
+  // Refetch appointments
+  const refetchAppointments = useCallback(async () => {
+    return await fetchAppointments();
+  }, []);
+
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const appointmentsData = await appointmentService.getAll();
-        setAppointments(appointmentsData);
+        await fetchAppointments();
         
         // For now, we'll use the mock data for clients and services
         // Later we'll implement the actual Supabase service for these
-        
-        // Calculate stats
-        updateDashboardStats(appointmentsData);
         
         // Load blocked dates
         await fetchBlockedDates();
@@ -441,6 +461,7 @@ export const useSupabaseData = () => {
     deleteAppointment,
     rescheduleAppointment,
     changeAppointmentStatus,
+    refetchAppointments,
     
     // Blocked date actions
     addBlockedDate,

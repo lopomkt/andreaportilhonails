@@ -114,3 +114,8 @@ export interface WhatsAppMessageData {
   appointment?: Appointment;
   message?: string;
 }
+
+// Type for refetch functions
+export interface RefetchFunction {
+  (): Promise<any>;
+}
