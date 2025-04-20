@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, LineChart, PieChart, Pie, Cell } from "recharts";
@@ -15,7 +14,6 @@ interface ServiceRevenue {
   value: number;
   count: number;
 }
-
 export function FinancialDashboard() {
   const {
     appointments,
@@ -23,12 +21,10 @@ export function FinancialDashboard() {
     calculateDailyRevenue,
     getRevenueData
   } = useData();
-  
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
   const [projectedRevenue, setProjectedRevenue] = useState(0);
   const [averageClientValue, setAverageClientValue] = useState(0);
   const [topServices, setTopServices] = useState<ServiceRevenue[]>([]);
-  
   useEffect(() => {
     // Calculate current month's revenue
     const now = new Date();
@@ -80,133 +76,9 @@ export function FinancialDashboard() {
 
   // Get revenue data for charts
   const revenueData = getRevenueData();
-  
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(currentMonthRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Valor total dos agendamentos confirmados este mês</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Receita Projetada</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(projectedRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Valor estimado dos agendamentos futuros confirmados</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageClientValue)}</div>
-            <p className="text-xs text-muted-foreground">Valor médio gasto por cliente</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Serviços Realizados</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {appointments.filter(a => a.status === "confirmed").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Total de agendamentos confirmados</p>
-          </CardContent>
-        </Card>
-      </div>
+  return <div className="space-y-6">
       
-      <Tabs defaultValue="revenue" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="revenue">Receita</TabsTrigger>
-          <TabsTrigger value="services">Serviços</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="revenue" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Receita por Dia</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(value) => `R$${value}`} />
-                  <Tooltip formatter={(value) => [`R$${value}`, 'Receita']} />
-                  <Legend />
-                  <Bar dataKey="value" name="Receita" fill="#E5989B" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="services" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Serviços Populares</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={topServices}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="value"
-                      nameKey="name"
-                      label={(entry) => entry.name}
-                    >
-                      {topServices.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`R$${value}`, 'Receita']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Serviços por Quantidade</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topServices} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" />
-                    <Tooltip />
-                    <Bar dataKey="count" name="Quantidade" fill="#B76E79" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+      
+      
+    </div>;
 }
