@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    /* Primary color: Rosê Gold (#B76E79) */
+    --primary: 348 28% 57%;
+    --primary-foreground: 0 0% 100%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    --secondary: 328 10% 96%;
+    --secondary-foreground: 348 28% 40%;
+    
+    --muted: 328 5% 95%;
+    --muted-foreground: 328 5% 45%;
+    
+    --accent: 328 10% 95%;
+    --accent-foreground: 348 28% 40%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 328 10% 90%;
+    --input: 328 10% 90%;
+    --ring: 348 28% 57%;
+    
+    --radius: 12px;
+    
+    /* Status colors */
+    --status-confirmed: 142 76% 36%;
+    --status-pending: 38 92% 50%;
+    --status-canceled: 0 84% 60%;
+    
+    /* Nail palette - keep for compatibility */
+    --nail-50: 348 100% 98%;
+    --nail-100: 348 100% 94%;
+    --nail-200: 348 95% 90%;
+    --nail-300: 348 90% 82%;
+    --nail-400: 348 85% 74%;
+    --nail-500: 348 28% 57%; /* Main Rosê Gold color #B76E79 */
+    --nail-600: 348 28% 50%;
+    --nail-700: 348 30% 42%;
+    --nail-800: 348 32% 34%;
+    --nail-900: 348 34% 26%;
+    --nail-950: 348 36% 18%;
+  }
+ 
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    
+    /* Primary color: Rosê Gold (#B76E79) - adjusted for dark mode */
+    --primary: 348 28% 57%;
+    --primary-foreground: 0 0% 100%;
+    
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    
+    --secondary: 348 10% 20%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 348 10% 20%;
+    --muted-foreground: 348 5% 70%;
+    
+    --accent: 348 10% 20%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 348 10% 20%;
+    --input: 348 10% 20%;
+    --ring: 348 28% 57%;
+    
+    /* Status colors - adjusted for dark mode */
+    --status-confirmed: 142 76% 36%;
+    --status-pending: 38 92% 50%;
+    --status-canceled: 0 84% 60%;
+    
+    /* Nail palette - keep for compatibility, adjusted for dark mode */
+    --nail-50: 348 10% 15%;
+    --nail-100: 348 10% 20%;
+    --nail-200: 348 10% 25%;
+    --nail-300: 348 15% 30%;
+    --nail-400: 348 20% 35%;
+    --nail-500: 348 25% 45%;
+    --nail-600: 348 30% 55%;
+    --nail-700: 348 35% 65%;
+    --nail-800: 348 40% 75%;
+    --nail-900: 348 45% 85%;
+    --nail-950: 348 50% 95%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-poppins overflow-hidden;
+  }
+}
+
+@layer components {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .status-badge {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full;
+  }
+  
+  .status-confirmed {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .status-pending {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .status-canceled {
+    @apply bg-red-100 text-red-800;
+  }
+
+  /* Premium UI Components */
+  .card-premium {
+    @apply bg-white rounded-2xl shadow-premium border border-rose-100;
+  }
+  
+  .btn-premium {
+    @apply bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-soft transition-all;
+  }
+  
+  .btn-outline-premium {
+    @apply border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-xl shadow-soft transition-all;
+  }
+  
+  .input-premium {
+    @apply rounded-xl border-rose-100 focus:border-rose-300 focus:ring focus:ring-rose-200 focus:ring-opacity-50;
+  }
+  
+  .divider-premium {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-rose-200 to-transparent my-6;
+  }
+  
+  .tag-premium {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom styling for client tags */
+.client-tag {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.client-tag-vip {
+  @apply bg-rose-100 text-rose-800;
+}
+
+.client-tag-punctual {
+  @apply bg-green-100 text-green-800;
+}
+
+.client-tag-defaulter {
+  @apply bg-red-100 text-red-800;
+}
+
+.client-tag-inactive {
+  @apply bg-gray-100 text-gray-800;
+}
