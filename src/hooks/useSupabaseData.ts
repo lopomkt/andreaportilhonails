@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Appointment, AppointmentStatus, BlockedDate, Client, DashboardStats, Service, WhatsAppMessageData } from '@/types';
 import { appointmentService } from '@/integrations/supabase/appointmentService';
+import { supabase } from '@/integrations/supabase/client';
 import { addDays, differenceInDays, format, isAfter, isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -354,7 +355,8 @@ export const useSupabaseData = () => {
         id: item.id,
         date: item.data,
         reason: item.motivo || "",
-        allDay: item.dia_todo
+        allDay: item.dia_todo,
+        dia_todo: item.dia_todo
       })) || [];
       
       setBlockedDates(mappedData);
@@ -428,7 +430,7 @@ export const useSupabaseData = () => {
 
   useEffect(() => {
     getBlockedDates();
-  }, []);
+  }, [getBlockedDates]);
 
   return {
     appointments,

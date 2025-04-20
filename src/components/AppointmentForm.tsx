@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,6 @@ export function AppointmentForm({
     addAppointment, 
     updateAppointment,
     blockedDates,
-    refetchAppointments
   } = useData();
 
   const [clientId, setClientId] = useState(initialClientId || appointment?.clientId || "");
@@ -203,9 +201,6 @@ export function AppointmentForm({
           description: "O agendamento foi criado com sucesso.",
         });
       }
-      
-      // Make sure to refresh appointments
-      await refetchAppointments();
       
       if (onSuccess) onSuccess();
     } catch (error) {
