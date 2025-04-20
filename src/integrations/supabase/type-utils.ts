@@ -16,7 +16,8 @@ export const tableNames = {
   servicos: 'servicos',
   configuracoes: 'configuracoes',
   datas_bloqueadas: 'datas_bloqueadas',
-  mensagens_motivacionais: 'mensagens_motivacionais'
+  mensagens_motivacionais: 'mensagens_motivacionais',
+  ultima_mensagem_vista: 'ultima_mensagem_vista'
 } as const;
 
 export type TableName = keyof typeof tableNames;

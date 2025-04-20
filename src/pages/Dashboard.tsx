@@ -16,6 +16,7 @@ import { FinancialDashboard } from "@/components/FinancialDashboard";
 import { ServiceTimeStatistics } from "@/components/ServiceTimeStatistics";
 import { AppointmentsByWeek } from "@/components/AppointmentsByWeek";
 import { supabase } from "@/integrations/supabase/client";
+
 export default function Dashboard() {
   const {
     dashboardStats,
@@ -33,96 +34,105 @@ export default function Dashboard() {
   const todayAppointments = getAppointmentsForDate(new Date());
   const topClients = getTopClients(3);
 
-  // Get inactive clients (no appointments in last 30 days) - updated from 40 to 30 days
   const inactiveClients = clients.filter(client => {
     if (!client.lastAppointment) return true;
     const lastAppointmentDate = new Date(client.lastAppointment);
     const today = new Date();
     const days = differenceInDays(today, lastAppointmentDate);
     return days > 30;
-  }).slice(0, 3); // Only show the first 3
+  }).slice(0, 3);
 
-  // Calculate today's revenue
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
 
-  // Calculate average client value (ticket médio)
   const calculateAverageClientValue = () => {
     const now = new Date();
     const firstDayOfMonth = startOfMonth(now);
     const lastDayOfMonth = endOfMonth(now);
 
-    // Find all confirmed appointments in current month
     const confirmedAppointments = appointments.filter(appt => {
       const apptDate = new Date(appt.date);
       return appt.status === "confirmed" && isAfter(apptDate, firstDayOfMonth) && isBefore(apptDate, lastDayOfMonth);
     });
 
-    // Get unique client IDs from this month's appointments
     const uniqueClientIds = new Set(confirmedAppointments.map(appt => appt.clientId));
 
-    // Calculate total revenue from confirmed appointments
     const totalRevenue = confirmedAppointments.reduce((sum, appt) => sum + appt.price, 0);
 
-    // Calculate average revenue per client
     const avgValue = uniqueClientIds.size > 0 ? totalRevenue / uniqueClientIds.size : 0;
     return avgValue;
   };
 
-  // Calculate projected revenue (pending appointments until end of month)
   const calculateProjectedRevenue = () => {
     const now = new Date();
     const lastDayOfMonth = endOfMonth(now);
 
-    // Find all pending appointments until end of month
     const pendingAppointments = appointments.filter(appt => {
       const apptDate = new Date(appt.date);
       return appt.status === "pending" && isAfter(apptDate, now) && isBefore(apptDate, lastDayOfMonth);
     });
 
-    // Calculate total projected revenue
     return pendingAppointments.reduce((sum, appt) => sum + appt.price, 0);
   };
 
-  // Get the current time of day
   const getCurrentTimeOfDay = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
   };
+
   const [motivationalMessage, setMotivationalMessage] = useState<string>("");
+
   useEffect(() => {
     const fetchMotivationalMessage = async () => {
       try {
-        // First, check last viewed message
         const {
           data: lastViewed,
           error: lastViewedError
-        } = await supabase.from('ultima_mensagem_vista').select('mensagem_id, data_visualizacao').eq('id', 'andrea').single();
+        } = await supabase
+          .from('ultima_mensagem_vista')
+          .select('*')
+          .eq('id', 'andrea')
+          .single();
+
         if (lastViewedError) throw lastViewedError;
+        
         const now = new Date();
         const lastViewedTime = new Date(lastViewed.data_visualizacao);
         const hoursSinceLastView = (now.getTime() - lastViewedTime.getTime()) / (1000 * 60 * 60);
+        
         if (hoursSinceLastView >= 24) {
-          // Fetch and update a new random message
           const {
             data: newMessage,
             error: messageError
-          } = await supabase.from('mensagens_motivacionais').select('id, mensagem').order('random()').limit(1).single();
+          } = await supabase
+            .from('mensagens_motivacionais')
+            .select('*')
+            .order('random()')
+            .limit(1)
+            .single();
+
           if (messageError) throw messageError;
 
-          // Update last viewed message
-          await supabase.from('ultima_mensagem_vista').update({
-            mensagem_id: newMessage.id,
-            data_visualizacao: now.toISOString()
-          }).eq('id', 'andrea');
+          await supabase
+            .from('ultima_mensagem_vista')
+            .update({
+              mensagem_id: newMessage.id,
+              data_visualizacao: now.toISOString()
+            })
+            .eq('id', 'andrea');
+
           setMotivationalMessage(newMessage.mensagem);
         } else {
-          // Fetch the last viewed message details
           const {
             data: message,
             error: messageError
-          } = await supabase.from('mensagens_motivacionais').select('mensagem').eq('id', lastViewed.mensagem_id).single();
+          } = await supabase
+            .from('mensagens_motivacionais')
+            .select('mensagem')
+            .eq('id', lastViewed.mensagem_id)
+            .single();
+
           if (messageError) throw messageError;
           setMotivationalMessage(message.mensagem);
         }
@@ -130,8 +140,10 @@ export default function Dashboard() {
         console.error('Error fetching motivational message:', error);
       }
     };
+
     fetchMotivationalMessage();
   }, []);
+
   const openQuickAppointment = () => {
     const quickAppointmentButton = document.getElementById('quick-appointment-button');
     if (quickAppointmentButton) {
@@ -139,20 +151,18 @@ export default function Dashboard() {
     }
   };
 
-  // Navigate to calendar day view when clicking on today's appointments
   const navigateToCalendarDay = () => {
     navigate("/calendario");
-    // Need to set day view in calendar page
   };
 
-  // Navigate to clients inactive section
   const navigateToInactiveClients = () => {
     navigate("/clientes?filter=inactive");
   };
+
   const averageClientValue = calculateAverageClientValue();
   const projectedRevenue = calculateProjectedRevenue();
+
   return <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0">
-      {/* Welcome Banner */}
       <Card className="bg-gradient-to-r from-rose-500 to-rose-400 text-white border-0 shadow-premium">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col items-center text-center md:flex-row md:justify-between md:text-left">
@@ -176,9 +186,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Cards Grid - Reorganized in the specified order */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-        {/* 1. Agendamentos de Hoje */}
         <Card className="bg-white border-rose-100 shadow-soft cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToCalendarDay}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-rose-700 flex items-center text-base font-bold">
@@ -200,10 +208,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         
-        {/* 2. Agendamentos da Semana */}
         <AppointmentsByWeek appointments={appointments} />
         
-        {/* 3. Clientes Inativos */}
         {inactiveClients.length > 0 && <Card className="card-premium cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToInactiveClients}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium text-rose-700 flex items-center">
@@ -219,26 +225,19 @@ export default function Dashboard() {
             </CardContent>
           </Card>}
         
-        {/* 4. Total do Mês */}
         <StatsCard title="Total do Mês" value={formatCurrency(dashboardStats.monthRevenue)} icon={DollarSign} description="faturamento até o momento" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
         
-        {/* 5. Lucro Líquido */}
         <StatsCard title="Lucro Líquido" value={formatCurrency(calculateNetProfit())} icon={BadgeDollarSign} description="faturamento - despesas" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
         
-        {/* 6. Média por Cliente (ticket médio) */}
         <StatsCard title="Média por Cliente" value={formatCurrency(averageClientValue)} icon={Wallet} description="ticket médio" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
         
-        {/* 7. Receita Prevista */}
         <StatsCard title="Receita Prevista" value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"} icon={Users} description="agendamentos pendentes até o fim do mês" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
       </div>
 
-      {/* Financial Dashboard */}
       <FinancialDashboard />
       
-      {/* Message Templates */}
       <MessageTemplateEditor />
 
-      {/* Motivational Message Banner */}
       {motivationalMessage && <Card className="bg-rose-50 border-rose-100 shadow-soft ">
           <CardContent className="p-6 text-center py-[16px] px-[10px]">
             <p className="text-rose-700 text-lg font-medium italic">
@@ -248,6 +247,7 @@ export default function Dashboard() {
         </Card>}
     </div>;
 }
+
 interface StatsCardProps {
   title: string;
   value: string;
@@ -257,6 +257,7 @@ interface StatsCardProps {
   iconClassName?: string;
   onClick?: () => void;
 }
+
 function StatsCard({
   title,
   value,
@@ -277,9 +278,11 @@ function StatsCard({
       </CardContent>
     </Card>;
 }
+
 interface InactiveClientCardProps {
   client: Client;
 }
+
 function InactiveClientCard({
   client
 }: InactiveClientCardProps) {

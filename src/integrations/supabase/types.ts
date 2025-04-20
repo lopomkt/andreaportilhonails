@@ -189,6 +189,32 @@ export type Database = {
         }
         Relationships: []
       }
+      ultima_mensagem_vista: {
+        Row: {
+          data_visualizacao: string
+          id: string
+          mensagem_id: string
+        }
+        Insert: {
+          data_visualizacao?: string
+          id: string
+          mensagem_id: string
+        }
+        Update: {
+          data_visualizacao?: string
+          id?: string
+          mensagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ultima_mensagem_vista_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens_motivacionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
