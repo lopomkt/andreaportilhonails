@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -22,11 +21,9 @@ import { cn } from "@/lib/utils";
 import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
 interface DayViewProps {
   date: Date;
 }
-
 export const DayView: React.FC<DayViewProps> = ({
   date
 }) => {
@@ -45,8 +42,9 @@ export const DayView: React.FC<DayViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const {
     appointments,
     blockedDates,
@@ -55,10 +53,8 @@ export const DayView: React.FC<DayViewProps> = ({
     refetchAppointments,
     refetchBlockedDates
   } = useSupabaseData();
-  
   const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), date));
   const dayBlocks = blockedDates.filter(block => isSameDay(new Date(block.date), date));
-
   const appointmentsByHour = dayAppointments.reduce((groups, appointment) => {
     const hour = format(new Date(appointment.date), 'HH:00');
     if (!groups[hour]) {
@@ -67,9 +63,7 @@ export const DayView: React.FC<DayViewProps> = ({
     groups[hour].push(appointment);
     return groups;
   }, {} as Record<string, typeof dayAppointments>);
-  
   const hours = Object.keys(appointmentsByHour).sort();
-  
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -82,7 +76,6 @@ export const DayView: React.FC<DayViewProps> = ({
         return 'secondary';
     }
   };
-  
   const getServiceIcon = (serviceName: string) => {
     const name = serviceName?.toLowerCase() || '';
     if (name.includes('manicure') || name.includes('unha')) {
@@ -93,7 +86,6 @@ export const DayView: React.FC<DayViewProps> = ({
       return <FileSpreadsheet className="h-4 w-4" />;
     }
   };
-  
   const handleOpenManageModal = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setClientId(appointment.clientId);
@@ -106,11 +98,9 @@ export const DayView: React.FC<DayViewProps> = ({
     setManageModalOpen(true);
     setIsFormDirty(false);
   };
-  
   const handleFormChange = () => {
     setIsFormDirty(true);
   };
-  
   const handleCloseManageModal = () => {
     if (isFormDirty) {
       setConfirmSaveOpen(true);
@@ -119,17 +109,13 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
-  
   const handleSaveChanges = async () => {
     if (!selectedAppointment) return;
-    
     setIsSaving(true);
-    
     try {
       const dateWithTime = new Date(appointmentDate);
       const [hours, minutes] = appointmentTime.split(":").map(Number);
       dateWithTime.setHours(hours, minutes, 0, 0);
-      
       const success = await appointmentService.update(selectedAppointment.id, {
         clientId,
         serviceId,
@@ -138,18 +124,17 @@ export const DayView: React.FC<DayViewProps> = ({
         notes,
         status
       });
-      
       if (success) {
         toast({
           title: "Sucesso",
-          description: "Agendamento atualizado com sucesso",
+          description: "Agendamento atualizado com sucesso"
         });
         await refetchAppointments();
       } else {
         toast({
           title: "Erro",
           description: "Falha ao atualizar o agendamento",
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -157,7 +142,7 @@ export const DayView: React.FC<DayViewProps> = ({
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar as alterações",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -166,75 +151,61 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
-  
   const handleSendMessage = async (type: 'confirmation' | 'reminder') => {
     if (!selectedAppointment || !selectedAppointment.client) return;
-    
     setIsSendingMessage(true);
-    
     try {
       const template = await appointmentService.getWhatsAppTemplate();
-      
       const client = clients.find(c => c.id === clientId);
       const service = services.find(s => s.id === serviceId);
-      
       if (!client || !service) {
         toast({
           title: "Erro",
           description: "Cliente ou serviço não encontrado",
-          variant: "destructive",
+          variant: "destructive"
         });
         setIsSendingMessage(false);
         return;
       }
-      
       const appointmentDateTime = new Date(appointmentDate);
       const [hours, minutes] = appointmentTime.split(":").map(Number);
       appointmentDateTime.setHours(hours, minutes, 0, 0);
-      
-      const formattedDate = format(appointmentDateTime, "dd/MM/yyyy", { locale: ptBR });
-      const formattedTime = format(appointmentDateTime, "HH:mm", { locale: ptBR });
-      
-      let message = template
-        .replace(/{{nome}}/g, client.name)
-        .replace(/{{servico}}/g, service.name)
-        .replace(/{{data}}/g, formattedDate)
-        .replace(/{{hora}}/g, formattedTime)
-        .replace(/{{preço}}/g, price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
-      
+      const formattedDate = format(appointmentDateTime, "dd/MM/yyyy", {
+        locale: ptBR
+      });
+      const formattedTime = format(appointmentDateTime, "HH:mm", {
+        locale: ptBR
+      });
+      let message = template.replace(/{{nome}}/g, client.name).replace(/{{servico}}/g, service.name).replace(/{{data}}/g, formattedDate).replace(/{{hora}}/g, formattedTime).replace(/{{preço}}/g, price.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }));
       if (type === 'confirmation') {
         message = "✅ *CONFIRMAÇÃO DE HORÁRIO* ✅\n\n" + message;
       } else {
         message = "⏰ *LEMBRETE DE AGENDAMENTO* ⏰\n\n" + message;
       }
-      
       const encodedMessage = encodeURIComponent(message);
-      
       const phoneNumber = client.phone?.replace(/\D/g, '') || '';
-      
       window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-
       if (type === 'confirmation' && status !== 'confirmed') {
         setStatus('confirmed');
         setIsFormDirty(true);
       }
-      
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao preparar a mensagem",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSendingMessage(false);
     }
   };
-  
   const handleOpenBlockedDateDialog = () => {
     setOpenBlockedDateDialog(true);
   };
-
   return <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex justify-between items-center py-0 my-[24px] px-[16px]">
         <h2 className="font-bold text-lg md:text-2xl">
@@ -243,28 +214,15 @@ export const DayView: React.FC<DayViewProps> = ({
         })}
         </h2>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-1"
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-1">
             <Filter className="h-4 w-4" />
             Filtrar
           </Button>
-          <Button
-            className="bg-gray-500 text-white shadow-soft hover:bg-gray-600 flex items-center gap-1" 
-            size="sm"
-            onClick={handleOpenBlockedDateDialog}
-          >
-            <Lock className="h-4 w-4" />
-            Bloquear
-          </Button>
+          
         </div>
       </div>
       
-      {showFilters && (
-        <div className="bg-accent/10 p-4 rounded-lg mb-4">
+      {showFilters && <div className="bg-accent/10 p-4 rounded-lg mb-4">
           <h3 className="text-sm font-medium mb-2">Filtros</h3>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" className="text-xs">Todos</Button>
@@ -272,8 +230,7 @@ export const DayView: React.FC<DayViewProps> = ({
             <Button variant="outline" size="sm" className="text-xs">Pendentes</Button>
             <Button variant="outline" size="sm" className="text-xs">Cancelados</Button>
           </div>
-        </div>
-      )}
+        </div>}
       
       {dayBlocks.length > 0 && <div className="mt-4 mb-6">
           <h3 className="text-md font-semibold mb-2 flex items-center">
@@ -344,14 +301,14 @@ export const DayView: React.FC<DayViewProps> = ({
           <p className="text-muted-foreground">Nenhum agendamento para este dia.</p>
         </div>}
       
-      <Dialog open={manageModalOpen} onOpenChange={(open) => {
-        if (!open && isFormDirty) {
-          setConfirmSaveOpen(true);
-        } else if (!open) {
-          setManageModalOpen(false);
-          setSelectedAppointment(null);
-        }
-      }}>
+      <Dialog open={manageModalOpen} onOpenChange={open => {
+      if (!open && isFormDirty) {
+        setConfirmSaveOpen(true);
+      } else if (!open) {
+        setManageModalOpen(false);
+        setSelectedAppointment(null);
+      }
+    }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
           <DialogHeader>
             <DialogTitle className="text-xl text-rose-700 flex items-center">
@@ -366,22 +323,17 @@ export const DayView: React.FC<DayViewProps> = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="client">Cliente</Label>
-              <Select 
-                value={clientId} 
-                onValueChange={(value) => {
-                  setClientId(value);
-                  handleFormChange();
-                }}
-              >
+              <Select value={clientId} onValueChange={value => {
+              setClientId(value);
+              handleFormChange();
+            }}>
                 <SelectTrigger id="client">
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
+                  {clients.map(client => <SelectItem key={client.id} value={client.id}>
                       {client.name}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -390,112 +342,77 @@ export const DayView: React.FC<DayViewProps> = ({
               <Label>Data</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !appointmentDate && "text-muted-foreground"
-                    )}
-                  >
-                    {appointmentDate ? format(appointmentDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !appointmentDate && "text-muted-foreground")}>
+                    {appointmentDate ? format(appointmentDate, "PPP", {
+                    locale: ptBR
+                  }) : <span>Selecione uma data</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={appointmentDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setAppointmentDate(date);
-                        handleFormChange();
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
+                  <Calendar mode="single" selected={appointmentDate} onSelect={date => {
+                  if (date) {
+                    setAppointmentDate(date);
+                    handleFormChange();
+                  }
+                }} initialFocus className={cn("p-3 pointer-events-auto")} />
                 </PopoverContent>
               </Popover>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="time">Horário</Label>
-              <Input 
-                id="time" 
-                type="time" 
-                value={appointmentTime}
-                onChange={(e) => {
-                  setAppointmentTime(e.target.value);
-                  handleFormChange();
-                }}
-              />
+              <Input id="time" type="time" value={appointmentTime} onChange={e => {
+              setAppointmentTime(e.target.value);
+              handleFormChange();
+            }} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="service">Serviço</Label>
-              <Select 
-                value={serviceId} 
-                onValueChange={(value) => {
-                  setServiceId(value);
-                  
-                  const service = services.find(s => s.id === value);
-                  if (service) {
-                    setPrice(service.price);
-                  }
-                  
-                  handleFormChange();
-                }}
-              >
+              <Select value={serviceId} onValueChange={value => {
+              setServiceId(value);
+              const service = services.find(s => s.id === value);
+              if (service) {
+                setPrice(service.price);
+              }
+              handleFormChange();
+            }}>
                 <SelectTrigger id="service">
                   <SelectValue placeholder="Selecione um serviço" />
                 </SelectTrigger>
                 <SelectContent>
-                  {services.map(service => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - {service.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </SelectItem>
-                  ))}
+                  {services.map(service => <SelectItem key={service.id} value={service.id}>
+                      {service.name} - {service.price.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="price">Preço</Label>
-              <Input 
-                id="price" 
-                type="number" 
-                min="0" 
-                step="0.01"
-                value={price}
-                onChange={(e) => {
-                  setPrice(parseFloat(e.target.value) || 0);
-                  handleFormChange();
-                }}
-              />
+              <Input id="price" type="number" min="0" step="0.01" value={price} onChange={e => {
+              setPrice(parseFloat(e.target.value) || 0);
+              handleFormChange();
+            }} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="notes">Observações</Label>
-              <Textarea 
-                id="notes" 
-                placeholder="Observações ou detalhes adicionais..."
-                value={notes}
-                onChange={(e) => {
-                  setNotes(e.target.value);
-                  handleFormChange();
-                }}
-                rows={3}
-              />
+              <Textarea id="notes" placeholder="Observações ou detalhes adicionais..." value={notes} onChange={e => {
+              setNotes(e.target.value);
+              handleFormChange();
+            }} rows={3} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select 
-                value={status} 
-                onValueChange={(value: AppointmentStatus) => {
-                  setStatus(value);
-                  handleFormChange();
-                }}
-              >
+              <Select value={status} onValueChange={(value: AppointmentStatus) => {
+              setStatus(value);
+              handleFormChange();
+            }}>
                 <SelectTrigger id="status">
                   <SelectValue placeholder="Selecione um status" />
                 </SelectTrigger>
@@ -508,19 +425,11 @@ export const DayView: React.FC<DayViewProps> = ({
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 mt-6">
-              <Button 
-                className="flex-1 gap-2 bg-green-500 hover:bg-green-600 text-white py-6" 
-                onClick={() => handleSendMessage('confirmation')}
-                disabled={isSendingMessage}
-              >
+              <Button className="flex-1 gap-2 bg-green-500 hover:bg-green-600 text-white py-6" onClick={() => handleSendMessage('confirmation')} disabled={isSendingMessage}>
                 {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4" />}
                 WhatsApp: Confirmar
               </Button>
-              <Button 
-                className="flex-1 gap-2 bg-blue-500 hover:bg-blue-600 text-white py-6" 
-                onClick={() => handleSendMessage('reminder')}
-                disabled={isSendingMessage}
-              >
+              <Button className="flex-1 gap-2 bg-blue-500 hover:bg-blue-600 text-white py-6" onClick={() => handleSendMessage('reminder')} disabled={isSendingMessage}>
                 {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Bell className="h-4 w-4" />}
                 WhatsApp: Lembrete
               </Button>
@@ -531,17 +440,13 @@ export const DayView: React.FC<DayViewProps> = ({
             <Button variant="outline" onClick={handleCloseManageModal}>
               Cancelar
             </Button>
-            <Button 
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => {
-                if (isFormDirty) {
-                  setConfirmSaveOpen(true);
-                } else {
-                  setManageModalOpen(false);
-                }
-              }}
-              disabled={isSaving}
-            >
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+            if (isFormDirty) {
+              setConfirmSaveOpen(true);
+            } else {
+              setManageModalOpen(false);
+            }
+          }} disabled={isSaving}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Concluir
             </Button>
@@ -561,18 +466,15 @@ export const DayView: React.FC<DayViewProps> = ({
               Preencha os dados para bloquear um horário
             </DialogDescription>
           </DialogHeader>
-          <BlockedDateForm 
-            onSuccess={() => {
-              // This function is called after successfully creating a blocked date
-              refetchBlockedDates(); // Refresh data
-              setOpenBlockedDateDialog(false); // Close dialog
-              toast({
-                title: "Sucesso",
-                description: "Horário bloqueado com sucesso",
-              });
-            }}
-            initialDate={date}
-          />
+          <BlockedDateForm onSuccess={() => {
+          // This function is called after successfully creating a blocked date
+          refetchBlockedDates(); // Refresh data
+          setOpenBlockedDateDialog(false); // Close dialog
+          toast({
+            title: "Sucesso",
+            description: "Horário bloqueado com sucesso"
+          });
+        }} initialDate={date} />
         </DialogContent>
       </Dialog>
       
@@ -586,10 +488,10 @@ export const DayView: React.FC<DayViewProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
-              setConfirmSaveOpen(false);
-              setManageModalOpen(false);
-              setSelectedAppointment(null);
-            }}>
+            setConfirmSaveOpen(false);
+            setManageModalOpen(false);
+            setSelectedAppointment(null);
+          }}>
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleSaveChanges} disabled={isSaving}>
@@ -600,8 +502,7 @@ export const DayView: React.FC<DayViewProps> = ({
         </AlertDialogContent>
       </AlertDialog>
       
-      {selectedAppointment && !manageModalOpen && (
-        <Dialog open={!!selectedAppointment && !manageModalOpen} onOpenChange={() => setSelectedAppointment(null)}>
+      {selectedAppointment && !manageModalOpen && <Dialog open={!!selectedAppointment && !manageModalOpen} onOpenChange={() => setSelectedAppointment(null)}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
             <DialogHeader>
               <DialogTitle className="text-xl text-rose-700 flex items-center">
@@ -610,19 +511,9 @@ export const DayView: React.FC<DayViewProps> = ({
               </DialogTitle>
             </DialogHeader>
             <AppointmentFormWrapper>
-              <AppointmentForm 
-                appointment={selectedAppointment}
-                clientId={selectedAppointment.clientId}
-                serviceId={selectedAppointment.serviceId}
-                date={new Date(selectedAppointment.date)}
-                notes={selectedAppointment.notes}
-                price={selectedAppointment.price}
-                status={selectedAppointment.status}
-                onSuccess={() => setSelectedAppointment(null)}
-              />
+              <AppointmentForm appointment={selectedAppointment} clientId={selectedAppointment.clientId} serviceId={selectedAppointment.serviceId} date={new Date(selectedAppointment.date)} notes={selectedAppointment.notes} price={selectedAppointment.price} status={selectedAppointment.status} onSuccess={() => setSelectedAppointment(null)} />
             </AppointmentFormWrapper>
           </DialogContent>
-        </Dialog>
-      )}
+        </Dialog>}
     </div>;
 };
