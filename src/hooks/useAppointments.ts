@@ -1,8 +1,10 @@
+
 import { useState, useCallback } from 'react';
-import { Appointment, Client, Service, AppointmentStatus, ServiceResponse, WhatsAppMessageData } from '@/types';
+import { Appointment, ServiceResponse, WhatsAppMessageData } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbAppointmentToApp, mapAppAppointmentToDb } from '@/integrations/supabase/mappers';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 export function useAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -28,25 +30,6 @@ export function useAppointments() {
       
       if (data) {
         const mappedAppointments: Appointment[] = data.map(item => {
-          const client = item.clientes ? {
-            id: item.clientes.id,
-            name: item.clientes.nome,
-            phone: item.clientes.telefone,
-            email: item.clientes.email || undefined,
-            notes: item.clientes.observacoes || undefined,
-            lastAppointment: item.clientes.ultimo_agendamento || undefined,
-            totalSpent: Number(item.clientes.valor_total || 0),
-            createdAt: item.clientes.data_criacao || undefined
-          } : undefined;
-          
-          const service = item.servicos ? {
-            id: item.servicos.id,
-            name: item.servicos.nome,
-            price: Number(item.servicos.preco),
-            durationMinutes: item.servicos.duracao_minutos,
-            description: item.servicos.descricao || undefined
-          } : undefined;
-          
           return mapDbAppointmentToApp(item, item.clientes, item.servicos);
         });
         
@@ -73,12 +56,15 @@ export function useAppointments() {
     try {
       setLoading(true);
       
+      // Convert app model to database model
       const dbAppointmentData = mapAppAppointmentToDb(appointment);
       
+      // Make sure required fields are present
       if (!dbAppointmentData.cliente_id || !dbAppointmentData.servico_id || !dbAppointmentData.data) {
         throw new Error('Cliente, serviço e data são obrigatórios');
       }
       
+      // Create data object with required fields
       const dataToInsert = {
         cliente_id: dbAppointmentData.cliente_id,
         servico_id: dbAppointmentData.servico_id,
@@ -131,14 +117,27 @@ export function useAppointments() {
     }
   };
 
-  const updateAppointment = async (id: string, data: Partial<Appointment>): Promise<ServiceResponse<Appointment>> => {
+  const updateAppointment = async (id: string, appointmentData: Partial<Appointment>): Promise<ServiceResponse<Appointment>> => {
     try {
       setLoading(true);
       
-      const dbAppointmentData = mapAppAppointmentToDb(data);
-      const { data: responseData, error } = await supabase
+      // Convert app model to database model
+      const dbAppointmentData = mapAppAppointmentToDb(appointmentData);
+      
+      // Only include fields that are actually provided
+      const updateData: Record<string, any> = {};
+      if (dbAppointmentData.cliente_id !== undefined) updateData.cliente_id = dbAppointmentData.cliente_id;
+      if (dbAppointmentData.servico_id !== undefined) updateData.servico_id = dbAppointmentData.servico_id;
+      if (dbAppointmentData.data !== undefined) updateData.data = dbAppointmentData.data;
+      if (dbAppointmentData.preco !== undefined) updateData.preco = dbAppointmentData.preco;
+      if (dbAppointmentData.status !== undefined) updateData.status = dbAppointmentData.status;
+      if (dbAppointmentData.hora_fim !== undefined) updateData.hora_fim = dbAppointmentData.hora_fim;
+      if (dbAppointmentData.motivo_cancelamento !== undefined) updateData.motivo_cancelamento = dbAppointmentData.motivo_cancelamento;
+      if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
+      
+      const { data, error } = await supabase
         .from('agendamentos')
-        .update(dbAppointmentData)
+        .update(updateData)
         .eq('id', id)
         .select(`
           *,
@@ -151,8 +150,8 @@ export function useAppointments() {
         throw error;
       }
       
-      if (responseData) {
-        const updatedAppointment = mapDbAppointmentToApp(responseData, responseData.clientes, responseData.servicos);
+      if (data) {
+        const updatedAppointment = mapDbAppointmentToApp(data, data.clientes, data.servicos);
         setAppointments(prev => prev.map(appointment => appointment.id === id ? updatedAppointment : appointment));
         
         toast({
@@ -199,9 +198,23 @@ export function useAppointments() {
   const generateWhatsAppLink = async ({
     client,
     message,
+    appointment
   }: WhatsAppMessageData): Promise<string> => {
-    const encodedMessage = encodeURIComponent(message || "");
-    return `https://wa.me/${client?.phone}?text=${encodedMessage}`;
+    if (!client || !client.phone) {
+      return "";
+    }
+    
+    let messageText = message || "";
+    
+    if (!messageText && appointment) {
+      const appointmentDate = new Date(appointment.date);
+      const serviceType = appointment.service?.name || "serviço";
+      
+      messageText = `Olá ${client.name}, confirmando seu agendamento de ${serviceType} para o dia ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}.`;
+    }
+    
+    const encodedMessage = encodeURIComponent(messageText);
+    return `https://wa.me/${client.phone}?text=${encodedMessage}`;
   };
 
   return {
@@ -210,9 +223,9 @@ export function useAppointments() {
     error,
     fetchAppointments,
     addAppointment,
-    updateAppointment: async () => ({ error: "Not implemented" }),
-    getAppointmentsForDate: () => [],
-    calculateDailyRevenue: () => 0,
-    generateWhatsAppLink: async () => ""
+    updateAppointment,
+    getAppointmentsForDate,
+    calculateDailyRevenue,
+    generateWhatsAppLink
   };
 }

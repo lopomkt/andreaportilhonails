@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Loader2, User, Phone, Users } from 'lucide-react';
+import { Plus, Search, Loader2, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ClientForm from "@/components/ClientForm";
@@ -128,6 +129,7 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
+  // Fix this function to properly match the client form's onSuccess prop type
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
@@ -238,7 +240,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
+            onSuccess={(client) => handleNewClientSuccess(client)} 
             onCancel={handleCloseDialog}
           />
         </DialogContent>

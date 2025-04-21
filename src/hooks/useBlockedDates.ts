@@ -1,8 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { BlockedDate, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbBlockedDateToApp, mapAppBlockedDateToDb } from '@/integrations/supabase/mappers';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function useBlockedDates() {
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
@@ -55,7 +56,8 @@ export function useBlockedDates() {
       // Convert app model to database model
       const dbBlockedDateData = mapAppBlockedDateToDb(blockedDate);
       
-      // Create data object with required fields
+      // Create data object with required fields only for insert
+      // Ensure 'data' field is properly set as it's required
       const dataToInsert = {
         data: dbBlockedDateData.data,
         motivo: dbBlockedDateData.motivo || null,
@@ -141,6 +143,6 @@ export function useBlockedDates() {
     error,
     fetchBlockedDates,
     addBlockedDate,
-    deleteBlockedDate: async () => ({ error: "Not implemented" }) // Implement properly
+    deleteBlockedDate
   };
 }

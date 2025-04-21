@@ -1,8 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbClientToApp, mapAppClientToDb } from '@/integrations/supabase/mappers';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function useClients() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -10,13 +11,9 @@ export function useClients() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Helper functions to validate responses
+  // Helper function to validate responses
   const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
     return response !== null && response.data !== null && !response.error;
-  };
-
-  const isValidResult = <T extends unknown>(result: T | null): result is T => {
-    return result !== null && typeof result === 'object';
   };
 
   const fetchClients = useCallback(async (): Promise<Client[]> => {
@@ -33,19 +30,18 @@ export function useClients() {
 
       if (data) {
         const mappedClients: Client[] = data.map(item => {
-          // Ensure all required fields are present
-          return mapDbClientToApp({
+          // We need to safely map the database fields to our app model
+          return {
             id: item.id,
-            nome: item.nome,
-            telefone: item.telefone,
-            email: item.email || null,
-            observacoes: item.observacoes || null,
-            valor_total: item.valor_total || 0,
-            data_nascimento: item.data_nascimento || null,
-            ultimo_agendamento: item.ultimo_agendamento || null,
-            data_criacao: item.data_criacao || null,
-            data_ultimo_agendamento: item.data_ultimo_agendamento || item.ultimo_agendamento || null
-          });
+            name: item.nome || '',
+            phone: item.telefone || '',
+            email: item.email || '',
+            notes: item.observacoes || '',
+            totalSpent: item.valor_total || 0,
+            birthdate: item.data_nascimento || null,
+            lastAppointment: item.ultimo_agendamento || null,
+            createdAt: item.data_criacao || null
+          };
         });
         
         setClients(mappedClients);
@@ -75,20 +71,17 @@ export function useClients() {
         throw new Error('Nome e telefone são obrigatórios');
       }
       
-      // Convert Client to database format
-      const dbClientData = mapAppClientToDb(clientData);
-      
-      // Ensure required fields for database
+      // Prepare the data for insert to match database schema requirements
       const dataToInsert = {
-        nome: dbClientData.nome,
-        telefone: dbClientData.telefone,
-        email: dbClientData.email || null,
-        observacoes: dbClientData.observacoes || null,
-        data_nascimento: dbClientData.data_nascimento || null,
-        valor_total: dbClientData.valor_total || 0,
-        data_criacao: dbClientData.data_criacao || new Date().toISOString(),
-        ultimo_agendamento: dbClientData.ultimo_agendamento || null,
-        data_ultimo_agendamento: dbClientData.ultimo_agendamento || null
+        nome: clientData.name,
+        telefone: clientData.phone,
+        email: clientData.email || null,
+        observacoes: clientData.notes || null,
+        data_nascimento: clientData.birthdate || null,
+        valor_total: clientData.totalSpent || 0,
+        data_criacao: new Date().toISOString(),
+        ultimo_agendamento: clientData.lastAppointment || null,
+        data_ultimo_agendamento: clientData.lastAppointment || null
       };
       
       const { data, error } = await supabase
@@ -102,7 +95,18 @@ export function useClients() {
       }
       
       if (data) {
-        const newClient = mapDbClientToApp(data);
+        const newClient: Client = {
+          id: data.id,
+          name: data.nome,
+          phone: data.telefone,
+          email: data.email || '',
+          notes: data.observacoes || '',
+          totalSpent: data.valor_total || 0,
+          birthdate: data.data_nascimento || null,
+          lastAppointment: data.ultimo_agendamento || null,
+          createdAt: data.data_criacao || null
+        };
+        
         setClients(prev => [...prev, newClient]);
         
         toast({
@@ -132,10 +136,23 @@ export function useClients() {
     try {
       setLoading(true);
       
-      const dbClientData = mapAppClientToDb(clientData);
+      // Prepare the data for update
+      const updateData: Record<string, any> = {};
+      
+      if (clientData.name !== undefined) updateData.nome = clientData.name;
+      if (clientData.phone !== undefined) updateData.telefone = clientData.phone;
+      if (clientData.email !== undefined) updateData.email = clientData.email;
+      if (clientData.notes !== undefined) updateData.observacoes = clientData.notes;
+      if (clientData.birthdate !== undefined) updateData.data_nascimento = clientData.birthdate;
+      if (clientData.totalSpent !== undefined) updateData.valor_total = clientData.totalSpent;
+      if (clientData.lastAppointment !== undefined) {
+        updateData.ultimo_agendamento = clientData.lastAppointment;
+        updateData.data_ultimo_agendamento = clientData.lastAppointment;
+      }
+      
       const { data, error } = await supabase
         .from('clientes')
-        .update(dbClientData)
+        .update(updateData)
         .eq('id', clientId)
         .select('*')
         .single();
@@ -145,7 +162,18 @@ export function useClients() {
       }
       
       if (data) {
-        const updatedClient = mapDbClientToApp(data);
+        const updatedClient: Client = {
+          id: data.id,
+          name: data.nome,
+          phone: data.telefone,
+          email: data.email || '',
+          notes: data.observacoes || '',
+          totalSpent: data.valor_total || 0,
+          birthdate: data.data_nascimento || null,
+          lastAppointment: data.ultimo_agendamento || null,
+          createdAt: data.data_criacao || null
+        };
+        
         setClients(prev => prev.map(client => client.id === clientId ? updatedClient : client));
         
         toast({
@@ -215,8 +243,8 @@ export function useClients() {
     error,
     fetchClients,
     createClient,
-    updateClient: async () => ({ error: "Not implemented" }),
-    deleteClient: async () => ({ error: "Not implemented" }),
+    updateClient,
+    deleteClient,
     getTopClients
   };
 }
