@@ -5,8 +5,8 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import { toast } from "react-toastify";
-import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Appointment,
   Client,
@@ -19,9 +19,8 @@ import {
   MonthlyRevenueData,
   ServiceResponse
 } from "@/types";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
 
-// Helper function to validate responses
+// Helper functions to validate responses
 const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
   return response !== null && response.data !== null && !response.error;
 };
@@ -29,6 +28,36 @@ const isValidResponse = <T extends unknown>(response: { data: T | null; error: a
 // Helper function to check if result/response is valid
 const isValidResult = <T extends unknown>(result: T | null): result is T => {
   return result !== null && typeof result === 'object';
+};
+
+const deleteService = async (id: string) => {
+  try {
+    const { error } = await supabase.from("servicos").delete().eq("id", id);
+    if (error) throw error;
+    toast({
+      title: "Serviço excluído com sucesso"
+    });
+  } catch (error) {
+    toast({
+      title: "Erro ao excluir serviço",
+      variant: "destructive"
+    });
+  }
+};
+
+const updateService = async (id: string, data: any) => {
+  try {
+    const { error } = await supabase.from("servicos").update(data).eq("id", id);
+    if (error) throw error;
+    toast({
+      title: "Serviço atualizado com sucesso"
+    });
+  } catch (error) {
+    toast({
+      title: "Erro ao atualizar serviço",
+      variant: "destructive"
+    });
+  }
 };
 
 interface RevenueData {
@@ -70,26 +99,6 @@ interface DataContextType {
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
 }
-
-const deleteService = async (id: string) => {
-  try {
-    const { error } = await supabase.from("servicos").delete().eq("id", id);
-    if (error) throw error;
-    toast.success("Serviço excluído com sucesso");
-  } catch (error) {
-    toast.error("Erro ao excluir serviço");
-  }
-};
-
-const updateService = async (id: string, data: any) => {
-  try {
-    const { error } = await supabase.from("servicos").update(data).eq("id", id);
-    if (error) throw error;
-    toast.success("Serviço atualizado com sucesso");
-  } catch (error) {
-    toast.error("Erro ao atualizar serviço");
-  }
-};
 
 export const DataContext = createContext<DataContextType>({
   appointments: [],
@@ -356,7 +365,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        return { success: true, data: result };
+        return { success: true, data: result as Client };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -380,7 +389,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        return { success: true, data: result };
+        return { success: true, data: result as Client };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -612,16 +621,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
 
+      const clientData = response.data;
       const newClient: Client = {
-        id: response.data.id,
-        name: response.data.nome,
-        phone: response.data.telefone,
-        email: response.data.email || '',
-        notes: response.data.observacoes || '',
-        totalSpent: response.data.valor_total ?? 0,
-        birthdate: response.data.data_nascimento || null,
-        lastAppointment: response.data.ultimo_agendamento || null,
-        createdAt: response.data.data_criacao || null
+        id: clientData.id,
+        name: clientData.nome,
+        phone: clientData.telefone,
+        email: clientData.email || '',
+        notes: clientData.observacoes || '',
+        totalSpent: clientData.valor_total ?? 0,
+        birthdate: clientData.data_nascimento || null,
+        lastAppointment: clientData.ultimo_agendamento || null,
+        createdAt: clientData.data_criacao || null
       };
 
       setClients(prev => [...prev, newClient]);
