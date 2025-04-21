@@ -1,3 +1,4 @@
+
 import { useData } from "@/context/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,8 @@ export default function ClientsPage() {
     clients,
     appointments,
     generateWhatsAppLink,
-    refetchClients
+    refetchClients,
+    deleteClient
   } = useData();
   
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -81,14 +83,26 @@ export default function ClientsPage() {
     });
   };
 
-  const handleDeleteClient = () => {
-    toast({
-      title: "Cliente excluído",
-      description: "Cliente excluído com sucesso!"
-    });
-    setShowDeleteAlert(false);
-    setShowEditClientModal(false);
-    refetchClients();
+  const handleDeleteClient = async () => {
+    if (selectedClient) {
+      try {
+        await deleteClient(selectedClient.id);
+        toast({
+          title: "Cliente excluído",
+          description: "Cliente excluído com sucesso!"
+        });
+        setShowDeleteAlert(false);
+        setShowEditClientModal(false);
+        setSelectedClient(null);
+        refetchClients();
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível excluir o cliente",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const confirmDeleteClient = () => {

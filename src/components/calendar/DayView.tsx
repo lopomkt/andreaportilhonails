@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Appointment, AppointmentStatus, BlockedDate } from '@/types';
 import { cn } from "@/lib/utils";
 import { formatMinutesToHumanTime } from '@/lib/formatters';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface DayViewProps {
   date: Date;
@@ -28,7 +29,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
 
-  // Normalize date to avoid timezone issues - fixing the function call error
+  // Normalize date to avoid timezone issues - using correct parameters
   const normalizedDate = setHours(new Date(date), 12);
 
   // Generate time slots for the day (from 7:00 to 22:00)
@@ -79,12 +80,12 @@ export const DayView: React.FC<DayViewProps> = ({
   };
 
   return (
-    <div className="day-view-container">
-      <h3 className="text-lg font-medium mb-4">
+    <div className="day-view-container px-6 pt-4">
+      <h3 className="text-lg font-medium mb-4 md:flex justify-between items-center">
         {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
       </h3>
       
-      <div className="time-slots grid gap-2">
+      <div className="time-slots grid gap-3">
         {timeSlots.map((slot, index) => (
           <TimeSlot 
             key={index} 
@@ -145,18 +146,27 @@ const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppointmentCli
         ))}
         
         {!isBlocked && appointments.length === 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs"
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              onTimeClick(time); 
-            }}
-          >
-            <Clock className="h-3 w-3 mr-1" />
-            Agendar
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onTimeClick(time); 
+                  }}
+                >
+                  <Clock className="h-3 w-3 mr-1" />
+                  Agendar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clique para agendar neste horário</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
     </div>

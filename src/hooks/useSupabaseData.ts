@@ -639,6 +639,26 @@ export const useSupabaseData = () => {
     return [];
   }, [appointments, expenses]);
 
+  const deleteClient = async (clientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', clientId);
+      
+      if (error) throw error;
+      
+      // Refresh clients after deletion
+      await fetchClients();
+      await fetchAppointments(); // Refresh appointments in case any were tied to this client
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      return { success: false, error };
+    }
+  };
+
   return {
     appointments,
     clients,
@@ -676,5 +696,6 @@ export const useSupabaseData = () => {
     calculatedMonthlyRevenue,
     getRevenueData,
     fetchClients: refetchClients,
+    deleteClient,
   };
 };

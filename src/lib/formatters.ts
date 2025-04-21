@@ -79,5 +79,5 @@ export function formatAvailableTime(minutes: number): string {
     return `${hours} ${hours === 1 ? 'hora disponível' : 'horas disponíveis'}`;
   }
   
-  return `${hours} ${hours === 1 ? 'hora' : 'horas'} e ${mins} ${mins === 1 ? 'minuto' : 'minutos'} disponíveis`;
+  return `${hours}h e ${mins}min disponíveis`;
 }

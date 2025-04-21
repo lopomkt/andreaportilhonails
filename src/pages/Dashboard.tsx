@@ -1,7 +1,8 @@
+
 import { useData } from "@/context/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
-import { CalendarClock, CalendarDays, UserMinus, DollarSign, Clock, BadgeDollarSign, Wallet, Users, CalendarCheck, MessageSquare, CakeSlice } from "lucide-react";
+import { CalendarClock, CalendarDays, UserMinus, DollarSign, Clock, BadgeDollarSign, Wallet, Users, CalendarCheck, MessageSquare, CakeSlice, MoveVertical } from "lucide-react";
 import { format, isToday, differenceInDays, addDays, startOfMonth, endOfMonth, isAfter, isBefore, isSameMonth, getMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -9,13 +10,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Appointment, Client } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ClientTag, getClientTags } from "@/components/ClientTag";
+import { ClientTag } from "@/components/ClientTag";
 import { MessageTemplateEditor } from "@/components/MessageTemplateEditor";
 import { ClientRanking } from "@/components/ClientRanking";
 import { FinancialDashboard } from "@/components/FinancialDashboard";
 import { ServiceTimeStatistics } from "@/components/ServiceTimeStatistics";
 import { AppointmentsByWeek } from "@/components/AppointmentsByWeek";
 import { supabase } from "@/integrations/supabase/client";
+import { formatAvailableTime } from "@/lib/formatters";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 export default function Dashboard() {
   const {
     dashboardStats,
@@ -154,6 +158,10 @@ export default function Dashboard() {
     time: Date;
     duration: number;
   }[]>([]);
+
+  const [showReorderingModal, setShowReorderingModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(true); // This would normally be controlled by your auth system
+
   useEffect(() => {
     const calculateAvailableSlots = () => {
       const today = new Date();
@@ -250,7 +258,15 @@ export default function Dashboard() {
     };
     calculateAvailableSlots();
   }, [appointments, getAppointmentsForDate]);
+
+  const handleReorderCards = () => {
+    setShowReorderingModal(true);
+    // In a real implementation, you would open a modal with drag-drop functionality
+    // and update the configuration in the database
+  };
+  
   return <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0">
+      {/* Line 1: Welcome Card */}
       <Card className="bg-gradient-to-r from-rose-500 to-rose-400 text-white border-0 shadow-premium">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col items-center text-center md:flex-row md:justify-between md:text-left">
@@ -283,6 +299,42 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* Line 2: Motivational Message */}
+      {motivationalMessage && <Card className="bg-rose-50 border-rose-100 shadow-soft">
+          <CardContent className="p-6 text-center py-[16px] px-[10px]">
+            <p className="text-rose-700 text-lg font-medium italic">
+              "{motivationalMessage}"
+            </p>
+          </CardContent>
+        </Card>}
+
+      {/* Line 3: Today's Appointments + Weekly View */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <Card className="bg-white border-rose-100 shadow-soft cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToCalendarDay}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-rose-700 flex items-center text-base font-bold">
+              <CalendarCheck className="mr-2 h-4 w-4 text-rose-600" />
+              Agendamentos de Hoje
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-2xl font-bold">{todayAppointments.length}</div>
+                <p className="text-xs text-muted-foreground">agendamentos</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-rose-600">{formatCurrency(todayRevenue)}</div>
+                <p className="text-xs text-muted-foreground">faturamento</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <AppointmentsByWeek appointments={appointments} />
+      </div>
+
+      {/* Line 4: Suggested Time Slots */}
       {suggestedSlots.length > 0 && <Card className="bg-white border-rose-100 shadow-soft">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-rose-700 flex items-center text-base font-bold">
@@ -298,17 +350,27 @@ export default function Dashboard() {
                       💡 {isToday(slot.time) ? 'Hoje' : 'Amanhã'} às {format(slot.time, 'HH:mm')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Encaixe de {Math.floor(slot.duration)} minutos
+                      Encaixe de {formatAvailableTime(slot.duration)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-rose-600">
-                    <CalendarClock className="h-4 w-4 mr-1" /> Agendar
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-rose-600">
+                          <CalendarClock className="h-4 w-4 mr-1" /> Agendar
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clique para agendar neste horário</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>)}
             </div>
           </CardContent>
         </Card>}
 
+      {/* Line 5: Birthdays */}
       {birthdayClients.length > 0 && <Card className="bg-white border-rose-100 shadow-soft overflow-hidden">
           <div className="bg-[#D8A39D]/20 p-2 flex items-center justify-between">
             <div className="flex items-center">
@@ -333,36 +395,15 @@ export default function Dashboard() {
           </CardContent>
         </Card>}
 
+      {/* Line 6: Monthly Total + Net Profit */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-        <Card className="bg-white border-rose-100 shadow-soft cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToCalendarDay}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-rose-700 flex items-center text-base font-bold">
-              <CalendarCheck className="mr-2 h-4 w-4 text-rose-600" />
-              Agendamentos de Hoje
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-2xl font-bold">{todayAppointments.length}</div>
-                <p className="text-xs text-muted-foreground">agendamentos</p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-rose-600">{formatCurrency(todayRevenue)}</div>
-                <p className="text-xs text-muted-foreground">faturamento</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <AppointmentsByWeek appointments={appointments} />
-        
-        {inactiveClients.length > 0}
-        
         <StatsCard title="Total do Mês" value={formatCurrency(dashboardStats.monthRevenue)} icon={DollarSign} description="faturamento até o momento" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
         
         <StatsCard title="Lucro Líquido" value={formatCurrency(calculateNetProfit())} icon={BadgeDollarSign} description="faturamento - despesas" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
-        
+      </div>
+
+      {/* Line 7: Average per Client + Expected Revenue */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <StatsCard title="Média por Cliente" value={formatCurrency(averageClientValue)} icon={Wallet} description="ticket médio" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
         
         <StatsCard title="Receita Prevista" value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"} icon={Users} description="agendamentos pendentes até o fim do mês" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
@@ -372,15 +413,28 @@ export default function Dashboard() {
       
       <MessageTemplateEditor />
 
-      {motivationalMessage && <Card className="bg-rose-50 border-rose-100 shadow-soft ">
-          <CardContent className="p-6 text-center py-[16px] px-[10px]">
-            <p className="text-rose-700 text-lg font-medium italic">
-              "{motivationalMessage}"
-            </p>
-          </CardContent>
-        </Card>}
+      {isAdmin && (
+        <div className="fixed bottom-4 right-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={handleReorderCards} 
+                  className="rounded-full w-12 h-12 p-0 bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
+                >
+                  <MoveVertical className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reordenar Cards</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
     </div>;
 }
+
 interface StatsCardProps {
   title: string;
   value: string;
@@ -390,6 +444,7 @@ interface StatsCardProps {
   iconClassName?: string;
   onClick?: () => void;
 }
+
 function StatsCard({
   title,
   value,
@@ -410,9 +465,11 @@ function StatsCard({
       </CardContent>
     </Card>;
 }
+
 interface InactiveClientCardProps {
   client: Client;
 }
+
 function InactiveClientCard({
   client
 }: InactiveClientCardProps) {
