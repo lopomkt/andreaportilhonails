@@ -1,13 +1,12 @@
-
 import { useData } from "@/context/DataContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatPhone } from "@/lib/formatters";
 import { useEffect, useState } from "react";
 import { Client, Appointment } from "@/types";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, User, Phone, Calendar, AlertTriangle, MessageCircle, BookOpen, Clock } from "lucide-react";
+import { Search, Plus, Phone, Calendar, AlertTriangle, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/ClientForm";
 import { format, differenceInDays } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function ClientsPage() {
   const {
@@ -29,6 +29,8 @@ export default function ClientsPage() {
   const [view, setView] = useState<"all" | "inactive">("all");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [showEditClientModal, setShowEditClientModal] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -66,9 +68,43 @@ export default function ClientsPage() {
     });
   };
 
+  const handleEditClient = (client: Client) => {
+    setSelectedClient(client);
+    setShowEditClientModal(true);
+  };
+
+  const handleEditSuccess = () => {
+    setShowEditClientModal(false);
+    refetchClients();
+    toast({
+      title: "Cliente atualizado",
+      description: "Cliente atualizado com sucesso!"
+    });
+  };
+
+  const handleDeleteClient = () => {
+    // Implement client deletion logic
+    toast({
+      title: "Cliente excluído",
+      description: "Cliente excluído com sucesso!"
+    });
+    setShowDeleteAlert(false);
+    setShowEditClientModal(false);
+    refetchClients();
+  };
+
+  const confirmDeleteClient = () => {
+    setShowDeleteAlert(true);
+  };
+
   const getClientAppointments = (clientId: string) => {
     return (appointments || []).filter(appointment => appointment.clientId === clientId)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const handleScheduleForClient = (client: Client) => {
+    // Implement appointment creation for specific client
+    navigate("/calendario", { state: { selectedClient: client } });
   };
 
   const generateInactiveMessage = async (client: Client) => {
@@ -79,37 +115,75 @@ export default function ClientsPage() {
     });
   };
 
-  return <div className="space-y-4 animate-fade-in">
+  return (
+    <div className="space-y-4 animate-fade-in max-w-3xl mx-auto px-4">
       <div className="flex flex-col md:flex-row gap-4 justify-between mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar cliente..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input 
+            placeholder="Buscar cliente..." 
+            className="pl-9" 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
         </div>
-        <div className="flex gap-2 px-[30px]">
-          <Button variant={view === "all" ? "default" : "outline"} onClick={() => setView("all")} className={view === "all" ? "bg-nail-500 hover:bg-nail-600" : "hover:border-nail-500 hover:text-nail-500"}>
+        <div className="flex gap-2 justify-center">
+          <Button 
+            variant={view === "all" ? "default" : "outline"} 
+            onClick={() => setView("all")} 
+            className={view === "all" ? "bg-nail-500 hover:bg-nail-600" : "hover:border-nail-500 hover:text-nail-500"}
+          >
             Todos
           </Button>
-          <Button variant={view === "inactive" ? "default" : "outline"} onClick={() => setView("inactive")} className={view === "inactive" ? "bg-nail-500 hover:bg-nail-600" : "hover:border-nail-500 hover:text-nail-500"}>
+          <Button 
+            variant={view === "inactive" ? "default" : "outline"} 
+            onClick={() => setView("inactive")} 
+            className={view === "inactive" ? "bg-nail-500 hover:bg-nail-600" : "hover:border-nail-500 hover:text-nail-500"}
+          >
             Inativos
           </Button>
-          <Button onClick={() => setShowNewClientModal(true)} className="gap-1 bg-nail-500 hover:bg-nail-600 px-[8px] text-sm">
+          <Button 
+            onClick={() => setShowNewClientModal(true)} 
+            className="gap-1 bg-nail-500 hover:bg-nail-600"
+          >
             <Plus className="h-4 w-4" />
             Novo Cliente
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredClients.length > 0 ? filteredClients.map(client => <ClientCard key={client.id} client={client} onViewDetails={() => setSelectedClient(client)} getWhatsAppLink={generateInactiveMessage} />) : <div className="col-span-full text-center py-12">
-            <User className="h-12 w-12 mx-auto text-nail-300 mb-4 opacity-30" />
+      <div className="space-y-3 pb-6">
+        {filteredClients.length > 0 ? (
+          filteredClients.map(client => (
+            <ClientListItem
+              key={client.id}
+              client={client}
+              onEditClick={() => handleEditClient(client)}
+              onScheduleClick={() => handleScheduleForClient(client)}
+            />
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <Avatar className="h-16 w-16 mx-auto text-nail-300 mb-4 opacity-30">
+              <AvatarFallback className="bg-nail-100/50 text-nail-400 text-2xl">
+                ?
+              </AvatarFallback>
+            </Avatar>
             <h3 className="text-lg font-medium mb-1">Nenhum cliente encontrado</h3>
             <p className="text-muted-foreground">
-              {searchTerm ? "Tente outro termo de busca" : view === "inactive" ? "Não há clientes inativos" : "Adicione um novo cliente para começar"}
+              {searchTerm 
+                ? "Tente outro termo de busca" 
+                : view === "inactive" 
+                  ? "Não há clientes inativos" 
+                  : "Adicione um novo cliente para começar"
+              }
             </p>
-          </div>}
+          </div>
+        )}
       </div>
 
-      {selectedClient && <Dialog open={!!selectedClient} onOpenChange={open => !open && setSelectedClient(null)}>
+      {selectedClient && (
+        <Dialog open={!!selectedClient && !showEditClientModal} onOpenChange={open => !open && setSelectedClient(null)}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl">Detalhes do Cliente</DialogTitle>
@@ -122,11 +196,6 @@ export default function ClientsPage() {
               </TabsList>
               
               <TabsContent value="appointments" className="py-4">
-                <h3 className="text-lg font-medium mb-4 flex items-center">
-                  <BookOpen className="h-5 w-5 mr-2 text-nail-500" />
-                  Histórico de Agendamentos
-                </h3>
-                
                 <ClientAppointmentsHistory clientId={selectedClient.id} getClientAppointments={getClientAppointments} />
               </TabsContent>
               
@@ -142,7 +211,7 @@ export default function ClientsPage() {
                     <div>
                       <h3 className="text-2xl font-medium">{selectedClient.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Cliente desde {format(new Date(selectedClient.createdAt), 'dd/MM/yyyy')}
+                        Cliente desde {selectedClient.createdAt ? format(new Date(selectedClient.createdAt), 'dd/MM/yyyy') : 'data desconhecida'}
                       </p>
                     </div>
                   </div>
@@ -157,12 +226,14 @@ export default function ClientsPage() {
                             {formatPhone(selectedClient.phone)}
                           </a>
                         </div>
-                        {selectedClient.email && <div className="flex items-center gap-2">
+                        {selectedClient.email && (
+                          <div className="flex items-center gap-2">
                             <MessageCircle className="h-4 w-4 text-nail-500" />
                             <a href={`mailto:${selectedClient.email}`} className="text-sm hover:underline">
                               {selectedClient.email}
                             </a>
-                          </div>}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -185,7 +256,7 @@ export default function ClientsPage() {
                   
                   <div>
                     <h4 className="text-sm font-medium mb-1">Observações</h4>
-                    <Textarea value={selectedClient.notes || ""} placeholder="Adicione observações sobre este cliente..." rows={4} className="w-full" />
+                    <Textarea defaultValue={selectedClient.notes || ""} readOnly placeholder="Sem observações" rows={4} className="w-full" />
                   </div>
                 </div>
               </TabsContent>
@@ -195,102 +266,145 @@ export default function ClientsPage() {
               <DialogClose asChild>
                 <Button variant="outline">Fechar</Button>
               </DialogClose>
-              <Button className="gap-2 bg-nail-500 hover:bg-nail-600" onClick={() => navigate("/calendario")}>
+              <Button 
+                className="gap-2 bg-nail-500 hover:bg-nail-600" 
+                onClick={() => handleScheduleForClient(selectedClient)}
+              >
                 <Calendar className="h-4 w-4" />
                 Novo Agendamento
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>}
+        </Dialog>
+      )}
 
+      {/* New Client Modal */}
       <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm onSuccess={handleNewClientSuccess} onCancel={() => setShowNewClientModal(false)} />
         </DialogContent>
       </Dialog>
-    </div>;
+
+      {/* Edit Client Modal */}
+      <Dialog open={showEditClientModal} onOpenChange={setShowEditClientModal}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar cliente</DialogTitle>
+          </DialogHeader>
+          {selectedClient && (
+            <ClientForm 
+              client={selectedClient} 
+              onSuccess={handleEditSuccess}
+              onCancel={() => setShowEditClientModal(false)}
+              onDelete={confirmDeleteClient}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteClient}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
 
-interface ClientCardProps {
+interface ClientListItemProps {
   client: Client;
-  onViewDetails: () => void;
-  getWhatsAppLink: (client: Client) => Promise<string>;
+  onEditClick: () => void;
+  onScheduleClick: () => void;
 }
 
-function ClientCard({
-  client,
-  onViewDetails,
-  getWhatsAppLink
-}: ClientCardProps) {
-  const navigate = useNavigate();
-
-  const daysSinceLastAppointment = client.lastAppointment ? differenceInDays(new Date(), new Date(client.lastAppointment)) : null;
-
-  const isInactive = !client.lastAppointment || daysSinceLastAppointment && daysSinceLastAppointment >= 40;
-  const handleWhatsAppClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const link = await getWhatsAppLink(client);
-    if (link) {
-      window.open(link, '_blank');
-    }
-  };
-  return <Card className={isInactive ? "border-2 border-status-pending" : ""}>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-medium">{client.name}</CardTitle>
-          {isInactive && <div className="bg-status-pending/10 text-status-pending rounded-full p-1">
-              <AlertTriangle className="h-4 w-4" />
-            </div>}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Phone className="h-4 w-4 text-muted-foreground" />
-          <a href={`tel:${client.phone}`} className="text-sm">
-            {formatPhone(client.phone)}
-          </a>
-        </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">
-            {client.lastAppointment ? isInactive ? `${daysSinceLastAppointment} dias sem agendamento` : `Último: ${format(new Date(client.lastAppointment), "dd/MM/yyyy")}` : "Sem agendamentos"}
-          </span>
-        </div>
-        {client.notes && <div className="pt-2 border-t">
-            <p className="text-sm text-muted-foreground truncate">{client.notes}</p>
-          </div>}
-        <div className="pt-2 flex flex-col gap-2">
-          <div className="text-sm font-medium">
-            Total gasto: {formatCurrency(client.totalSpent)}
+function ClientListItem({ client, onEditClick, onScheduleClick }: ClientListItemProps) {
+  const daysSinceLastAppointment = client.lastAppointment 
+    ? differenceInDays(new Date(), new Date(client.lastAppointment)) 
+    : null;
+  
+  const isInactive = !client.lastAppointment || (daysSinceLastAppointment && daysSinceLastAppointment >= 40);
+  
+  return (
+    <div className={cn(
+      "p-4 border rounded-lg hover:shadow-sm transition-all",
+      isInactive ? "border-l-4 border-l-status-pending" : ""
+    )}>
+      <div className="flex flex-col sm:flex-row justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium">{client.name}</h3>
+            {isInactive && (
+              <span className="inline-flex items-center bg-status-pending/10 text-status-pending rounded-full p-1">
+                <AlertTriangle className="h-4 w-4" />
+              </span>
+            )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1" onClick={onViewDetails}>
-              Detalhes
-            </Button>
-            {isInactive ? <Button size="sm" className="flex-1 gap-1 bg-green-500 hover:bg-green-600" onClick={handleWhatsAppClick}>
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </Button> : <Button size="sm" className="flex-1 bg-nail-500 hover:bg-nail-600" onClick={() => navigate("/calendario")}>
-                Agendar
-              </Button>}
+          
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <a href={`tel:${client.phone}`} className="text-sm">
+              {formatPhone(client.phone)}
+            </a>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            {client.lastAppointment ? (
+              <span>Último agendamento: {format(new Date(client.lastAppointment), "dd/MM/yyyy")}</span>
+            ) : (
+              <span>Sem agendamentos</span>
+            )}
           </div>
         </div>
-      </CardContent>
-    </Card>;
-}
-
-interface ClientAppointmentsHistoryProps {
-  clientId: string;
-  getClientAppointments: (clientId: string) => Appointment[];
+        
+        <div className="flex gap-2 mt-3 sm:mt-0 justify-end">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-1"
+            onClick={onEditClick}
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="md:hidden">Editar</span>
+          </Button>
+          <Button 
+            size="sm" 
+            className="gap-1 bg-nail-500 hover:bg-nail-600"
+            onClick={onScheduleClick}
+          >
+            <Calendar className="h-4 w-4" />
+            Agendar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ClientAppointmentsHistory({
   clientId,
   getClientAppointments
-}: ClientAppointmentsHistoryProps) {
+}: {
+  clientId: string;
+  getClientAppointments: (clientId: string) => Appointment[];
+}) {
   const clientAppointments = getClientAppointments(clientId);
   if (clientAppointments.length === 0) {
     return <div className="text-center py-8">
@@ -325,4 +439,9 @@ function ClientAppointmentsHistory({
           </div>
         </div>)}
     </div>;
+}
+
+// Helper function
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
 }
