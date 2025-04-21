@@ -1,3 +1,4 @@
+
 import { useData } from "@/context/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,8 @@ import { formatCurrency, formatPhone } from "@/lib/formatters";
 import { useEffect, useState } from "react";
 import { Client, Appointment } from "@/types";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Phone, Calendar, AlertTriangle, MessageCircle, Pencil, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Search, Plus, Phone, Calendar, AlertTriangle, MessageCircle, Pencil, Trash2, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
