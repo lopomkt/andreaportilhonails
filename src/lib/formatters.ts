@@ -1,3 +1,4 @@
+
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -56,4 +57,27 @@ export function formatMinutesToHumanTime(minutes: number): string {
   } else {
     return `${hours} hora${hours !== 1 ? 's' : ''} e ${remainingMinutes} minuto${remainingMinutes !== 1 ? 's' : ''}`;
   }
+}
+
+/**
+ * Formats available time for schedule display
+ * Converts minutes to a human-readable format like "11 horas disponíveis" or "1 hora e 15 minutos"
+ */
+export function formatAvailableTime(minutes: number): string {
+  if (minutes <= 0) {
+    return "Sem disponibilidade";
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  
+  if (hours === 0) {
+    return `${mins} ${mins === 1 ? 'minuto disponível' : 'minutos disponíveis'}`;
+  }
+  
+  if (mins === 0) {
+    return `${hours} ${hours === 1 ? 'hora disponível' : 'horas disponíveis'}`;
+  }
+  
+  return `${hours} ${hours === 1 ? 'hora' : 'horas'} e ${mins} ${mins === 1 ? 'minuto' : 'minutos'} disponíveis`;
 }

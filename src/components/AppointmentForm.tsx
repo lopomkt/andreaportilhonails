@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ interface AppointmentFormProps {
   notes?: string;
   status?: AppointmentStatus;
   initialDate?: Date;
+  initialTime?: string; // Added initialTime prop
 }
 
 export function AppointmentForm({ 
@@ -36,7 +38,8 @@ export function AppointmentForm({
   date: initialDate,
   notes: initialNotes,
   price: initialPrice,
-  status: initialStatus 
+  status: initialStatus,
+  initialTime // Use the initialTime prop
 }: AppointmentFormProps) {
   const { 
     clients, 
@@ -52,7 +55,7 @@ export function AppointmentForm({
   const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
   const [date, setDate] = useState<Date>(initialDate || (appointment ? new Date(appointment.date) : new Date()));
   const [time, setTime] = useState(
-    appointment ? format(new Date(appointment.date), "HH:mm") : "09:00"
+    initialTime || (appointment ? format(new Date(appointment.date), "HH:mm") : "09:00")
   );
   const [notes, setNotes] = useState(initialNotes || appointment?.notes || "");
   const [price, setPrice] = useState(initialPrice || appointment?.price || 0);
