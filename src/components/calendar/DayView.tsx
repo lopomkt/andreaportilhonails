@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -36,5 +37,5 @@ export const DayView: React.FC<DayViewProps> = ({
   onDaySelect,
   onSuggestedTimeSelect
 }) => {
-  return <div>Day View Implementation</div>; // This is the fix - ensuring the component returns a ReactNode
+  return <div>Day View Implementation</div>; // This is a temporary placeholder
 };

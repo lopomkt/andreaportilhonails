@@ -89,6 +89,10 @@ export const useSupabaseData = () => {
     return await fetchAppointments();
   }, []);
 
+  const refetchClients = useCallback(async () => {
+    return await fetchClients();
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -483,10 +487,8 @@ export const useSupabaseData = () => {
     getBlockedDates();
   }, [getBlockedDates]);
 
-  // Add missing properties and methods for expenses
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
-  // Add the missing methods for services if they don't exist
   const addService = useCallback(async (service: Omit<Service, "id">) => {
     try {
       const { data, error } = await supabase
@@ -616,39 +618,26 @@ export const useSupabaseData = () => {
       return false;
     }
   }, []);
-  
-  // Add expense-related functions
+
   const addExpense = useCallback(async (expense: Omit<Expense, "id">) => {
-    // Implementation would go here in a full version
     return null;
   }, []);
-  
+
   const deleteExpense = useCallback(async (id: string) => {
-    // Implementation would go here in a full version
     return false;
   }, []);
-  
-  // Add revenue calculation functions
+
   const calculateNetProfit = useCallback((month?: number, year?: number): number => {
-    // Implementation would go here in a full version
     return 0;
   }, [appointments, expenses]);
-  
+
   const calculatedMonthlyRevenue = useCallback((month?: number, year?: number): number => {
-    // Implementation would go here in a full version
     return 0;
   }, [appointments]);
-  
+
   const getRevenueData = useCallback((): MonthlyRevenueData[] => {
-    // Implementation would go here in a full version
     return [];
   }, [appointments, expenses]);
-  
-  // Add fetchClients function (not just as an alias to fetchClients)
-  const fetchClients = useCallback(async () => {
-    // This should already be implemented above, but make sure it's exposed
-    return await fetchClients();
-  }, []);
 
   return {
     appointments,
@@ -686,6 +675,6 @@ export const useSupabaseData = () => {
     calculateNetProfit,
     calculatedMonthlyRevenue,
     getRevenueData,
-    fetchClients,
+    fetchClients: refetchClients,
   };
 };
