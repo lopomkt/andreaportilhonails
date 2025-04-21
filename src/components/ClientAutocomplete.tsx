@@ -10,12 +10,6 @@ import { Plus, Loader2, UserPlus } from "lucide-react";
 import { verifySupabaseConnection } from "@/utils/supabaseConnectionCheck";
 import { Client } from "@/types";
 
-interface ClientData {
-  id: string;
-  nome: string;
-  telefone: string;
-}
-
 interface ClientAutocompleteProps {
   onClientSelect: (client: { id: string; name: string }) => void;
   selectedClient?: { id: string; name: string } | null;
@@ -78,7 +72,7 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
       
       const { data, error } = await supabase
         .from('clientes')
-        .select('id, nome, telefone')
+        .select('id, nome, telefone, email, data_nascimento, observacoes')
         .or(`nome.ilike.%${searchQuery}%,telefone.ilike.%${searchQuery}%`)
         .order('nome', { ascending: true })
         .limit(10);
@@ -92,7 +86,18 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
         });
         setClients([]);
       } else {
-        setClients(data || []);
+        // Map database fields to Client type
+        const mappedClients: Client[] = (data || []).map(client => ({
+          id: client.id,
+          name: client.nome,
+          phone: client.telefone,
+          email: client.email || '',
+          birthdate: client.data_nascimento,
+          notes: client.observacoes || '',
+          lastAppointment: null,
+          totalSpent: 0
+        }));
+        setClients(mappedClients);
         setIsOpen(data && data.length > 0);
       }
     } catch (err) {
@@ -112,8 +117,8 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
 
   // Handle client selection
   const handleSelectClient = (client: Client) => {
-    onClientSelect({ id: client.id, name: client.nome });
-    setQuery(client.nome);
+    onClientSelect({ id: client.id, name: client.name });
+    setQuery(client.name);
     setIsOpen(false);
   };
 
@@ -196,8 +201,8 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
                 className="px-4 py-2 hover:bg-muted cursor-pointer"
               >
                 <div className="flex justify-between">
-                  <span>{client.nome}</span>
-                  <span className="text-sm text-muted-foreground">{client.telefone}</span>
+                  <span>{client.name}</span>
+                  <span className="text-sm text-muted-foreground">{client.phone}</span>
                 </div>
               </li>
             ))}
