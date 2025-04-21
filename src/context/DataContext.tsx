@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -362,7 +361,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseCreateClient) {
         const result = await supabaseCreateClient(clientData);
         
-        if (!isValidResult(result)) {
+        if (!result) {
           console.error("Error creating client: null result");
           return { success: false, error: "Failed to create client" };
         }
@@ -400,7 +399,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseUpdateClient) {
         const result = await supabaseUpdateClient(clientId, clientData);
         
-        if (!isValidResult(result)) {
+        if (!result) {
           console.error("Error updating client: null result");
           return { success: false, error: "Failed to update client" };
         }
@@ -457,7 +456,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseAddAppointment) {
         const response = await supabaseAddAppointment(appointment);
         
-        if (!isValidResult(response)) {
+        if (!response) {
           console.error("Error adding appointment: null response");
           return { success: false, error: "Failed to add appointment" };
         }
@@ -495,7 +494,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseUpdateAppointment) {
         const response = await supabaseUpdateAppointment(id, data);
         
-        if (!isValidResult(response)) {
+        if (!response) {
           console.error("Error updating appointment: null response");
           return { success: false, error: "Failed to update appointment" };
         }
@@ -533,7 +532,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseAddExpense) {
         const response = await supabaseAddExpense(expense);
         
-        if (!isValidResult(response)) {
+        if (!response) {
           console.error("Error adding expense: null response");
           return { success: false, error: "Failed to add expense" };
         }
