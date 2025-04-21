@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -144,6 +143,7 @@ export function ClientAutocomplete({
     setShowNewClientDialog(false);
   };
 
+  
   return (
     <div className="w-full relative">
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
@@ -239,7 +239,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={(client: Client | null) => handleNewClientSuccess(client)}
+            onSuccess={handleNewClientSuccess}
             onCancel={handleCloseDialog}
           />
         </DialogContent>

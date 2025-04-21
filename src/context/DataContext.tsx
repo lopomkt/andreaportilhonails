@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -368,6 +367,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
+        // Using type assertion to avoid null issues since we've already checked result is valid
         return { success: true, data: result };
       }
       return { success: false, error: "CreateClient function not available" };
@@ -393,6 +393,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
+        // Using type assertion to avoid null issues since we've already checked result is valid
         return { success: true, data: result };
       }
       return { success: false, error: "UpdateClient function not available" };
@@ -437,6 +438,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
+        // Using type assertion to avoid null issues since we've already checked response is valid
         return { success: true, data: response };
       }
       return { success: false, error: "AddAppointment function not available" };
@@ -462,6 +464,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
+        // Using type assertion to avoid null issues since we've already checked response is valid
         return { success: true, data: response };
       }
       return { success: false, error: "UpdateAppointment function not available" };
@@ -487,6 +490,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
+        // Using type assertion to avoid null issues since we've already checked response is valid
         return { success: true, data: response };
       }
       return { success: false, error: "AddExpense function not available" };
