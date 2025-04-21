@@ -5,6 +5,8 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import { toast } from "react-toastify";
+import { supabase } from "@/lib/supabase";
 import {
   Appointment,
   Client,
@@ -69,6 +71,26 @@ interface DataContextType {
   deleteService: (id: string) => Promise<any>;
 }
 
+const deleteService = async (id: string) => {
+  try {
+    const { error } = await supabase.from("servicos").delete().eq("id", id);
+    if (error) throw error;
+    toast.success("Serviço excluído com sucesso");
+  } catch (error) {
+    toast.error("Erro ao excluir serviço");
+  }
+};
+
+const updateService = async (id: string, data: any) => {
+  try {
+    const { error } = await supabase.from("servicos").update(data).eq("id", id);
+    if (error) throw error;
+    toast.success("Serviço atualizado com sucesso");
+  } catch (error) {
+    toast.error("Erro ao atualizar serviço");
+  }
+};
+
 export const DataContext = createContext<DataContextType>({
   appointments: [],
   clients: [],
@@ -104,8 +126,8 @@ export const DataContext = createContext<DataContextType>({
   addExpense: async () => ({}),
   deleteExpense: async () => ({}),
   addService: async () => ({}),
-  updateService: async () => ({}),
-  deleteService: async () => ({}),
+  updateService,
+  deleteService,
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {

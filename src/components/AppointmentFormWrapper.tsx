@@ -90,7 +90,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={(client) => handleSuccess(client)}
+            onSuccess={() => handleSuccess(selectedClient)}
             onCancel={() => handleCancel()}
           />
         </DialogContent>
