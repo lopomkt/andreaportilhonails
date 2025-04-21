@@ -373,8 +373,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
-        // Use type assertion after validation
-        return { success: true, data: result as Record<string, any> };
+        // Return success with data as object type
+        return { 
+          success: true, 
+          data: result as Record<string, any> 
+        };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -400,8 +403,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
-        // Use type assertion after validation
-        return { success: true, data: result as Record<string, any> };
+        // Return success with data as object type
+        return { 
+          success: true, 
+          data: result as Record<string, any> 
+        };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -446,8 +452,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // Use type assertion after validation
-        return { success: true, data: response as Record<string, any> };
+        // Return success with data as object type
+        return { 
+          success: true, 
+          data: response as Record<string, any> 
+        };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -473,8 +482,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // Use type assertion after validation
-        return { success: true, data: response as Record<string, any> };
+        // Return success with data as object type
+        return { 
+          success: true, 
+          data: response as Record<string, any> 
+        };
       }
       return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
@@ -500,8 +512,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // Use type assertion after validation
-        return { success: true, data: response as Record<string, any> };
+        // Return success with data as object type
+        return { 
+          success: true, 
+          data: response as Record<string, any> 
+        };
       }
       return { success: false, error: "AddExpense function not available" };
     } catch (error) {

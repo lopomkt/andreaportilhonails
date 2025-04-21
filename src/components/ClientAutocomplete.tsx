@@ -23,6 +23,7 @@ export function ClientAutocomplete({
   autofocus = false,
   placeholder = 'Buscar cliente por nome ou telefone...'
 }: ClientAutocompleteProps) {
+  
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
@@ -99,7 +100,7 @@ export function ClientAutocomplete({
     setSearchQuery('');
     setIsOpen(false);
   };
-
+  
   const handleClickOutside = useCallback((event: MouseEvent) => {
     if (
       inputRef.current && 
