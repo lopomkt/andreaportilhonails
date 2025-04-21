@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -239,7 +238,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
+            onSuccess={(client: Client | null) => handleNewClientSuccess(client)}
             onCancel={handleCloseDialog}
           />
         </DialogContent>

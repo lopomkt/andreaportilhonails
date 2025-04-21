@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -374,8 +373,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
-        // We've already checked result is valid above
-        return { success: true, data: result };
+        // Use type assertion after validation
+        return { success: true, data: result as Record<string, any> };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -401,8 +400,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
-        // We've already checked result is valid above
-        return { success: true, data: result };
+        // Use type assertion after validation
+        return { success: true, data: result as Record<string, any> };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -447,8 +446,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // We've already checked response is valid above
-        return { success: true, data: response };
+        // Use type assertion after validation
+        return { success: true, data: response as Record<string, any> };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -474,8 +473,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // We've already checked response is valid above
-        return { success: true, data: response };
+        // Use type assertion after validation
+        return { success: true, data: response as Record<string, any> };
       }
       return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
@@ -501,8 +500,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // We've already checked response is valid above
-        return { success: true, data: response };
+        // Use type assertion after validation
+        return { success: true, data: response as Record<string, any> };
       }
       return { success: false, error: "AddExpense function not available" };
     } catch (error) {
