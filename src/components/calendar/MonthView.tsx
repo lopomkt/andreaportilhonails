@@ -120,11 +120,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
     setCurrentMonth(addMonths(currentMonth, 1));
   };
   
-  // Handle day click - make sure to switch to day view and preserve exact same date
+  // Handle day click - fixed to use exact same date without timezone issues
   const handleDayClick = (day: Date) => {
     if (day) {
-      // Create a new date object to avoid any reference issues
-      const selectedDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+      // Create a new date object with noon time to avoid timezone issues
+      const selectedDate = new Date(day);
+      selectedDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
       onDaySelect(selectedDate);
     }
   };

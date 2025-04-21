@@ -1,222 +1,236 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Search, Loader2, User, Phone, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ClientForm from "@/components/ClientForm";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Loader2, UserPlus } from "lucide-react";
-import { verifySupabaseConnection } from "@/utils/supabaseConnectionCheck";
-import { Client } from "@/types";
+import { supabase } from '@/integrations/supabase/client';
+import { Client } from '@/types';
+import { formatPhone } from '@/lib/formatters';
+import { useToast } from '@/hooks/use-toast';
+import { DebounceInput } from 'react-debounce-input';
 
 interface ClientAutocompleteProps {
-  onClientSelect: (client: { id: string; name: string }) => void;
-  selectedClient?: { id: string; name: string } | null;
-  initialQuery?: string;
+  onClientSelect: (client: Client) => void;
+  selectedClient?: Client | null;
+  autofocus?: boolean;
+  placeholder?: string;
 }
 
-export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuery = '' }: ClientAutocompleteProps) {
-  const [query, setQuery] = useState(initialQuery);
+export function ClientAutocomplete({ 
+  onClientSelect, 
+  selectedClient = null,
+  autofocus = false,
+  placeholder = 'Buscar cliente por nome ou telefone...'
+}: ClientAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
+  
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Load client data when component mounts
+  // Pre-fetch clients list when the component mounts to improve responsiveness
   useEffect(() => {
-    // If there's a selected client, set the query to the client name
-    if (selectedClient) {
-      setQuery(selectedClient.name);
-    } else if (initialQuery) {
-      setQuery(initialQuery);
-      searchClients(initialQuery);
+    // Only fetch if no search query to avoid conflicts with search function
+    if (!searchQuery) {
+      fetchClients();
     }
-  }, [selectedClient, initialQuery]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && 
-          inputRef.current && !inputRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, []);
-
-  // Search for clients
-  const searchClients = async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setClients([]);
-      setIsOpen(false);
-      return;
-    }
-
-    setLoading(true);
+  
+  const fetchClients = async (query: string = '') => {
+    setIsLoading(true);
     
     try {
-      // Verify Supabase connection
-      const isConnected = await verifySupabaseConnection();
-      if (!isConnected) {
-        setLoading(false);
+      let queryBuilder = supabase
+        .from('clientes')
+        .select('*')
+        .order('nome', { ascending: true });
+      
+      if (query) {
+        queryBuilder = queryBuilder.or(`nome.ilike.%${query}%,telefone.ilike.%${query}%`);
+      }
+      
+      const { data, error } = await queryBuilder.limit(30);
+      
+      if (error) {
+        console.error('Error fetching clients:', error);
         return;
       }
       
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('id, nome, telefone, email, data_nascimento, observacoes')
-        .or(`nome.ilike.%${searchQuery}%,telefone.ilike.%${searchQuery}%`)
-        .order('nome', { ascending: true })
-        .limit(10);
-      
-      if (error) {
-        console.error("Error searching for clients:", error);
-        toast({
-          title: "Erro na busca",
-          description: "Não foi possível buscar clientes. Tente novamente.",
-          variant: "destructive",
-        });
-        setClients([]);
-      } else {
-        // Map database fields to Client type
-        const mappedClients: Client[] = (data || []).map(client => ({
-          id: client.id,
-          name: client.nome,
-          phone: client.telefone,
-          email: client.email || '',
-          birthdate: client.data_nascimento,
-          notes: client.observacoes || '',
-          lastAppointment: null,
-          totalSpent: 0
+      if (data) {
+        // Map database field names to Client type fields
+        const mappedClients: Client[] = data.map(item => ({
+          id: item.id,
+          name: item.nome,
+          phone: item.telefone,
+          email: item.email || '',
+          notes: item.observacoes || '',
+          totalSpent: item.valor_total || 0,
+          birthdate: item.data_nascimento || null,
+          lastAppointment: item.ultimo_agendamento || null,
+          created_at: item.data_criacao || null
         }));
-        setClients(mappedClients);
-        setIsOpen(data && data.length > 0);
+        setSearchResults(mappedClients);
       }
-    } catch (err) {
-      console.error("Unexpected error searching for clients:", err);
-      setClients([]);
+    } catch (error) {
+      console.error('Unexpected error fetching clients:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Handle input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    searchClients(value);
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    
+    if (query.length === 0) {
+      fetchClients();
+      return;
+    }
+    
+    if (query.length < 2) return;
+    
+    fetchClients(query);
   };
 
-  // Handle client selection
   const handleSelectClient = (client: Client) => {
-    onClientSelect({ id: client.id, name: client.name });
-    setQuery(client.name);
+    onClientSelect(client);
+    setSearchQuery('');
     setIsOpen(false);
   };
 
-  // Handle new client creation
-  const handleNewClient = () => {
-    setIsOpen(false);
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    if (
+      inputRef.current && 
+      resultsRef.current &&
+      !inputRef.current.contains(event.target as Node) && 
+      !resultsRef.current.contains(event.target as Node)
+    ) {
+      setIsOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, handleClickOutside]);
+
+  const openNewClientDialog = () => {
     setShowNewClientDialog(true);
+    setIsOpen(false);
   };
-
-  // Handle client form success
-  const handleClientFormSuccess = (client: Client) => {
-    onClientSelect({ id: client.id, name: client.name });
-    setQuery(client.name);
+  
+  const handleNewClientSuccess = (client: Client) => {
     setShowNewClientDialog(false);
+    handleSelectClient(client);
     toast({
-      title: "Cliente adicionado",
-      description: "Cliente adicionado com sucesso ao agendamento.",
+      title: "Cliente cadastrado com sucesso!",
+      description: "Cliente adicionado ao sistema."
     });
   };
 
-  // Handle client form cancel
-  const handleClientFormCancel = () => {
-    setShowNewClientDialog(false);
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 100);
-  };
-
-  // Handle input focus
-  const handleInputFocus = () => {
-    if (query && query.length >= 2) {
-      searchClients(query);
-    }
-  };
-
   return (
-    <div className="relative">
-      <div className="flex">
-        <Input
-          ref={inputRef}
-          value={query}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          placeholder="Digite o nome ou telefone do cliente"
-          className="w-full"
-        />
-        <Button 
-          type="button"
-          variant="outline"
-          size="icon"
-          className="ml-2 border-rose-200"
-          onClick={handleNewClient}
-        >
-          <UserPlus className="h-4 w-4 text-rose-500" />
-        </Button>
-      </div>
-      
-      {loading && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+    <div className="w-full relative">
+      <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
+        <div className="flex-1">
+          <DebounceInput
+            element={Input}
+            minLength={2}
+            debounceTimeout={300}
+            type="text"
+            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            placeholder={placeholder}
+            value={selectedClient ? selectedClient.name : searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+            onFocus={() => setIsOpen(true)}
+            autoFocus={autofocus}
+            ref={inputRef}
+          />
         </div>
-      )}
+        <div className="flex items-center pr-2">
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            <Search className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
       
       {isOpen && (
         <div 
-          ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-[200px] overflow-y-auto"
+          ref={resultsRef}
+          className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-md max-h-60 overflow-y-auto"
         >
-          <ul>
-            {clients.length === 0 && query.length >= 2 && (
-              <li className="px-4 py-2 text-muted-foreground">Nenhum cliente encontrado</li>
-            )}
-            
-            {clients.map((client) => (
-              <li
-                key={client.id}
-                onClick={() => handleSelectClient(client)}
-                className="px-4 py-2 hover:bg-muted cursor-pointer"
-              >
-                <div className="flex justify-between">
-                  <span>{client.name}</span>
-                  <span className="text-sm text-muted-foreground">{client.phone}</span>
+          {searchResults.length > 0 ? (
+            <div className="p-1">
+              {searchResults.map((client) => (
+                <div
+                  key={client.id}
+                  className="flex items-center justify-between px-3 py-2 hover:bg-accent/50 rounded cursor-pointer"
+                  onClick={() => handleSelectClient(client)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{client.name}</p>
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Phone className="mr-1 h-3 w-3" />
+                      <span>{formatPhone(client.phone)}</span>
+                    </div>
+                  </div>
                 </div>
-              </li>
-            ))}
-            
-            {query.length >= 2 && (
-              <li
-                onClick={handleNewClient}
-                className="px-4 py-2 hover:bg-rose-100 cursor-pointer flex items-center text-rose-500 font-medium border-t"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Cadastrar novo cliente: {query}
-              </li>
-            )}
-          </ul>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center">
+              {searchQuery.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Nenhum cliente encontrado</p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-sm"
+                    onClick={openNewClientDialog}
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Cadastrar novo cliente
+                  </Button>
+                </div>
+              ) : (
+                isLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando clientes...</p>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-sm"
+                    onClick={openNewClientDialog}
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Cadastrar novo cliente
+                  </Button>
+                )
+              )}
+            </div>
+          )}
+          
+          <div className="p-1 border-t">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sm font-normal"
+              onClick={openNewClientDialog}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Cadastrar novo cliente
+            </Button>
+          </div>
         </div>
       )}
       
@@ -224,14 +238,10 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
-            <DialogDescription>
-              Preencha os dados para cadastrar um novo cliente
-            </DialogDescription>
           </DialogHeader>
-          <ClientForm
-            onSuccess={handleClientFormSuccess}
-            onCancel={handleClientFormCancel}
-            initialName={query}
+          <ClientForm 
+            onSuccess={handleNewClientSuccess}
+            onCancel={() => setShowNewClientDialog(false)}
           />
         </DialogContent>
       </Dialog>

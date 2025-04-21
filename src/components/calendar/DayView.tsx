@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay, parseISO, addMinutes, differenceInMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader2, Lock, Clock, ArrowDown } from "lucide-react";
+import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader2, Lock, Clock, ArrowDown, CalendarClock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { AppointmentFormWrapper } from "@/components/AppointmentFormWrapper";
@@ -22,9 +22,12 @@ import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
+import { formatDuration } from '@/lib/formatters';
+
 interface DayViewProps {
   date: Date;
 }
+
 export const DayView: React.FC<DayViewProps> = ({
   date
 }) => {
@@ -49,9 +52,13 @@ export const DayView: React.FC<DayViewProps> = ({
   const [isAdjustingSchedule, setIsAdjustingSchedule] = useState(false);
   const [adjustMinutes, setAdjustMinutes] = useState(15);
   const [confirmAdjustScheduleOpen, setConfirmAdjustScheduleOpen] = useState(false);
+  const [newAppointmentDialogOpen, setNewAppointmentDialogOpen] = useState(false);
+  const [newAppointmentInitialDate, setNewAppointmentInitialDate] = useState<Date>(new Date());
+  
   const {
     toast
   } = useToast();
+  
   const {
     appointments,
     blockedDates,
@@ -62,8 +69,10 @@ export const DayView: React.FC<DayViewProps> = ({
     deleteBlockedDate,
     rescheduleAppointment
   } = useSupabaseData();
+  
   const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), date));
   const dayBlocks = blockedDates.filter(block => isSameDay(new Date(block.date), date));
+  
   const appointmentsByHour = dayAppointments.reduce((groups, appointment) => {
     const hour = format(new Date(appointment.date), 'HH:00');
     if (!groups[hour]) {
@@ -72,7 +81,9 @@ export const DayView: React.FC<DayViewProps> = ({
     groups[hour].push(appointment);
     return groups;
   }, {} as Record<string, typeof dayAppointments>);
+  
   const hours = Object.keys(appointmentsByHour).sort();
+  
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -85,6 +96,7 @@ export const DayView: React.FC<DayViewProps> = ({
         return 'secondary';
     }
   };
+  
   const getServiceIcon = (serviceName: string) => {
     const name = serviceName?.toLowerCase() || '';
     if (name.includes('manicure') || name.includes('unha')) {
@@ -95,6 +107,7 @@ export const DayView: React.FC<DayViewProps> = ({
       return <FileSpreadsheet className="h-4 w-4" />;
     }
   };
+  
   const handleOpenManageModal = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setClientId(appointment.clientId);
@@ -107,9 +120,11 @@ export const DayView: React.FC<DayViewProps> = ({
     setManageModalOpen(true);
     setIsFormDirty(false);
   };
+  
   const handleFormChange = () => {
     setIsFormDirty(true);
   };
+  
   const handleCloseManageModal = () => {
     if (isFormDirty) {
       setConfirmSaveOpen(true);
@@ -118,6 +133,7 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
+  
   const handleSaveChanges = async () => {
     if (!selectedAppointment) return;
     setIsSaving(true);
@@ -160,6 +176,7 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
+  
   const handleSendMessage = async (type: 'confirmation' | 'reminder') => {
     if (!selectedAppointment || !selectedAppointment.client) return;
     setIsSendingMessage(true);
@@ -212,17 +229,22 @@ export const DayView: React.FC<DayViewProps> = ({
       setIsSendingMessage(false);
     }
   };
+  
   const handleOpenBlockedDateDialog = () => {
+    setSelectedBlockedDate(null);
     setOpenBlockedDateDialog(true);
   };
+  
   const handleEditBlockedDate = (blockedDate: BlockedDate) => {
     setSelectedBlockedDate(blockedDate);
     setOpenBlockedDateDialog(true);
   };
+  
   const handleDeleteBlockedDate = (id: string) => {
     setDeleteBlockedDateId(id);
     setConfirmDeleteBlockedOpen(true);
   };
+  
   const confirmDeleteBlockedDate = async () => {
     if (!deleteBlockedDateId) return;
     try {
@@ -252,9 +274,11 @@ export const DayView: React.FC<DayViewProps> = ({
       setDeleteBlockedDateId(null);
     }
   };
+  
   const handleAdjustSchedule = () => {
     setIsAdjustingSchedule(true);
   };
+  
   const confirmAdjustSchedule = async () => {
     try {
       const dayAppointments = appointments.filter(appt => {
@@ -294,6 +318,102 @@ export const DayView: React.FC<DayViewProps> = ({
       setIsAdjustingSchedule(false);
     }
   };
+
+  const handleCreateSuggestedAppointment = (suggestedDate: Date) => {
+    setNewAppointmentInitialDate(suggestedDate);
+    setNewAppointmentDialogOpen(true);
+  };
+
+  const getAvailableTimeSlots = () => {
+    const getBusinessHours = (forDate: Date) => {
+      const businessStartHour = 8;
+      const businessEndHour = 19;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const targetDate = new Date(forDate);
+      targetDate.setHours(0, 0, 0, 0);
+      
+      const isSameDate = isSameDay(today, targetDate);
+      
+      let startHour = businessStartHour;
+      if (isSameDate) {
+        const currentHour = new Date().getHours();
+        const currentMinutes = new Date().getMinutes();
+        startHour = currentMinutes > 30 ? currentHour + 1 : currentHour;
+        startHour = Math.max(startHour, businessStartHour);
+      }
+      
+      const suggestedTimes = [];
+      
+      for (let hour = startHour; hour < businessEndHour; hour++) {
+        const slotTime = new Date(forDate);
+        slotTime.setHours(hour, 0, 0, 0);
+        
+        const blockedInTime = blockedDates.some(block => {
+          const blockDate = new Date(block.date);
+          return isSameDay(blockDate, slotTime) && 
+                (block.allDay || blockDate.getHours() === hour);
+        });
+        
+        const appointmentInTime = appointments.some(appt => {
+          const apptDate = new Date(appt.date);
+          return isSameDay(apptDate, slotTime) && 
+                apptDate.getHours() === hour && 
+                appt.status !== 'canceled';
+        });
+        
+        if (!blockedInTime && !appointmentInTime) {
+          const availableMinutes = (businessEndHour - hour) * 60;
+          
+          const nextEvents = [...appointments, ...blockedDates.map(block => ({
+            date: block.date,
+            status: 'blocked' as AppointmentStatus
+          }))].filter(event => {
+            const eventDate = new Date(event.date);
+            return isSameDay(eventDate, slotTime) && 
+                  eventDate.getHours() >= hour && 
+                  event.status !== 'canceled';
+          }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          
+          if (nextEvents.length > 0) {
+            const firstEvent = new Date(nextEvents[0].date);
+            const slotEndTime = new Date(slotTime);
+            slotEndTime.setHours(businessEndHour, 0, 0, 0);
+            
+            if (firstEvent < slotEndTime) {
+              availableMinutes = Math.min(
+                availableMinutes,
+                differenceInMinutes(firstEvent, slotTime)
+              );
+            }
+          }
+          
+          suggestedTimes.push({
+            time: slotTime,
+            availableMinutes: availableMinutes
+          });
+          
+          break;
+        }
+      }
+      
+      return suggestedTimes.length > 0 ? suggestedTimes[0] : null;
+    };
+    
+    const today = new Date();
+    const todaySlot = getBusinessHours(today);
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowSlot = getBusinessHours(tomorrow);
+    
+    return { todaySlot, tomorrowSlot };
+  };
+  
+  const { todaySlot, tomorrowSlot } = getAvailableTimeSlots();
+  
   return <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex justify-between items-center py-0 my-[24px] px-[16px]">
         <h2 className="font-bold text-lg md:text-2xl">
@@ -311,8 +431,6 @@ export const DayView: React.FC<DayViewProps> = ({
             <Clock className="h-4 w-4" /> 
             Ajustar Agenda
           </Button>
-          
-          
         </div>
       </div>
       
@@ -325,6 +443,62 @@ export const DayView: React.FC<DayViewProps> = ({
             <Button variant="outline" size="sm" className="text-xs">Cancelados</Button>
           </div>
         </div>}
+      
+      <div className="mt-4 mb-6 bg-blue-50 rounded-lg p-4">
+        <h3 className="text-md font-semibold mb-3 flex items-center text-blue-800">
+          <CalendarClock className="h-4 w-4 mr-2" />
+          Horários Sugeridos para Agendamento
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {todaySlot && (
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium flex items-center">
+                      💡 Hoje às {format(todaySlot.time, 'HH:mm')}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Encaixe de {formatDuration(todaySlot.availableMinutes)}
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="bg-green-500 text-white hover:bg-green-600"
+                    onClick={() => handleCreateSuggestedAppointment(todaySlot.time)}
+                  >
+                    Agendar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {tomorrowSlot && (
+            <Card className="border-l-4 border-l-blue-500">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium flex items-center">
+                      💡 Amanhã às {format(tomorrowSlot.time, 'HH:mm')}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Encaixe de {formatDuration(tomorrowSlot.availableMinutes)}
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="bg-blue-500 text-white hover:bg-blue-600"
+                    onClick={() => handleCreateSuggestedAppointment(tomorrowSlot.time)}
+                  >
+                    Agendar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
       
       {dayBlocks.length > 0 && <div className="mt-4 mb-6">
           <h3 className="text-md font-semibold mb-2 flex items-center">
@@ -394,6 +568,26 @@ export const DayView: React.FC<DayViewProps> = ({
         </div> : <div className="text-center py-8 bg-accent/10 rounded-lg">
           <p className="text-muted-foreground">Nenhum agendamento para este dia.</p>
         </div>}
+      
+      <Dialog open={newAppointmentDialogOpen} onOpenChange={setNewAppointmentDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-rose-700 flex items-center">
+              <span className="mr-2">💅</span>
+              Novo Agendamento
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados para criar um novo agendamento
+            </DialogDescription>
+          </DialogHeader>
+          <AppointmentFormWrapper>
+            <AppointmentForm 
+              onSuccess={() => setNewAppointmentDialogOpen(false)} 
+              initialDate={newAppointmentInitialDate}
+            />
+          </AppointmentFormWrapper>
+        </DialogContent>
+      </Dialog>
       
       <Dialog open={manageModalOpen} onOpenChange={open => {
       if (!open && isFormDirty) {
@@ -559,15 +753,19 @@ export const DayView: React.FC<DayViewProps> = ({
               {selectedBlockedDate ? "Edite as informações do bloqueio" : "Preencha os dados para bloquear um horário"}
             </DialogDescription>
           </DialogHeader>
-          <BlockedDateForm blockedDate={selectedBlockedDate} onSuccess={() => {
-          refetchBlockedDates();
-          setOpenBlockedDateDialog(false);
-          setSelectedBlockedDate(null);
-          toast({
-            title: "Sucesso",
-            description: selectedBlockedDate ? "Bloqueio atualizado com sucesso" : "Horário bloqueado com sucesso"
-          });
-        }} initialDate={date} />
+          <BlockedDateForm 
+            blockedDate={selectedBlockedDate} 
+            onSuccess={() => {
+              refetchBlockedDates();
+              setOpenBlockedDateDialog(false);
+              setSelectedBlockedDate(null);
+              toast({
+                title: "Sucesso",
+                description: selectedBlockedDate ? "Bloqueio atualizado com sucesso" : "Horário bloqueado com sucesso"
+              });
+            }} 
+            initialDate={date} 
+          />
         </DialogContent>
       </Dialog>
       

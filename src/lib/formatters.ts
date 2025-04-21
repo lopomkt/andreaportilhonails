@@ -1,4 +1,3 @@
-
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -25,16 +24,20 @@ export const formatPhone = (phone: string): string => {
 };
 
 export const formatDuration = (minutes: number): string => {
+  if (minutes <= 0) {
+    return "0 minutos";
+  }
+  
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   
   if (hours === 0) {
-    return `${mins} min`;
+    return `${mins} ${mins === 1 ? 'minuto' : 'minutos'}`;
   }
   
   if (mins === 0) {
-    return `${hours}h`;
+    return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
   }
   
-  return `${hours}h ${mins}min`;
+  return `${hours} ${hours === 1 ? 'hora' : 'horas'} e ${mins} ${mins === 1 ? 'minuto' : 'minutos'}`;
 };

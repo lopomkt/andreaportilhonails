@@ -11,7 +11,7 @@ import { Client } from '@/types';
 // For now, focusing on wrapping the client selection with our new autocomplete component
 
 export function AppointmentFormWrapper({ children }: { children: React.ReactNode }) {
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string } | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
 
@@ -38,9 +38,11 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             // Check if we want to render our autocomplete
             if (field && field.onChange) {
               // Set up connection between autocomplete and form field
-              const handleClientSelect = (client: { id: string; name: string }) => {
-                field.onChange(client.id);
-                setSelectedClient(client);
+              const handleClientSelect = (client: Client) => {
+                if (client && client.id) {
+                  field.onChange(client.id);
+                  setSelectedClient(client);
+                }
               };
 
               return (
@@ -87,8 +89,12 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
           </DialogHeader>
           <ClientForm
             onSuccess={(client: Client) => {
-              setSelectedClient({ id: client.id, name: client.name });
+              setSelectedClient(client);
               setShowNewClientDialog(false);
+              toast({
+                title: "Cliente cadastrado com sucesso!",
+                description: "Cliente adicionado ao sistema."
+              });
             }}
             onCancel={() => setShowNewClientDialog(false)}
           />

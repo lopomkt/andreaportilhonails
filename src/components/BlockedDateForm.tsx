@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { BlockedDate } from "@/types";
 import { BlockedDateService } from "@/integrations/supabase/blockedDateService";
 import { Loader2 } from "lucide-react";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface BlockedDateFormProps {
   onSuccess?: () => void;
@@ -28,6 +29,7 @@ export const BlockedDateForm = ({ onSuccess, initialDate, blockedDate }: Blocked
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { refetchBlockedDates } = useSupabaseData();
   
   // If editing an existing blocked date, populate the form
   useEffect(() => {
@@ -50,6 +52,9 @@ export const BlockedDateForm = ({ onSuccess, initialDate, blockedDate }: Blocked
       if (!allDay) {
         const [hours, minutes] = time.split(':').map(Number);
         blockedDateTime.setHours(hours, minutes, 0, 0);
+      } else {
+        // Set noon time to avoid timezone issues
+        blockedDateTime.setHours(12, 0, 0, 0);
       }
       
       let success = false;
@@ -77,6 +82,9 @@ export const BlockedDateForm = ({ onSuccess, initialDate, blockedDate }: Blocked
             ? "O bloqueio foi atualizado com sucesso." 
             : "O horário foi bloqueado com sucesso."
         });
+        
+        // Force refresh of blocked dates
+        await refetchBlockedDates();
         
         if (onSuccess) {
           onSuccess();

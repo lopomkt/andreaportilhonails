@@ -27,7 +27,6 @@ const LoadingView = () => <div className="flex items-center justify-center p-8">
   </div>;
 
 export default function CalendarPage() {
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week");
   const [openAppointmentDialog, setOpenAppointmentDialog] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
@@ -35,6 +34,14 @@ export default function CalendarPage() {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Get the view mode from localStorage or default to "week"
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">(() => {
+    const savedView = localStorage.getItem('calendarViewMode');
+    return (savedView === "day" || savedView === "week" || savedView === "month") 
+      ? savedView 
+      : "week";
+  });
   
   // Parse date from URL on component mount
   useEffect(() => {
@@ -47,10 +54,14 @@ export default function CalendarPage() {
         const parsedDate = new Date(dateParam);
         // Check if date is valid
         if (!isNaN(parsedDate.getTime())) {
+          // Set to noon to avoid timezone issues
+          parsedDate.setHours(12, 0, 0, 0);
           setCurrentDate(parsedDate);
+          
           // If coming from month view with view parameter, switch to that view
           if (viewParam && (viewParam === 'day' || viewParam === 'week' || viewParam === 'month')) {
             setCalendarView(viewParam as "day" | "week" | "month");
+            localStorage.setItem('calendarViewMode', viewParam);
           }
         }
       } catch (e) {
@@ -61,12 +72,15 @@ export default function CalendarPage() {
   
   const handleDaySelect = (date: Date) => {
     // Create a new Date object to ensure we're working with a clean instance
-    const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Set to noon to avoid timezone issues
+    const selectedDate = new Date(date);
+    selectedDate.setHours(12, 0, 0, 0);
     setCurrentDate(selectedDate);
     
     // When selecting a day from month view, change to day view
     if (calendarView === "month") {
       setCalendarView("day");
+      localStorage.setItem('calendarViewMode', 'day');
       
       // Update URL to reflect the selected date and view
       const searchParams = new URLSearchParams();
@@ -86,12 +100,20 @@ export default function CalendarPage() {
     // Add a small delay to ensure smooth transition
     setTimeout(() => {
       setCalendarView(value as "day" | "week" | "month");
+      // Save view preference to localStorage
+      localStorage.setItem('calendarViewMode', value);
       
       // Update URL to reflect the selected view
       const searchParams = new URLSearchParams(location.search);
       searchParams.set('view', value);
       navigate(`/calendario?${searchParams.toString()}`);
     }, 100);
+  };
+  
+  // Function to open appointment dialog with a specific date
+  const handleOpenAppointmentDialog = (date?: Date) => {
+    setCurrentDate(date || currentDate);
+    setOpenAppointmentDialog(true);
   };
   
   const handleOpenBlockedDateDialog = () => {
@@ -114,7 +136,7 @@ export default function CalendarPage() {
               <Lock className="mr-2 h-4 w-4" />
               {isMobile ? "Bloquear" : "Bloquear Horário"}
             </Button>
-            <Button className="bg-rose-500 text-white shadow-soft hover:bg-rose-600" onClick={() => setOpenAppointmentDialog(true)}>
+            <Button className="bg-rose-500 text-white shadow-soft hover:bg-rose-600" onClick={() => handleOpenAppointmentDialog()}>
               <CalendarClock className="mr-2 h-4 w-4" />
               {isMobile ? "Agendar" : "Novo Agendamento"}
             </Button>
@@ -186,7 +208,11 @@ export default function CalendarPage() {
             </DialogDescription>
           </DialogHeader>
           <BlockedDateForm 
-            onSuccess={() => setOpenBlockedDateDialog(false)}
+            onSuccess={() => {
+              setOpenBlockedDateDialog(false);
+              // Force data refresh
+              window.location.reload();
+            }}
             initialDate={currentDate}
           />
         </DialogContent>
