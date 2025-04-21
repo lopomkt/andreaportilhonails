@@ -1,4 +1,3 @@
-
 import { useData } from "@/context/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Client, Appointment } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, Phone, Calendar, AlertTriangle, MessageCircle, Pencil, Trash2, Clock } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -35,7 +34,6 @@ export default function ClientsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch clients when the component mounts
   useEffect(() => {
     refetchClients();
   }, [refetchClients]);
@@ -62,7 +60,7 @@ export default function ClientsPage() {
 
   const handleNewClientSuccess = () => {
     setShowNewClientModal(false);
-    refetchClients(); // Refresh clients list after new client creation
+    refetchClients();
     toast({
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
@@ -84,7 +82,6 @@ export default function ClientsPage() {
   };
 
   const handleDeleteClient = () => {
-    // Implement client deletion logic
     toast({
       title: "Cliente excluído",
       description: "Cliente excluído com sucesso!"
@@ -104,7 +101,6 @@ export default function ClientsPage() {
   };
 
   const handleScheduleForClient = (client: Client) => {
-    // Implement appointment creation for specific client
     navigate("/calendario", { state: { selectedClient: client } });
   };
 
@@ -279,7 +275,6 @@ export default function ClientsPage() {
         </Dialog>
       )}
 
-      {/* New Client Modal */}
       <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -289,7 +284,6 @@ export default function ClientsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Client Modal */}
       <Dialog open={showEditClientModal} onOpenChange={setShowEditClientModal}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -306,7 +300,6 @@ export default function ClientsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Alert */}
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -442,7 +435,6 @@ function ClientAppointmentsHistory({
     </div>;
 }
 
-// Helper function
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }

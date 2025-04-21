@@ -28,8 +28,8 @@ export const DayView: React.FC<DayViewProps> = ({
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
 
-  // Normalize date to avoid timezone issues
-  const normalizedDate = setHours(new Date(date), 12, 0, 0);
+  // Normalize date to avoid timezone issues - fixing the function call error
+  const normalizedDate = setHours(new Date(date), 12);
 
   // Generate time slots for the day (from 7:00 to 22:00)
   useEffect(() => {
