@@ -1,3 +1,4 @@
+
 // Types related to appointments
 export type AppointmentStatus = 'confirmed' | 'pending' | 'canceled';
 
@@ -125,4 +126,10 @@ export interface WhatsAppMessageData {
 // Type for refetch functions
 export interface RefetchFunction {
   (): Promise<any>;
+}
+
+// Types for function responses
+export interface ServiceResponse<T> {
+  data?: T;
+  error?: any;
 }

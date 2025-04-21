@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -142,7 +141,6 @@ export function ClientAutocomplete({
     });
   };
 
-  // Note: Using a regular input with state handling instead of DebounceInput to fix TS error
   return (
     <div className="w-full relative">
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
@@ -239,7 +237,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
+            onSuccess={(client: Client) => handleNewClientSuccess(client)}
             onCancel={() => setShowNewClientDialog(false)}
           />
         </DialogContent>

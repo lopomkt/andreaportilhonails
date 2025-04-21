@@ -15,6 +15,8 @@ export const useSupabaseData = () => {
     weekAppointments: 0,
     monthRevenue: 0,
     inactiveClients: 0,
+    newClients: 0,
+    totalAppointments: 0
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -147,6 +149,8 @@ export const useSupabaseData = () => {
       weekAppointments: weekAppts,
       monthRevenue: monthlyRevenue,
       inactiveClients: inactiveClientsCount,
+      newClients: 0,
+      totalAppointments: 0
     });
   }, []);
 

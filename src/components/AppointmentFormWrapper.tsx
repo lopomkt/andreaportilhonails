@@ -86,7 +86,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={() => {
+            onSuccess={(client: Client) => {
               setShowNewClientDialog(false);
               toast({
                 title: "Cliente cadastrado com sucesso!",
