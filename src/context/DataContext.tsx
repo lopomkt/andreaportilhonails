@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -317,7 +318,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw result.error;
         }
         await refetchClients();
-        return { success: true, data: result || null };
+        return { success: true, data: result ?? null };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -334,7 +335,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw result.error;
         }
         await refetchClients();
-        return { success: true, data: result || null };
+        return { success: true, data: result ?? null };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -371,7 +372,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw response.error;
         }
         await refetchAppointments();
-        return { success: true, data: response || null };
+        return { success: true, data: response ?? null };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -389,7 +390,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw response.error;
         }
         await refetchAppointments();
-        return { success: true, data: response || null };
+        return { success: true, data: response ?? null };
       }
       return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
@@ -407,7 +408,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw response.error;
         }
         await refetchAppointments();
-        return { success: true, data: response || null };
+        return { success: true, data: response ?? null };
       }
       return { success: false, error: "AddExpense function not available" };
     } catch (error) {
@@ -443,7 +444,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw response.error;
         }
         await fetchServices();
-        return { success: true, data: response || null };
+        return { success: true, data: response ?? null };
       }
       return { success: false, error: "AddService function not available" };
     } catch (error) {
@@ -461,7 +462,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw response.error;
         }
         await fetchServices();
-        return { success: true, data: response || null };
+        return { success: true, data: response ?? null };
       }
       return { success: false, error: "UpdateService function not available" };
     } catch (error) {
