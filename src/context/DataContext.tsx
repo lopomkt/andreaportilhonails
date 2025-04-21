@@ -32,6 +32,11 @@ const isValidResult = <T extends unknown>(result: T | null): result is T => {
   return result !== null && typeof result === 'object';
 };
 
+// Helper function to safely access properties on possibly null objects
+const safeAccess = <T, K extends keyof T>(obj: T | null | undefined, key: K): T[K] | undefined => {
+  return obj ? obj[key] : undefined;
+};
+
 const deleteService = async (id: string) => {
   try {
     const { error } = await supabase.from("servicos").delete().eq("id", id);
@@ -368,8 +373,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        // Using type assertion to avoid null issues since we've already checked result is valid
-        return { success: true, data: result as any };
+        
+        // We've already checked result is valid above
+        return { success: true, data: result };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -394,8 +400,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        // Using type assertion to avoid null issues since we've already checked result is valid
-        return { success: true, data: result as any };
+        
+        // We've already checked result is valid above
+        return { success: true, data: result };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -439,8 +446,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
-        // Using type assertion to avoid null issues since we've already checked response is valid
-        return { success: true, data: response as any };
+        
+        // We've already checked response is valid above
+        return { success: true, data: response };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -465,8 +473,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
-        // Using type assertion to avoid null issues since we've already checked response is valid
-        return { success: true, data: response as any };
+        
+        // We've already checked response is valid above
+        return { success: true, data: response };
       }
       return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
@@ -491,8 +500,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
-        // Using type assertion to avoid null issues since we've already checked response is valid
-        return { success: true, data: response as any };
+        
+        // We've already checked response is valid above
+        return { success: true, data: response };
       }
       return { success: false, error: "AddExpense function not available" };
     } catch (error) {
