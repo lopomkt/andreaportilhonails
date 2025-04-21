@@ -19,6 +19,7 @@ import {
   MonthlyRevenueData,
   ServiceResponse
 } from "@/types";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 // Helper functions to validate responses
 const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
@@ -596,91 +597,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
   }, []);
-
-  // Implement the isValidResponse helper
-  const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
-    return response !== null && response.data !== null && !response.error;
-  };
-
-  // Update createClient with proper null checks
-  const createSupabaseClient = async (clientData: any) => {
-    try {
-      const response = await supabase
-        .from('clientes')
-        .insert([clientData])
-        .select()
-        .single();
-
-      if (!isValidResponse(response)) {
-        console.error('Error creating client:', response?.error);
-        toast({
-          title: 'Erro ao criar cliente',
-          description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
-          variant: 'destructive',
-        });
-        return null;
-      }
-
-      const clientData = response.data;
-      const newClient: Client = {
-        id: clientData.id,
-        name: clientData.nome,
-        phone: clientData.telefone,
-        email: clientData.email || '',
-        notes: clientData.observacoes || '',
-        totalSpent: clientData.valor_total ?? 0,
-        birthdate: clientData.data_nascimento || null,
-        lastAppointment: clientData.ultimo_agendamento || null,
-        createdAt: clientData.data_criacao || null
-      };
-
-      setClients(prev => [...prev, newClient]);
-      return newClient;
-    } catch (error) {
-      console.error('Error creating client:', error);
-      toast({
-        title: 'Erro ao criar cliente',
-        description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
-        variant: 'destructive',
-      });
-      return null;
-    }
-  };
-
-  const updateSupabaseClient = async (clientId: string, clientData: any) => {
-    try {
-      const response = await supabase
-        .from('clientes')
-        .update(clientData)
-        .eq('id', clientId)
-        .select()
-        .single();
-
-      if (!isValidResponse(response)) {
-        console.error('Error updating client:', response?.error);
-        toast({
-          title: 'Erro ao atualizar cliente',
-          description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-
-      setClients(prev =>
-        prev.map(client => client.id === clientId ? { ...client, ...response.data } : client)
-      );
-
-      return true;
-    } catch (error) {
-      console.error('Error updating client:', error);
-      toast({
-        title: 'Erro ao atualizar cliente',
-        description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
 
   return (
     <DataContext.Provider
