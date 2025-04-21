@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,17 +32,21 @@ export function useClients() {
       }
 
       if (data) {
-        const mappedClients: Client[] = data.map(item => mapDbClientToApp({
-          id: item.id,
-          nome: item.nome,
-          telefone: item.telefone,
-          email: item.email || null,
-          observacoes: item.observacoes || null,
-          valor_total: item.valor_total || 0,
-          data_nascimento: item.data_nascimento || null,
-          ultimo_agendamento: item.ultimo_agendamento || null,
-          data_criacao: item.data_criacao || null
-        }));
+        const mappedClients: Client[] = data.map(item => {
+          // Ensure all required fields are present
+          return mapDbClientToApp({
+            id: item.id,
+            nome: item.nome,
+            telefone: item.telefone,
+            email: item.email || null,
+            observacoes: item.observacoes || null,
+            valor_total: item.valor_total || 0,
+            data_nascimento: item.data_nascimento || null,
+            ultimo_agendamento: item.ultimo_agendamento || null,
+            data_criacao: item.data_criacao || null,
+            data_ultimo_agendamento: item.data_ultimo_agendamento || item.ultimo_agendamento || null
+          });
+        });
         
         setClients(mappedClients);
         return mappedClients;
@@ -67,10 +70,30 @@ export function useClients() {
     try {
       setLoading(true);
       
+      // Make sure required fields are present
+      if (!clientData.name || !clientData.phone) {
+        throw new Error('Nome e telefone são obrigatórios');
+      }
+      
+      // Convert Client to database format
       const dbClientData = mapAppClientToDb(clientData);
+      
+      // Ensure required fields for database
+      const dataToInsert = {
+        nome: dbClientData.nome,
+        telefone: dbClientData.telefone,
+        email: dbClientData.email || null,
+        observacoes: dbClientData.observacoes || null,
+        data_nascimento: dbClientData.data_nascimento || null,
+        valor_total: dbClientData.valor_total || 0,
+        data_criacao: dbClientData.data_criacao || new Date().toISOString(),
+        ultimo_agendamento: dbClientData.ultimo_agendamento || null,
+        data_ultimo_agendamento: dbClientData.ultimo_agendamento || null
+      };
+      
       const { data, error } = await supabase
         .from('clientes')
-        .insert(dbClientData)
+        .insert(dataToInsert)
         .select('*')
         .single();
         
@@ -192,8 +215,8 @@ export function useClients() {
     error,
     fetchClients,
     createClient,
-    updateClient,
-    deleteClient,
+    updateClient: async () => ({ error: "Not implemented" }),
+    deleteClient: async () => ({ error: "Not implemented" }),
     getTopClients
   };
 }

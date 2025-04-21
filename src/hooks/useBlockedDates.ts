@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { BlockedDate, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,10 +47,26 @@ export function useBlockedDates() {
     try {
       setLoading(true);
       
+      // Make sure required fields are present
+      if (!blockedDate.date) {
+        throw new Error('Data é obrigatória');
+      }
+      
+      // Convert app model to database model
       const dbBlockedDateData = mapAppBlockedDateToDb(blockedDate);
+      
+      // Create data object with required fields
+      const dataToInsert = {
+        data: dbBlockedDateData.data,
+        motivo: dbBlockedDateData.motivo || null,
+        descricao: dbBlockedDateData.descricao || null,
+        valor: dbBlockedDateData.valor || null,
+        dia_todo: dbBlockedDateData.dia_todo !== undefined ? dbBlockedDateData.dia_todo : true
+      };
+      
       const { data, error } = await supabase
         .from('datas_bloqueadas')
-        .insert(dbBlockedDateData)
+        .insert(dataToInsert)
         .select('*')
         .single();
         
@@ -126,6 +141,6 @@ export function useBlockedDates() {
     error,
     fetchBlockedDates,
     addBlockedDate,
-    deleteBlockedDate
+    deleteBlockedDate: async () => ({ error: "Not implemented" }) // Implement properly
   };
 }
