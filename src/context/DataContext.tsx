@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -361,12 +362,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to create client" };
         }
         
+        // Check if result exists and has error property with a value
         if (result && typeof result === 'object' && 'error' in result && result.error) {
           throw result.error;
         }
         
         await refetchClients();
-        return { success: true, data: result as unknown as Client };
+        return { success: true, data: result };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -385,12 +387,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to update client" };
         }
         
+        // Check if result exists and has error property with a value
         if (result && typeof result === 'object' && 'error' in result && result.error) {
           throw result.error;
         }
         
         await refetchClients();
-        return { success: true, data: result as unknown as Client };
+        return { success: true, data: result };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -428,6 +431,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to add appointment" };
         }
         
+        // Check if response exists and has error property with a value
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
@@ -452,6 +456,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to update appointment" };
         }
         
+        // Check if response exists and has error property with a value
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
@@ -476,6 +481,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to add expense" };
         }
         
+        // Check if response exists and has error property with a value
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }

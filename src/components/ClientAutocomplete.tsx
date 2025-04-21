@@ -239,7 +239,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
+            onSuccess={(client: Client | null) => handleNewClientSuccess(client)}
             onCancel={handleCloseDialog}
           />
         </DialogContent>
