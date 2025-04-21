@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -14,11 +15,16 @@ import {
   AppointmentStatus,
   Expense,
   WhatsAppMessageData,
-  RevenueData,
   MonthlyRevenueData,
   ServiceResponse
 } from "@/types";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+
+// Define RevenueData type if not in @/types
+interface RevenueData {
+  month: string;
+  revenue: number;
+}
 
 interface DataContextType {
   appointments: Appointment[];
@@ -111,34 +117,34 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
   const {
-    fetchAppointments: fetchSupabaseAppointments,
-    fetchClients: fetchSupabaseClients,
-    fetchServices: fetchSupabaseServices,
-    createClient: createSupabaseClient,
-    updateClient: updateSupabaseClient,
-    deleteClient: deleteSupabaseClient,
-    addAppointment: addSupabaseAppointment,
-    updateAppointment: updateSupabaseAppointment,
+    fetchAppointments: supabaseFetchAppointments,
+    fetchClients: supabaseFetchClients,
+    fetchServices: supabaseFetchServices,
+    createClient: supabaseCreateClient,
+    updateClient: supabaseUpdateClient,
+    deleteClient: supabaseDeleteClient,
+    addAppointment: supabaseAddAppointment,
+    updateAppointment: supabaseUpdateAppointment,
     blockedDates = [],
     expenses = [],
-    addExpense: addSupabaseExpense,
-    deleteExpense: deleteSupabaseExpense,
-    addService: addSupabaseService,
-    updateService: updateSupabaseService,
-    deleteService: deleteSupabaseService,
-    calculatedMonthlyRevenue: supabseCalculatedMonthlyRevenue,
+    addExpense: supabaseAddExpense,
+    deleteExpense: supabaseDeleteExpense,
+    addService: supabaseAddService,
+    updateService: supabaseUpdateService,
+    deleteService: supabaseDeleteService,
+    calculatedMonthlyRevenue: supabaseCalculatedMonthlyRevenue,
   } = useSupabaseData();
 
   const fetchAppointments = async () => {
-    return fetchSupabaseAppointments ? await fetchSupabaseAppointments() : [];
+    return supabaseFetchAppointments ? await supabaseFetchAppointments() : [];
   };
   
   const fetchClients = async () => {
-    return fetchSupabaseClients ? await fetchSupabaseClients() : [];
+    return supabaseFetchClients ? await supabaseFetchClients() : [];
   };
   
   const fetchServices = async () => {
-    return fetchSupabaseServices ? await fetchSupabaseServices() : [];
+    return supabaseFetchServices ? await supabaseFetchServices() : [];
   };
 
   useEffect(() => {
@@ -173,7 +179,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const getTopClients = useCallback(
     (limit: number) => {
       const sortedClients = [...clients].sort(
-        (a, b) => b.totalSpent - a.totalSpent
+        (a, b) => (b.totalSpent || 0) - (a.totalSpent || 0)
       );
       return sortedClients.slice(0, limit);
     },
@@ -198,6 +204,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const calculatedMonthlyRevenue = useCallback(
     (month?: number, year?: number) => {
+      if (supabaseCalculatedMonthlyRevenue) {
+        return supabaseCalculatedMonthlyRevenue(month, year);
+      }
+      
       const now = year ? new Date(year, month || 0, 1) : new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -216,7 +226,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
       return monthRevenue;
     },
-    [appointments]
+    [appointments, supabaseCalculatedMonthlyRevenue]
   );
 
   const calculateServiceRevenue = useCallback(
@@ -272,12 +282,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const generateWhatsAppLink = async ({
     client,
     message,
-  }: {
-    client: Client;
-    message: string;
-  }): Promise<string> => {
-    const encodedMessage = encodeURIComponent(message);
-    return `https://wa.me/${client.phone}?text=${encodedMessage}`;
+  }: WhatsAppMessageData): Promise<string> => {
+    const encodedMessage = encodeURIComponent(message || "");
+    return `https://wa.me/${client?.phone}?text=${encodedMessage}`;
   };
 
   const refetchAppointments = async () => {
@@ -306,10 +313,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const createClient = async (clientData: any) => {
     try {
-      const { data, error } = await createSupabaseClient(clientData);
-      if (error) throw error;
-      await refetchClients();
-      return { success: true, data };
+      if (supabaseCreateClient) {
+        const { data, error } = await supabaseCreateClient(clientData);
+        if (error) throw error;
+        await refetchClients();
+        return { success: true, data };
+      }
+      return { success: false, error: "CreateClient function not available" };
     } catch (error) {
       console.error("Error creating client:", error);
       return { success: false, error };
@@ -318,10 +328,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateClient = async (clientId: string, clientData: any) => {
     try {
-      const { data, error } = await updateSupabaseClient(clientId, clientData);
-      if (error) throw error;
-      await refetchClients();
-      return { success: true, data };
+      if (supabaseUpdateClient) {
+        const { data, error } = await supabaseUpdateClient(clientId, clientData);
+        if (error) throw error;
+        await refetchClients();
+        return { success: true, data };
+      }
+      return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
       console.error("Error updating client:", error);
       return { success: false, error };
@@ -330,14 +343,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const deleteClient = async (clientId: string) => {
     try {
-      const { error } = await deleteSupabaseClient(clientId);
-      
-      if (error) throw error;
-      
-      await refetchClients();
-      await refetchAppointments();
-      
-      return { success: true };
+      if (supabaseDeleteClient) {
+        const { error } = await supabaseDeleteClient(clientId);
+        
+        if (error) throw error;
+        
+        await refetchClients();
+        await refetchAppointments();
+        
+        return { success: true };
+      }
+      return { success: false, error: "DeleteClient function not available" };
     } catch (error) {
       console.error('Error deleting client:', error);
       return { success: false, error };
@@ -346,10 +362,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addAppointment = async (appointment: Omit<Appointment, "id">) => {
     try {
-      const response = await addSupabaseAppointment(appointment);
-      if (response && 'error' in response && response.error) throw response.error;
-      await refetchAppointments();
-      return { success: true, data: response };
+      if (supabaseAddAppointment) {
+        const response = await supabaseAddAppointment(appointment);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await refetchAppointments();
+        return { success: true, data: response };
+      }
+      return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
       console.error("Error adding appointment:", error);
       return { success: false, error };
@@ -358,10 +380,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateAppointment = async (id: string, data: Partial<Appointment>) => {
     try {
-      const response = await updateSupabaseAppointment(id, data);
-      if (response && typeof response === 'object' && 'error' in response && response.error) throw response.error;
-      await refetchAppointments();
-      return { success: true, data: response };
+      if (supabaseUpdateAppointment) {
+        const response = await supabaseUpdateAppointment(id, data);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await refetchAppointments();
+        return { success: true, data: response };
+      }
+      return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
       console.error("Error updating appointment:", error);
       return { success: false, error };
@@ -370,10 +398,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addExpense = async (expense: Omit<Expense, "id">) => {
     try {
-      const response = await addSupabaseExpense(expense);
-      if (response && 'error' in response && response.error) throw response.error;
-      await refetchAppointments();
-      return { success: true, data: response };
+      if (supabaseAddExpense) {
+        const response = await supabaseAddExpense(expense);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await refetchAppointments();
+        return { success: true, data: response };
+      }
+      return { success: false, error: "AddExpense function not available" };
     } catch (error) {
       console.error("Error adding expense:", error);
       return { success: false, error };
@@ -382,10 +416,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const deleteExpense = async (id: string) => {
     try {
-      const response = await deleteSupabaseExpense(id);
-      if (response && typeof response === 'object' && 'error' in response && response.error) throw response.error;
-      await refetchAppointments();
-      return { success: true };
+      if (supabaseDeleteExpense) {
+        const response = await supabaseDeleteExpense(id);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await refetchAppointments();
+        return { success: true };
+      }
+      return { success: false, error: "DeleteExpense function not available" };
     } catch (error) {
       console.error("Error deleting expense:", error);
       return { success: false, error };
@@ -394,10 +434,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addService = async (service: Omit<Service, "id">) => {
     try {
-      const response = await addSupabaseService(service);
-      if (response && 'error' in response && response.error) throw response.error;
-      await fetchServices();
-      return { success: true, data: response };
+      if (supabaseAddService) {
+        const response = await supabaseAddService(service);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await fetchServices();
+        return { success: true, data: response };
+      }
+      return { success: false, error: "AddService function not available" };
     } catch (error) {
       console.error("Error adding service:", error);
       return { success: false, error };
@@ -406,10 +452,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateService = async (id: string, data: Partial<Service>) => {
     try {
-      const response = await updateSupabaseService(id, data);
-      if (response && typeof response === 'object' && 'error' in response && response.error) throw response.error;
-      await fetchServices();
-      return { success: true, data: response };
+      if (supabaseUpdateService) {
+        const response = await supabaseUpdateService(id, data);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await fetchServices();
+        return { success: true, data: response };
+      }
+      return { success: false, error: "UpdateService function not available" };
     } catch (error) {
       console.error("Error updating service:", error);
       return { success: false, error };
@@ -418,10 +470,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const deleteService = async (id: string) => {
     try {
-      const response = await deleteSupabaseService(id);
-      if (response && typeof response === 'object' && 'error' in response && response.error) throw response.error;
-      await fetchServices();
-      return { success: true };
+      if (supabaseDeleteService) {
+        const response = await supabaseDeleteService(id);
+        // Check if response has error property and properly handle it
+        if (response && typeof response === 'object' && 'error' in response && response.error) {
+          throw response.error;
+        }
+        await fetchServices();
+        return { success: true };
+      }
+      return { success: false, error: "DeleteService function not available" };
     } catch (error) {
       console.error("Error deleting service:", error);
       return { success: false, error };
@@ -444,7 +502,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         getTopClients,
         calculateNetProfit,
         calculateDailyRevenue,
-        calculatedMonthlyRevenue: supabseCalculatedMonthlyRevenue,
+        calculatedMonthlyRevenue,
         calculateServiceRevenue,
         getRevenueData,
         generateWhatsAppLink,

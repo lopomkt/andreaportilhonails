@@ -150,7 +150,7 @@ export const useSupabaseData = () => {
       monthRevenue: monthlyRevenue,
       inactiveClients: inactiveClientsCount,
       newClients: 0,
-      totalAppointments: 0
+      totalAppointments: currentAppointments.length
     });
   }, []);
 
@@ -663,6 +663,101 @@ export const useSupabaseData = () => {
     }
   };
 
+  const {
+    createClient: createSupabaseClient,
+    updateClient: updateSupabaseClient,
+  } = useMemo(() => {
+    return {
+      createClient: async (clientData: any) => {
+        try {
+          const { data, error } = await supabase
+            .from('clientes')
+            .insert([clientData])
+            .select()
+            .single();
+  
+          if (error) {
+            console.error('Error creating client:', error);
+            toast({
+              title: 'Erro ao criar cliente',
+              description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
+              variant: 'destructive',
+            });
+            return null;
+          }
+  
+          const newClient: Client = {
+            id: data.id,
+            name: data.nome,
+            phone: data.telefone,
+            email: data.email || '',
+            notes: data.observacoes || '',
+            totalSpent: data.valor_total || 0,
+            birthdate: data.data_nascimento || null,
+            lastAppointment: data.ultimo_agendamento || null,
+            createdAt: data.data_criacao || null
+          };
+  
+          setClients(prev => [...prev, newClient]);
+  
+          toast({
+            title: 'Cliente adicionado',
+            description: 'Cliente adicionado com sucesso!',
+          });
+  
+          return newClient;
+        } catch (error) {
+          console.error('Error creating client:', error);
+          toast({
+            title: 'Erro ao criar cliente',
+            description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
+            variant: 'destructive',
+          });
+          return null;
+        }
+      },
+      updateClient: async (clientId: string, clientData: any) => {
+        try {
+          const { data, error } = await supabase
+            .from('clientes')
+            .update(clientData)
+            .eq('id', clientId)
+            .select()
+            .single();
+  
+          if (error) {
+            console.error('Error updating client:', error);
+            toast({
+              title: 'Erro ao atualizar cliente',
+              description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
+              variant: 'destructive',
+            });
+            return false;
+          }
+  
+          setClients(prev =>
+            prev.map(client => client.id === clientId ? { ...client, ...data } : client)
+          );
+  
+          toast({
+            title: 'Cliente atualizado',
+            description: 'Cliente atualizado com sucesso!',
+          });
+  
+          return true;
+        } catch (error) {
+          console.error('Error updating client:', error);
+          toast({
+            title: 'Erro ao atualizar cliente',
+            description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
+            variant: 'destructive',
+          });
+          return false;
+        }
+      }
+    };
+  }, [setClients, toast]);
+
   return {
     appointments,
     clients,
@@ -699,7 +794,14 @@ export const useSupabaseData = () => {
     calculateNetProfit,
     calculatedMonthlyRevenue,
     getRevenueData,
-    fetchClients: refetchClients,
+    fetchAppointments,
+    fetchClients,
+    fetchServices,
+    createClient: createSupabaseClient,
+    updateClient: updateSupabaseClient,
     deleteClient,
+    
+    
+    calculatedMonthlyRevenue: calculatedMonthlyRevenue,
   };
 };
