@@ -29,6 +29,7 @@ const LoadingView = () => <div className="flex items-center justify-center p-8">
 export default function CalendarPage() {
   const [openAppointmentDialog, setOpenAppointmentDialog] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [suggestedTime, setSuggestedTime] = useState<string | null>(null);
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -48,6 +49,7 @@ export default function CalendarPage() {
     const searchParams = new URLSearchParams(location.search);
     const dateParam = searchParams.get('date');
     const viewParam = searchParams.get('view');
+    const timeParam = searchParams.get('time');
     
     if (dateParam) {
       try {
@@ -56,6 +58,16 @@ export default function CalendarPage() {
         if (!isNaN(parsedDate.getTime())) {
           // Set to noon to avoid timezone issues
           parsedDate.setHours(12, 0, 0, 0);
+          
+          // If time parameter is provided, set the hours and minutes
+          if (timeParam) {
+            const [hours, minutes] = timeParam.split(':').map(Number);
+            if (!isNaN(hours) && !isNaN(minutes)) {
+              parsedDate.setHours(hours, minutes);
+              setSuggestedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+            }
+          }
+          
           setCurrentDate(parsedDate);
           
           // If coming from month view with view parameter, switch to that view
@@ -110,9 +122,26 @@ export default function CalendarPage() {
     }, 100);
   };
   
-  // Function to open appointment dialog with a specific date
-  const handleOpenAppointmentDialog = (date?: Date) => {
-    setCurrentDate(date || currentDate);
+  // Function to open appointment dialog with a specific date and time
+  const handleOpenAppointmentDialog = (date?: Date, time?: string) => {
+    if (date) {
+      const appointmentDate = new Date(date);
+      
+      // If time is provided, set the hours and minutes
+      if (time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        if (!isNaN(hours) && !isNaN(minutes)) {
+          appointmentDate.setHours(hours, minutes);
+          setSuggestedTime(`${hours}:${minutes}`);
+        }
+      }
+      
+      setCurrentDate(appointmentDate);
+    } else {
+      setCurrentDate(currentDate);
+      setSuggestedTime(null);
+    }
+    
     setOpenAppointmentDialog(true);
   };
   
@@ -161,7 +190,10 @@ export default function CalendarPage() {
             
             <Suspense fallback={<LoadingView />}>
               <TabsContent value="day" className="m-0">
-                <DayView date={currentDate} />
+                <DayView 
+                  date={currentDate}
+                  onSuggestedTimeSelect={(date, time) => handleOpenAppointmentDialog(date, time)}
+                />
               </TabsContent>
               <TabsContent value="week" className="m-0">
                 <WeekView date={currentDate} onDaySelect={handleDaySelect} />
@@ -190,6 +222,7 @@ export default function CalendarPage() {
             <AppointmentForm 
               onSuccess={() => setOpenAppointmentDialog(false)} 
               initialDate={currentDate}
+              initialTime={suggestedTime}
             />
           </AppointmentFormWrapper>
         </DialogContent>

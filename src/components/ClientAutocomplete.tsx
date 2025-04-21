@@ -142,21 +142,20 @@ export function ClientAutocomplete({
     });
   };
 
+  // Note: Using a regular input with state handling instead of DebounceInput to fix TS error
   return (
     <div className="w-full relative">
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
         <div className="flex-1">
-          <DebounceInput
-            minLength={2}
-            debounceTimeout={300}
+          <Input
             type="text"
             className="w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder={placeholder}
             value={selectedClient ? selectedClient.name : searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => setIsOpen(true)}
             autoFocus={autofocus}
-            element={Input}
+            ref={inputRef}
           />
         </div>
         <div className="flex items-center pr-2">

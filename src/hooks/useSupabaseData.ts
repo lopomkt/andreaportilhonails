@@ -36,6 +36,55 @@ export const useSupabaseData = () => {
     }
   };
 
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .order('nome', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching clients:', error);
+        toast({
+          title: 'Erro ao carregar clientes',
+          description: 'Ocorreu um erro ao carregar a lista de clientes.',
+          variant: 'destructive',
+        });
+        return [];
+      }
+      
+      if (data) {
+        const mappedClients: Client[] = data.map(item => ({
+          id: item.id,
+          name: item.nome || 'Sem nome',
+          phone: item.telefone || 'Não informado',
+          email: item.email || '',
+          notes: item.observacoes || '',
+          totalSpent: item.valor_total || 0,
+          birthdate: item.data_nascimento || null,
+          lastAppointment: item.ultimo_agendamento || null,
+          createdAt: item.data_criacao || null
+        }));
+        
+        setClients(mappedClients);
+        return mappedClients;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Unexpected error fetching clients:', error);
+      toast({
+        title: 'Erro ao carregar clientes',
+        description: 'Ocorreu um erro inesperado ao carregar os clientes.',
+        variant: 'destructive',
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refetchAppointments = useCallback(async () => {
     return await fetchAppointments();
   }, []);
@@ -44,9 +93,11 @@ export const useSupabaseData = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        await fetchAppointments();
-        
-        await fetchBlockedDates();
+        await Promise.all([
+          fetchAppointments(),
+          fetchClients(),
+          fetchBlockedDates()
+        ]);
       } catch (error) {
         console.error('Error loading data:', error);
         toast({
@@ -371,7 +422,7 @@ export const useSupabaseData = () => {
 
   const addBlockedDate = useCallback(async (blockedDate: Omit<BlockedDate, "id">) => {
     try {
-      const dateObj = typeof blockedDate.date === 'string' ? new Date(blockedDate.date) : new Date();
+      const dateObj = typeof blockedDate.date === 'string' ? new Date(blockedDate.date) : new Date(blockedDate.date);
       
       const newBlockedDate = await appointmentService.createBlockedDate({
         date: dateObj,
@@ -380,7 +431,7 @@ export const useSupabaseData = () => {
       });
       
       if (newBlockedDate) {
-        setBlockedDates(prev => [...prev, newBlockedDate]);
+        await fetchBlockedDates(); // Refresh blocked dates after adding a new one
         toast({
           title: 'Data bloqueada',
           description: 'Data bloqueada com sucesso!',
@@ -402,7 +453,7 @@ export const useSupabaseData = () => {
     try {
       const success = await appointmentService.deleteBlockedDate(id);
       if (success) {
-        setBlockedDates(prev => prev.filter(bd => bd.id !== id));
+        await fetchBlockedDates(); // Refresh blocked dates after deletion
         toast({
           title: 'Data desbloqueada',
           description: 'Data desbloqueada com sucesso!',

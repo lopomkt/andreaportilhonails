@@ -20,22 +20,30 @@ export default function ClientsPage() {
   const {
     clients,
     appointments,
-    generateWhatsAppLink
+    generateWhatsAppLink,
+    refetchClients
   } = useData();
+  
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredClients, setFilteredClients] = useState<Client[]>(clients);
   const [view, setView] = useState<"all" | "inactive">("all");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
+  // Fetch clients when the component mounts
+  useEffect(() => {
+    refetchClients();
+  }, [refetchClients]);
 
   useEffect(() => {
-    let filtered = clients;
+    let filtered = clients || [];
     if (searchTerm) {
-      filtered = clients.filter(client => client.name.toLowerCase().includes(searchTerm.toLowerCase()) || client.phone.includes(searchTerm));
+      filtered = (clients || []).filter(client => 
+        client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        client.phone?.includes(searchTerm)
+      );
     }
 
     if (view === "inactive") {
@@ -45,11 +53,13 @@ export default function ClientsPage() {
         return !client.lastAppointment || new Date(client.lastAppointment) < cutoffDate;
       });
     }
+    
     setFilteredClients(filtered);
   }, [clients, searchTerm, view]);
 
   const handleNewClientSuccess = () => {
     setShowNewClientModal(false);
+    refetchClients(); // Refresh clients list after new client creation
     toast({
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
@@ -57,7 +67,8 @@ export default function ClientsPage() {
   };
 
   const getClientAppointments = (clientId: string) => {
-    return appointments.filter(appointment => appointment.clientId === clientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return (appointments || []).filter(appointment => appointment.clientId === clientId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   const generateInactiveMessage = async (client: Client) => {

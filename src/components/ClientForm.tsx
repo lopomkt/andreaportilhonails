@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types";
 import { Loader2 } from "lucide-react";
+import { useData } from "@/context/DataContext";
 
 interface ClientFormProps {
   onSuccess?: (client: Client) => void;
@@ -29,6 +30,7 @@ const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) 
   const [submitting, setSubmitting] = useState(false);
 
   const { toast } = useToast();
+  const { refetchClients } = useData?.() || {}; // Use optional chaining for safety
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -63,7 +65,14 @@ const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) 
 
       toast({
         title: "Cliente cadastrado",
-        description: `Cliente ${name} foi cadastrado com sucesso!`
+        description: `Cliente ${name} foi cadastrado com sucesso!`,
+        action: (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.location.href = `/clientes?id=${newClient.id}`}>
+              Ver cliente
+            </Button>
+          </div>
+        )
       });
 
       // Reset the form
@@ -83,8 +92,15 @@ const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) 
           birthdate: newClient.data_nascimento,
           notes: newClient.observacoes || "",
           lastAppointment: null,
-          totalSpent: 0
+          totalSpent: 0,
+          createdAt: newClient.data_criacao
         };
+        
+        // Refresh the clients list in the context if the function exists
+        if (refetchClients) {
+          refetchClients();
+        }
+        
         onSuccess(client);
       }
     } catch (error) {
@@ -151,6 +167,7 @@ const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) 
               selected={birthdate}
               onSelect={setBirthdate}
               initialFocus
+              className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>
         </Popover>

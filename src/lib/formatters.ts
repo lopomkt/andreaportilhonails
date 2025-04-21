@@ -41,3 +41,19 @@ export const formatDuration = (minutes: number): string => {
   
   return `${hours} ${hours === 1 ? 'hora' : 'horas'} e ${mins} ${mins === 1 ? 'minuto' : 'minutos'}`;
 };
+
+/**
+ * Formats minutes into human-readable time format (hours and minutes)
+ */
+export function formatMinutesToHumanTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (hours === 0) {
+    return `${remainingMinutes} minuto${remainingMinutes !== 1 ? 's' : ''}`;
+  } else if (remainingMinutes === 0) {
+    return `${hours} hora${hours !== 1 ? 's' : ''}`;
+  } else {
+    return `${hours} hora${hours !== 1 ? 's' : ''} e ${remainingMinutes} minuto${remainingMinutes !== 1 ? 's' : ''}`;
+  }
+}
