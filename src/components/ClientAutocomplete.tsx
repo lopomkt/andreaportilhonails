@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -129,7 +128,6 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  // Fix this function to properly match the client form's onSuccess prop type
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
@@ -240,7 +238,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={(client) => handleNewClientSuccess(client)} 
+            onSuccess={handleNewClientSuccess} 
             onCancel={handleCloseDialog}
           />
         </DialogContent>

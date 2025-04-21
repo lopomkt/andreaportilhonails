@@ -428,7 +428,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to add appointment" };
         }
         
-        // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
@@ -453,7 +452,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to update appointment" };
         }
         
-        // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
@@ -478,7 +476,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           return { success: false, error: "Failed to add expense" };
         }
         
-        // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
