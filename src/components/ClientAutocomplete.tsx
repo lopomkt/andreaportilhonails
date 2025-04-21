@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Client } from '@/types';
 import { formatPhone } from '@/lib/formatters';
 import { useToast } from '@/hooks/use-toast';
-import { DebounceInput } from 'react-debounce-input';
 
 interface ClientAutocompleteProps {
   onClientSelect: (client: Client | null) => void;
