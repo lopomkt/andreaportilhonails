@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, LineChart, PieChart, Pie, Cell } from "recharts";
@@ -10,13 +9,11 @@ import { Appointment, Service } from "@/types";
 
 // Colors for the charts
 const COLORS = ["#B76E79", "#E5989B", "#FFB4A2", "#FFCDB2", "#E5E5E5"];
-
 interface ServiceRevenue {
   name: string;
   value: number;
   count: number;
 }
-
 export function FinancialDashboard() {
   const {
     appointments,
@@ -24,31 +21,20 @@ export function FinancialDashboard() {
     calculateDailyRevenue,
     getRevenueData
   } = useData();
-  
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
   const [projectedRevenue, setProjectedRevenue] = useState(0);
   const [averageClientValue, setAverageClientValue] = useState(0);
   const [topServices, setTopServices] = useState<ServiceRevenue[]>([]);
-  
   useEffect(() => {
     // Calculate current month's revenue
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const confirmedAppointments = (appointments || []).filter(appt => 
-      appt.status === "confirmed" && 
-      new Date(appt.date) >= firstDayOfMonth && 
-      new Date(appt.date) <= now
-    );
-    
+    const confirmedAppointments = (appointments || []).filter(appt => appt.status === "confirmed" && new Date(appt.date) >= firstDayOfMonth && new Date(appt.date) <= now);
     const revenue = confirmedAppointments.reduce((sum, appt) => sum + appt.price, 0);
     setCurrentMonthRevenue(revenue);
 
     // Calculate projected revenue (confirmed future appointments)
-    const futureAppointments = (appointments || []).filter(appt => 
-      appt.status === "confirmed" && 
-      new Date(appt.date) > now
-    );
-    
+    const futureAppointments = (appointments || []).filter(appt => appt.status === "confirmed" && new Date(appt.date) > now);
     const projected = futureAppointments.reduce((sum, appt) => sum + appt.price, 0);
     setProjectedRevenue(projected);
 
@@ -90,131 +76,5 @@ export function FinancialDashboard() {
 
   // Get revenue data for charts
   const revenueData = getRevenueData();
-  
-  return (
-    <div className="space-y-6">
-      {/* Revenue Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(currentMonthRevenue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Projeção: +{formatCurrency(projectedRevenue)}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Valor Médio por Cliente</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageClientValue)}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Agendamentos no Mês</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{
-              appointments.filter(appt => {
-                const now = new Date();
-                const apptDate = new Date(appt.date);
-                return apptDate.getMonth() === now.getMonth() && 
-                      apptDate.getFullYear() === now.getFullYear();
-              }).length
-            }</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Duração Média</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{
-              formatMinutesToHumanTime(
-                services.reduce((sum, service) => sum + service.durationMinutes, 0) / 
-                (services.length || 1)
-              )
-            }</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="services">Serviços</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Receita por Mês</CardTitle>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={revenueData} 
-                  margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                  <Legend />
-                  <Bar 
-                    name="Receita" 
-                    dataKey="revenue" 
-                    fill="#B76E79" 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="services" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Serviços por Receita</CardTitle>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={topServices}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {topServices.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+  return;
 }
