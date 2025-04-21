@@ -9,15 +9,32 @@ import {
   Appointment,
   Client,
   DashboardStats,
-  RevenueData,
   Service,
+  BlockedDate,
+  AppointmentStatus,
+  Expense,
+  WhatsAppMessageData
 } from "@/types";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+
+interface RevenueData {
+  month: string;
+  revenue: number;
+}
+
+interface MonthlyRevenueData {
+  month: string;
+  revenue: number;
+  expenses?: number;
+  profit?: number;
+}
 
 interface DataContextType {
   appointments: Appointment[];
   clients: Client[];
   services: Service[];
+  expenses: Expense[];
+  blockedDates: BlockedDate[];
   dashboardStats: DashboardStats;
   revenueData: RevenueData[];
   loading: boolean;
@@ -26,34 +43,40 @@ interface DataContextType {
   getTopClients: (limit: number) => Client[];
   calculateNetProfit: () => number;
   calculateDailyRevenue: (date: Date) => number;
+  calculatedMonthlyRevenue: (month?: number, year?: number) => number;
   calculateServiceRevenue: (
     appointments: Appointment[],
     services: Service[]
   ) => { name: string; value: number; count: number }[];
   getRevenueData: () => RevenueData[];
-  generateWhatsAppLink: ({
-    client,
-    message,
-  }: {
-    client: Client;
-    message: string;
-  }) => Promise<string>;
+  generateWhatsAppLink: (data: WhatsAppMessageData) => Promise<string>;
   refetchAppointments: () => Promise<void>;
   refetchClients: () => Promise<void>;
   createClient: (clientData: any) => Promise<any>;
   updateClient: (clientId: string, clientData: any) => Promise<any>;
   deleteClient: (clientId: string) => Promise<any>;
+  addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
+  updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
+  addExpense: (expense: Omit<Expense, "id">) => Promise<any>;
+  deleteExpense: (id: string) => Promise<any>;
+  addService: (service: Omit<Service, "id">) => Promise<any>;
+  updateService: (id: string, data: Partial<Service>) => Promise<any>;
+  deleteService: (id: string) => Promise<any>;
 }
 
 export const DataContext = createContext<DataContextType>({
   appointments: [],
   clients: [],
   services: [],
+  expenses: [],
+  blockedDates: [],
   dashboardStats: {
-    totalRevenue: 0,
     monthRevenue: 0,
     newClients: 0,
     totalAppointments: 0,
+    inactiveClients: 0,
+    todayAppointments: 0,
+    weekAppointments: 0,
   },
   revenueData: [],
   loading: false,
@@ -62,6 +85,7 @@ export const DataContext = createContext<DataContextType>({
   getTopClients: () => [],
   calculateNetProfit: () => 0,
   calculateDailyRevenue: () => 0,
+  calculatedMonthlyRevenue: () => 0,
   calculateServiceRevenue: () => [],
   getRevenueData: () => [],
   generateWhatsAppLink: async () => "",
@@ -70,6 +94,13 @@ export const DataContext = createContext<DataContextType>({
   createClient: async () => ({}),
   updateClient: async () => ({}),
   deleteClient: async () => ({}),
+  addAppointment: async () => ({}),
+  updateAppointment: async () => ({}),
+  addExpense: async () => ({}),
+  deleteExpense: async () => ({}),
+  addService: async () => ({}),
+  updateService: async () => ({}),
+  deleteService: async () => ({}),
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
@@ -79,10 +110,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
-    totalRevenue: 0,
     monthRevenue: 0,
     newClients: 0,
     totalAppointments: 0,
+    inactiveClients: 0,
+    todayAppointments: 0,
+    weekAppointments: 0,
   });
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
@@ -93,6 +126,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     createClient: createSupabaseClient,
     updateClient: updateSupabaseClient,
     deleteClient: deleteSupabaseClient,
+    addAppointment,
+    updateAppointment,
+    blockedDates = [],
+    expenses = [],
+    addExpense,
+    deleteExpense,
+    addService,
+    updateService,
+    deleteService,
+    calculatedMonthlyRevenue,
   } = useSupabaseData();
 
   useEffect(() => {
@@ -110,7 +153,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     loadData();
   }, [fetchAppointments, fetchClients, fetchServices]);
 
-  // Update local state when Supabase data changes
   useEffect(() => {
     const updateData = async () => {
       setLoading(true);
@@ -125,7 +167,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         setClients(clientsData);
         setServices(servicesData);
 
-        // Calculate dashboard stats here
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const monthRevenue = appointmentsData.reduce((sum, appointment) => {
@@ -151,13 +192,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }).length;
 
         setDashboardStats({
-          totalRevenue: appointmentsData.reduce(
-            (sum, appointment) => sum + appointment.price,
-            0
-          ),
           monthRevenue,
           newClients,
           totalAppointments,
+          inactiveClients: 0,
+          todayAppointments: 0,
+          weekAppointments: 0,
         });
       } catch (err: any) {
         setError(err.message || "Erro ao atualizar os dados.");
@@ -207,6 +247,29 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       );
     },
     [getAppointmentsForDate]
+  );
+
+  const calculatedMonthlyRevenue = useCallback(
+    (month?: number, year?: number) => {
+      const now = year ? new Date(year, month || 0, 1) : new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      const monthRevenue = appointments.reduce((sum, appointment) => {
+        const appointmentDate = new Date(appointment.date);
+        if (
+          appointment.status === "confirmed" &&
+          appointmentDate >= monthStart &&
+          appointmentDate <= monthEnd
+        ) {
+          return sum + appointment.price;
+        }
+        return sum;
+      }, 0);
+
+      return monthRevenue;
+    },
+    [appointments]
   );
 
   const calculateServiceRevenue = useCallback(
@@ -324,13 +387,96 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) throw error;
       
-      // Refresh clients after deletion
       await refetchClients();
-      await refetchAppointments(); // Refresh appointments in case any were tied to this client
+      await refetchAppointments();
       
       return { success: true };
     } catch (error) {
       console.error('Error deleting client:', error);
+      return { success: false, error };
+    }
+  };
+
+  const addAppointment = async (appointment: Omit<Appointment, "id">) => {
+    try {
+      const { data, error } = await addAppointment(appointment);
+      if (error) throw error;
+      await refetchAppointments();
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error adding appointment:", error);
+      return { success: false, error };
+    }
+  };
+
+  const updateAppointment = async (id: string, data: Partial<Appointment>) => {
+    try {
+      const { data: updatedAppointment, error } = await updateAppointment(id, data);
+      if (error) throw error;
+      await refetchAppointments();
+      return { success: true, data: updatedAppointment };
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      return { success: false, error };
+    }
+  };
+
+  const addExpense = async (expense: Omit<Expense, "id">) => {
+    try {
+      const { data, error } = await addExpense(expense);
+      if (error) throw error;
+      await refetchAppointments();
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error adding expense:", error);
+      return { success: false, error };
+    }
+  };
+
+  const deleteExpense = async (id: string) => {
+    try {
+      const { error } = await deleteExpense(id);
+      if (error) throw error;
+      await refetchAppointments();
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      return { success: false, error };
+    }
+  };
+
+  const addService = async (service: Omit<Service, "id">) => {
+    try {
+      const { data, error } = await addService(service);
+      if (error) throw error;
+      await refetchServices();
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error adding service:", error);
+      return { success: false, error };
+    }
+  };
+
+  const updateService = async (id: string, data: Partial<Service>) => {
+    try {
+      const { data: updatedService, error } = await updateService(id, data);
+      if (error) throw error;
+      await refetchServices();
+      return { success: true, data: updatedService };
+    } catch (error) {
+      console.error("Error updating service:", error);
+      return { success: false, error };
+    }
+  };
+
+  const deleteService = async (id: string) => {
+    try {
+      const { error } = await deleteService(id);
+      if (error) throw error;
+      await refetchServices();
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting service:", error);
       return { success: false, error };
     }
   };
@@ -341,6 +487,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         appointments,
         clients,
         services,
+        expenses,
+        blockedDates,
         dashboardStats,
         revenueData,
         loading,
@@ -349,6 +497,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         getTopClients,
         calculateNetProfit,
         calculateDailyRevenue,
+        calculatedMonthlyRevenue,
         calculateServiceRevenue,
         getRevenueData,
         generateWhatsAppLink,
@@ -357,6 +506,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         createClient,
         updateClient,
         deleteClient,
+        addAppointment,
+        updateAppointment,
+        addExpense,
+        deleteExpense,
+        addService,
+        updateService,
+        deleteService,
       }}
     >
       {children}

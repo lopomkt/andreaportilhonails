@@ -1,4 +1,3 @@
-
 // Types related to appointments
 export type AppointmentStatus = 'confirmed' | 'pending' | 'canceled';
 
@@ -87,33 +86,40 @@ export interface Expense {
   name: string;
   amount: number;
   date: string; // ISO format string
-  isRecurring: boolean;
   category?: string;
+  isRecurring: boolean;
   notes?: string;
 }
 
 // Types related to dashboard statistics
 export interface DashboardStats {
+  monthRevenue: number;
+  newClients: number;
+  totalAppointments: number;
+  inactiveClients: number;
   todayAppointments: number;
   weekAppointments: number;
-  monthRevenue: number;
-  inactiveClients: number;
 }
 
 // Types related to revenue data
 export interface MonthlyRevenueData {
-  name: string;
-  month: number;
+  month: string;
   revenue: number;
-  expenses: number;
-  profit: number;
+  expenses?: number;
+  profit?: number;
+}
+
+// Types related to revenue data
+export interface RevenueData {
+  month: string;
+  revenue: number;
 }
 
 // Types related to WhatsApp messaging
 export interface WhatsAppMessageData {
   client?: Client;
-  appointment?: Appointment;
   message?: string;
+  appointment?: Appointment;
 }
 
 // Type for refetch functions

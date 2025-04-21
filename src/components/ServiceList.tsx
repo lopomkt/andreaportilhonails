@@ -9,17 +9,17 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { Clock, Pencil, Trash, Plus } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
 import { toast } from "@/hooks/use-toast";
+
 export function ServiceList() {
-  const {
-    services,
-    deleteService
-  } = useData();
+  const { services, deleteService } = useData();
   const [selectedService, setSelectedService] = useState<Service | undefined>(undefined);
   const [showAddForm, setShowAddForm] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+
   const handleEdit = (service: Service) => {
     setSelectedService(service);
   };
+
   const handleDelete = async (serviceId: string) => {
     try {
       await deleteService(serviceId);
@@ -37,7 +37,9 @@ export function ServiceList() {
       });
     }
   };
+
   const sortedServices = [...services].sort((a, b) => a.name.localeCompare(b.name));
+
   return <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-medium px-0 mx-[15px]">Lista de Serviços</h2>

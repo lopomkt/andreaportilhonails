@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { ClientAutocomplete } from './ClientAutocomplete';
 import ClientForm from './ClientForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { verifySupabaseConnection } from '@/utils/supabaseConnectionCheck';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '@/types';
 
@@ -88,8 +86,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={(client: Client) => {
-              setSelectedClient(client);
+            onSuccess={() => {
               setShowNewClientDialog(false);
               toast({
                 title: "Cliente cadastrado com sucesso!",
