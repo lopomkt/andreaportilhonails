@@ -366,7 +366,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        return { success: true, data: result as Client };
+        return { success: true, data: result as unknown as Client };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -390,7 +390,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        return { success: true, data: result as Client };
+        return { success: true, data: result as unknown as Client };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
