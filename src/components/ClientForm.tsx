@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +16,12 @@ import { Loader2 } from "lucide-react";
 
 interface ClientFormProps {
   onSuccess?: (client: Client) => void;
+  onCancel?: () => void;
+  initialName?: string;
 }
 
-const ClientForm = ({ onSuccess }: ClientFormProps) => {
-  const [name, setName] = useState("");
+const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) => {
+  const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [birthdate, setBirthdate] = useState<Date | null>(null);
@@ -160,16 +163,23 @@ const ClientForm = ({ onSuccess }: ClientFormProps) => {
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Salvando...
-          </>
-        ) : (
-          "Cadastrar Cliente"
+      <div className="flex justify-end gap-2">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
         )}
-      </Button>
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            "Cadastrar Cliente"
+          )}
+        </Button>
+      </div>
     </form>
   );
 };

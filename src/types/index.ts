@@ -26,6 +26,7 @@ export interface Client {
   name: string;
   phone: string;
   email?: string;
+  birthdate?: string; // ISO format string for birthdate
   notes?: string;
   lastAppointment?: string; // ISO format string
   totalSpent?: number;

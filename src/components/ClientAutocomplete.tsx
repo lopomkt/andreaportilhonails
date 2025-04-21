@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ClientForm } from "@/components/ClientForm";
+import ClientForm from "@/components/ClientForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Loader2, UserPlus } from "lucide-react";

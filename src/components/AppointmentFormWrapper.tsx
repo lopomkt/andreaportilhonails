@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { ClientAutocomplete } from './ClientAutocomplete';
-import { ClientForm } from './ClientForm';
+import ClientForm from './ClientForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { verifySupabaseConnection } from '@/utils/supabaseConnectionCheck';
 import { useToast } from '@/hooks/use-toast';

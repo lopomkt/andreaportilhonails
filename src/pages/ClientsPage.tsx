@@ -7,13 +7,13 @@ import { useEffect, useState } from "react";
 import { Client, Appointment } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, User, Phone, Calendar, AlertTriangle, MessageCircle, BookOpen, Clock } from "lucide-react";
-import { differenceInDays, format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ClientForm } from "@/components/ClientForm";
+import ClientForm from "@/components/ClientForm";
+
 export default function ClientsPage() {
   const {
     clients,
@@ -29,14 +29,13 @@ export default function ClientsPage() {
   const {
     toast
   } = useToast();
+
   useEffect(() => {
-    // Filter clients by search term
     let filtered = clients;
     if (searchTerm) {
       filtered = clients.filter(client => client.name.toLowerCase().includes(searchTerm.toLowerCase()) || client.phone.includes(searchTerm));
     }
 
-    // Filter by inactive status if needed
     if (view === "inactive") {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 40);
@@ -47,7 +46,6 @@ export default function ClientsPage() {
     setFilteredClients(filtered);
   }, [clients, searchTerm, view]);
 
-  // Handle new client creation success
   const handleNewClientSuccess = () => {
     setShowNewClientModal(false);
     toast({
@@ -56,12 +54,10 @@ export default function ClientsPage() {
     });
   };
 
-  // Get client appointments
   const getClientAppointments = (clientId: string) => {
     return appointments.filter(appointment => appointment.clientId === clientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  // Generate WhatsApp message for inactive clients
   const generateInactiveMessage = async (client: Client) => {
     if (!client) return "";
     return generateWhatsAppLink({
@@ -69,6 +65,7 @@ export default function ClientsPage() {
       message: `Olá ${client.name}, sentimos sua falta! Já faz um tempo desde seu último atendimento conosco. Que tal agendar um horário? Responda essa mensagem e vamos marcar. 😊`
     });
   };
+
   return <div className="space-y-4 animate-fade-in">
       <div className="flex flex-col md:flex-row gap-4 justify-between mb-4">
         <div className="relative flex-1">
@@ -99,7 +96,6 @@ export default function ClientsPage() {
           </div>}
       </div>
 
-      {/* Client Details Dialog */}
       {selectedClient && <Dialog open={!!selectedClient} onOpenChange={open => !open && setSelectedClient(null)}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
@@ -194,7 +190,6 @@ export default function ClientsPage() {
           </DialogContent>
         </Dialog>}
 
-      {/* New Client Dialog */}
       <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -205,11 +200,13 @@ export default function ClientsPage() {
       </Dialog>
     </div>;
 }
+
 interface ClientCardProps {
   client: Client;
   onViewDetails: () => void;
   getWhatsAppLink: (client: Client) => Promise<string>;
 }
+
 function ClientCard({
   client,
   onViewDetails,
@@ -217,10 +214,8 @@ function ClientCard({
 }: ClientCardProps) {
   const navigate = useNavigate();
 
-  // Calculate days since last appointment
   const daysSinceLastAppointment = client.lastAppointment ? differenceInDays(new Date(), new Date(client.lastAppointment)) : null;
 
-  // Check if the client is inactive (no appointments for 40+ days)
   const isInactive = !client.lastAppointment || daysSinceLastAppointment && daysSinceLastAppointment >= 40;
   const handleWhatsAppClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -273,10 +268,12 @@ function ClientCard({
       </CardContent>
     </Card>;
 }
+
 interface ClientAppointmentsHistoryProps {
   clientId: string;
   getClientAppointments: (clientId: string) => Appointment[];
 }
+
 function ClientAppointmentsHistory({
   clientId,
   getClientAppointments
