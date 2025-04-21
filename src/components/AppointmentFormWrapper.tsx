@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ClientAutocomplete } from './ClientAutocomplete';
 import ClientForm from './ClientForm';
@@ -74,8 +75,8 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
           </DialogHeader>
           <ClientForm
             onSuccess={(newClient) => {
-              setShowNewClientDialog(false);
               if (newClient) {
+                setShowNewClientDialog(false);
                 toast({
                   title: "Cliente cadastrado com sucesso!",
                   description: "Cliente adicionado ao sistema."
