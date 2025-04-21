@@ -22,7 +22,6 @@ import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
-
 interface DayViewProps {
   date: Date;
 }
@@ -50,7 +49,6 @@ export const DayView: React.FC<DayViewProps> = ({
   const [isAdjustingSchedule, setIsAdjustingSchedule] = useState(false);
   const [adjustMinutes, setAdjustMinutes] = useState(15);
   const [confirmAdjustScheduleOpen, setConfirmAdjustScheduleOpen] = useState(false);
-  
   const {
     toast
   } = useToast();
@@ -64,7 +62,6 @@ export const DayView: React.FC<DayViewProps> = ({
     deleteBlockedDate,
     rescheduleAppointment
   } = useSupabaseData();
-  
   const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), date));
   const dayBlocks = blockedDates.filter(block => isSameDay(new Date(block.date), date));
   const appointmentsByHour = dayAppointments.reduce((groups, appointment) => {
@@ -76,7 +73,6 @@ export const DayView: React.FC<DayViewProps> = ({
     return groups;
   }, {} as Record<string, typeof dayAppointments>);
   const hours = Object.keys(appointmentsByHour).sort();
-  
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -89,7 +85,6 @@ export const DayView: React.FC<DayViewProps> = ({
         return 'secondary';
     }
   };
-  
   const getServiceIcon = (serviceName: string) => {
     const name = serviceName?.toLowerCase() || '';
     if (name.includes('manicure') || name.includes('unha')) {
@@ -100,7 +95,6 @@ export const DayView: React.FC<DayViewProps> = ({
       return <FileSpreadsheet className="h-4 w-4" />;
     }
   };
-  
   const handleOpenManageModal = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setClientId(appointment.clientId);
@@ -113,11 +107,9 @@ export const DayView: React.FC<DayViewProps> = ({
     setManageModalOpen(true);
     setIsFormDirty(false);
   };
-  
   const handleFormChange = () => {
     setIsFormDirty(true);
   };
-  
   const handleCloseManageModal = () => {
     if (isFormDirty) {
       setConfirmSaveOpen(true);
@@ -126,7 +118,6 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
-  
   const handleSaveChanges = async () => {
     if (!selectedAppointment) return;
     setIsSaving(true);
@@ -169,7 +160,6 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
-  
   const handleSendMessage = async (type: 'confirmation' | 'reminder') => {
     if (!selectedAppointment || !selectedAppointment.client) return;
     setIsSendingMessage(true);
@@ -222,24 +212,19 @@ export const DayView: React.FC<DayViewProps> = ({
       setIsSendingMessage(false);
     }
   };
-  
   const handleOpenBlockedDateDialog = () => {
     setOpenBlockedDateDialog(true);
   };
-  
   const handleEditBlockedDate = (blockedDate: BlockedDate) => {
     setSelectedBlockedDate(blockedDate);
     setOpenBlockedDateDialog(true);
   };
-  
   const handleDeleteBlockedDate = (id: string) => {
     setDeleteBlockedDateId(id);
     setConfirmDeleteBlockedOpen(true);
   };
-  
   const confirmDeleteBlockedDate = async () => {
     if (!deleteBlockedDateId) return;
-    
     try {
       const success = await deleteBlockedDate(deleteBlockedDateId);
       if (success) {
@@ -267,31 +252,23 @@ export const DayView: React.FC<DayViewProps> = ({
       setDeleteBlockedDateId(null);
     }
   };
-  
   const handleAdjustSchedule = () => {
     setIsAdjustingSchedule(true);
   };
-  
   const confirmAdjustSchedule = async () => {
     try {
       const dayAppointments = appointments.filter(appt => {
         const apptDate = new Date(appt.date);
-        return isSameDay(apptDate, date) && 
-               apptDate > new Date() && 
-               appt.status !== 'canceled';
+        return isSameDay(apptDate, date) && apptDate > new Date() && appt.status !== 'canceled';
       });
-      
       dayAppointments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
       const updatePromises = dayAppointments.map(appt => {
         const currentDate = new Date(appt.date);
         const newDate = new Date(currentDate);
         newDate.setMinutes(currentDate.getMinutes() + adjustMinutes);
         return rescheduleAppointment(appt.id, newDate);
       });
-      
       const results = await Promise.all(updatePromises);
-      
       if (results.every(result => result)) {
         toast({
           title: "Agenda ajustada",
@@ -317,7 +294,6 @@ export const DayView: React.FC<DayViewProps> = ({
       setIsAdjustingSchedule(false);
     }
   };
-  
   return <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex justify-between items-center py-0 my-[24px] px-[16px]">
         <h2 className="font-bold text-lg md:text-2xl">
@@ -331,25 +307,12 @@ export const DayView: React.FC<DayViewProps> = ({
             Filtrar
           </Button>
           
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleAdjustSchedule} 
-            className="flex items-center gap-1 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
-          >
+          <Button variant="outline" size="sm" onClick={handleAdjustSchedule} className="flex items-center gap-1 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100">
             <Clock className="h-4 w-4" /> 
             Ajustar Agenda
           </Button>
           
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setOpenBlockedDateDialog(true)} 
-            className="flex items-center gap-1"
-          >
-            <Lock className="h-4 w-4" /> 
-            Bloquear
-          </Button>
+          
         </div>
       </div>
       
@@ -593,26 +556,18 @@ export const DayView: React.FC<DayViewProps> = ({
               {selectedBlockedDate ? "Editar Bloqueio" : "Bloquear Horário"}
             </DialogTitle>
             <DialogDescription>
-              {selectedBlockedDate 
-                ? "Edite as informações do bloqueio" 
-                : "Preencha os dados para bloquear um horário"}
+              {selectedBlockedDate ? "Edite as informações do bloqueio" : "Preencha os dados para bloquear um horário"}
             </DialogDescription>
           </DialogHeader>
-          <BlockedDateForm 
-            blockedDate={selectedBlockedDate}
-            onSuccess={() => {
-              refetchBlockedDates();
-              setOpenBlockedDateDialog(false);
-              setSelectedBlockedDate(null);
-              toast({
-                title: "Sucesso",
-                description: selectedBlockedDate 
-                  ? "Bloqueio atualizado com sucesso" 
-                  : "Horário bloqueado com sucesso"
-              });
-            }} 
-            initialDate={date} 
-          />
+          <BlockedDateForm blockedDate={selectedBlockedDate} onSuccess={() => {
+          refetchBlockedDates();
+          setOpenBlockedDateDialog(false);
+          setSelectedBlockedDate(null);
+          toast({
+            title: "Sucesso",
+            description: selectedBlockedDate ? "Bloqueio atualizado com sucesso" : "Horário bloqueado com sucesso"
+          });
+        }} initialDate={date} />
         </DialogContent>
       </Dialog>
       
@@ -650,9 +605,9 @@ export const DayView: React.FC<DayViewProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
-              setConfirmDeleteBlockedOpen(false);
-              setDeleteBlockedDateId(null);
-            }}>
+            setConfirmDeleteBlockedOpen(false);
+            setDeleteBlockedDateId(null);
+          }}>
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteBlockedDate} className="bg-red-500 text-white hover:bg-red-600">
@@ -677,7 +632,7 @@ export const DayView: React.FC<DayViewProps> = ({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="adjustMinutes">Empurrar agenda em</Label>
-              <Select value={adjustMinutes.toString()} onValueChange={(value) => setAdjustMinutes(parseInt(value))}>
+              <Select value={adjustMinutes.toString()} onValueChange={value => setAdjustMinutes(parseInt(value))}>
                 <SelectTrigger id="adjustMinutes">
                   <SelectValue placeholder="Selecione os minutos" />
                 </SelectTrigger>
@@ -708,10 +663,7 @@ export const DayView: React.FC<DayViewProps> = ({
             <Button variant="outline" onClick={() => setIsAdjustingSchedule(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={() => setConfirmAdjustScheduleOpen(true)} 
-              className="bg-rose-500 hover:bg-rose-600 text-white"
-            >
+            <Button onClick={() => setConfirmAdjustScheduleOpen(true)} className="bg-rose-500 hover:bg-rose-600 text-white">
               Ajustar Horários
             </Button>
           </DialogFooter>
@@ -732,10 +684,7 @@ export const DayView: React.FC<DayViewProps> = ({
             <AlertDialogCancel onClick={() => setConfirmAdjustScheduleOpen(false)}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmAdjustSchedule} 
-              className="bg-rose-500 text-white hover:bg-rose-600"
-            >
+            <AlertDialogAction onClick={confirmAdjustSchedule} className="bg-rose-500 text-white hover:bg-rose-600">
               Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
