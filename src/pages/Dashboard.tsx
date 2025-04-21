@@ -1,4 +1,3 @@
-
 import { useData } from "@/context/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
@@ -19,7 +18,6 @@ import { AppointmentsByWeek } from "@/components/AppointmentsByWeek";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAvailableTime } from "@/lib/formatters";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
 export default function Dashboard() {
   const {
     dashboardStats,
@@ -158,7 +156,6 @@ export default function Dashboard() {
     time: Date;
     duration: number;
   }[]>([]);
-
   const [showReorderingModal, setShowReorderingModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(true); // This would normally be controlled by your auth system
 
@@ -258,13 +255,11 @@ export default function Dashboard() {
     };
     calculateAvailableSlots();
   }, [appointments, getAppointmentsForDate]);
-
   const handleReorderCards = () => {
     setShowReorderingModal(true);
     // In a real implementation, you would open a modal with drag-drop functionality
     // and update the configuration in the database
   };
-  
   return <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0">
       {/* Line 1: Welcome Card */}
       <Card className="bg-gradient-to-r from-rose-500 to-rose-400 text-white border-0 shadow-premium">
@@ -413,28 +408,20 @@ export default function Dashboard() {
       
       <MessageTemplateEditor />
 
-      {isAdmin && (
-        <div className="fixed bottom-4 right-4">
+      {isAdmin && <div className="fixed bottom-4 right-4">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  onClick={handleReorderCards} 
-                  className="rounded-full w-12 h-12 p-0 bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
-                >
-                  <MoveVertical className="h-5 w-5" />
-                </Button>
+                
               </TooltipTrigger>
               <TooltipContent>
                 <p>Reordenar Cards</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
-      )}
+        </div>}
     </div>;
 }
-
 interface StatsCardProps {
   title: string;
   value: string;
@@ -444,7 +431,6 @@ interface StatsCardProps {
   iconClassName?: string;
   onClick?: () => void;
 }
-
 function StatsCard({
   title,
   value,
@@ -465,11 +451,9 @@ function StatsCard({
       </CardContent>
     </Card>;
 }
-
 interface InactiveClientCardProps {
   client: Client;
 }
-
 function InactiveClientCard({
   client
 }: InactiveClientCardProps) {
