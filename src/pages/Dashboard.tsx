@@ -1,8 +1,8 @@
 import { useData } from "@/context/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
-import { CalendarClock, CalendarDays, UserMinus, DollarSign, Clock, BadgeDollarSign, Wallet, Users, CalendarCheck } from "lucide-react";
-import { format, isToday, differenceInDays, addDays, startOfMonth, endOfMonth, isAfter, isBefore } from "date-fns";
+import { CalendarClock, CalendarDays, UserMinus, DollarSign, Clock, BadgeDollarSign, Wallet, Users, CalendarCheck, MessageSquare, CakeSlice } from "lucide-react";
+import { format, isToday, differenceInDays, addDays, startOfMonth, endOfMonth, isAfter, isBefore, isSameMonth, getMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -30,9 +30,31 @@ export default function Dashboard() {
     appointments
   } = useData();
   const [showAddAppointment, setShowAddAppointment] = useState(false);
+  const [birthdayClients, setBirthdayClients] = useState<Client[]>([]);
   const navigate = useNavigate();
   const todayAppointments = getAppointmentsForDate(new Date());
   const topClients = getTopClients(3);
+  const todaySortedAppointments = [...todayAppointments].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const firstAppointment = todaySortedAppointments.length > 0 ? todaySortedAppointments[0] : null;
+
+  useEffect(() => {
+    const currentMonth = getMonth(new Date());
+    const clientsWithBirthdaysThisMonth = clients.filter(client => {
+      if (!client.birthdate) return false;
+      const birthdate = new Date(client.birthdate);
+      return getMonth(birthdate) === currentMonth;
+    });
+    
+    clientsWithBirthdaysThisMonth.sort((a, b) => {
+      const dateA = new Date(a.birthdate || "");
+      const dateB = new Date(b.birthdate || "");
+      return dateA.getDate() - dateB.getDate();
+    });
+    
+    setBirthdayClients(clientsWithBirthdaysThisMonth);
+  }, [clients]);
 
   const inactiveClients = clients.filter(client => {
     if (!client.lastAppointment) return true;
@@ -143,6 +165,23 @@ export default function Dashboard() {
 
     fetchMotivationalMessage();
   }, []);
+  
+  const sendBirthdayWish = async (client: Client) => {
+    try {
+      const message = `Olá ${client.name}! 🎂✨ A *Nail Studio Andrea* deseja um Feliz Aniversário para você! Que seu dia seja maravilhoso e repleto de alegrias. Como presente especial, temos um desconto exclusivo esperando por você no seu próximo atendimento. 💅💖`;
+      
+      const whatsAppLink = await generateWhatsAppLink({
+        client,
+        message
+      });
+      
+      if (whatsAppLink) {
+        window.open(whatsAppLink, '_blank');
+      }
+    } catch (error) {
+      console.error("Error sending birthday wish:", error);
+    }
+  };
 
   const openQuickAppointment = () => {
     const quickAppointmentButton = document.getElementById('quick-appointment-button');
@@ -162,6 +201,123 @@ export default function Dashboard() {
   const averageClientValue = calculateAverageClientValue();
   const projectedRevenue = calculateProjectedRevenue();
 
+  const [suggestedSlots, setSuggestedSlots] = useState<{time: Date, duration: number}[]>([]);
+  
+  useEffect(() => {
+    const calculateAvailableSlots = () => {
+      const today = new Date();
+      const tomorrow = addDays(today, 1);
+      
+      const todayAppointments = getAppointmentsForDate(today).filter(appt => appt.status !== 'canceled');
+      const tomorrowAppointments = getAppointmentsForDate(tomorrow).filter(appt => appt.status !== 'canceled');
+      
+      const businessHoursStart = 8; // 8 AM
+      const businessHoursEnd = 19; // 7 PM
+      const avgServiceDuration = 90; // 1.5 hours in minutes
+      
+      const findGapsInDay = (dayDate: Date, dayAppointments: Appointment[]) => {
+        const sortedAppointments = [...dayAppointments].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        
+        const slots: {time: Date, duration: number}[] = [];
+        
+        let startTime: Date;
+        if (isToday(dayDate)) {
+          startTime = new Date();
+          startTime.setMinutes(Math.ceil(startTime.getMinutes() / 15) * 15, 0, 0);
+        } else {
+          startTime = new Date(dayDate);
+          startTime.setHours(businessHoursStart, 0, 0, 0);
+        }
+        
+        const endTime = new Date(dayDate);
+        endTime.setHours(businessHoursEnd, 0, 0, 0);
+        
+        if (startTime > endTime) return [];
+        
+        if (sortedAppointments.length === 0) {
+          const duration = (endTime.getTime() - startTime.getTime()) / (60 * 1000);
+          if (duration >= avgServiceDuration) {
+            slots.push({
+              time: startTime,
+              duration: duration
+            });
+          }
+          return slots;
+        }
+        
+        const firstAppt = sortedAppointments[0];
+        const firstApptTime = new Date(firstAppt.date);
+        
+        if (firstApptTime > startTime) {
+          const duration = (firstApptTime.getTime() - startTime.getTime()) / (60 * 1000);
+          if (duration >= avgServiceDuration) {
+            slots.push({
+              time: startTime,
+              duration: duration
+            });
+          }
+        }
+        
+        for (let i = 0; i < sortedAppointments.length - 1; i++) {
+          const currentEnd = new Date(sortedAppointments[i].date);
+          if (sortedAppointments[i].endTime) {
+            currentEnd.setTime(new Date(sortedAppointments[i].endTime).getTime());
+          } else {
+            currentEnd.setMinutes(currentEnd.getMinutes() + 60);
+          }
+          
+          const nextStart = new Date(sortedAppointments[i + 1].date);
+          
+          if (nextStart > currentEnd) {
+            const duration = (nextStart.getTime() - currentEnd.getTime()) / (60 * 1000);
+            if (duration >= avgServiceDuration) {
+              slots.push({
+                time: currentEnd,
+                duration: duration
+              });
+            }
+          }
+        }
+        
+        const lastAppt = sortedAppointments[sortedAppointments.length - 1];
+        const lastApptEnd = new Date(lastAppt.date);
+        if (lastAppt.endTime) {
+          lastApptEnd.setTime(new Date(lastAppt.endTime).getTime());
+        } else {
+          lastApptEnd.setMinutes(lastApptEnd.getMinutes() + 60);
+        }
+        
+        if (lastApptEnd < endTime) {
+          const duration = (endTime.getTime() - lastApptEnd.getTime()) / (60 * 1000);
+          if (duration >= avgServiceDuration) {
+            slots.push({
+              time: lastApptEnd,
+              duration: duration
+            });
+          }
+        }
+        
+        return slots;
+      };
+      
+      const todaySlots = findGapsInDay(today, todayAppointments);
+      const tomorrowSlots = findGapsInDay(tomorrow, tomorrowAppointments);
+      
+      const allSlots = [...todaySlots, ...tomorrowSlots].sort((a, b) => {
+        if (Math.abs(a.duration - avgServiceDuration) !== Math.abs(b.duration - avgServiceDuration)) {
+          return Math.abs(a.duration - avgServiceDuration) - Math.abs(b.duration - avgServiceDuration);
+        }
+        return a.time.getTime() - b.time.getTime();
+      });
+      
+      setSuggestedSlots(allSlots.slice(0, 3));
+    };
+    
+    calculateAvailableSlots();
+  }, [appointments, getAppointmentsForDate]);
+
   return <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0">
       <Card className="bg-gradient-to-r from-rose-500 to-rose-400 text-white border-0 shadow-premium">
         <CardContent className="p-4 md:p-6">
@@ -171,6 +327,17 @@ export default function Dashboard() {
               <p className="mt-1 opacity-90">
                 {todayAppointments.length > 0 ? `Você tem ${todayAppointments.length} agendamento${todayAppointments.length !== 1 ? 's' : ''} hoje` : "Você não tem agendamentos hoje"}
               </p>
+              
+              {firstAppointment && firstAppointment.client && (
+                <div className="mt-2">
+                  <p className="text-white/90 text-sm">
+                    Primeiro cliente: <span className="font-semibold">{firstAppointment.client.name}</span> às {format(new Date(firstAppointment.date), 'HH:mm')}
+                  </p>
+                  <p className="text-white/90 text-sm mt-1">
+                    Faturamento previsto hoje: <span className="font-semibold">{formatCurrency(todayRevenue)}</span>
+                  </p>
+                </div>
+              )}
             </div>
             <div className="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 w-full md:w-auto">
               <Button className="bg-white text-rose-600 hover:bg-rose-50 shadow-soft w-full md:w-auto" onClick={() => navigate("/calendario")}>
@@ -185,6 +352,73 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {suggestedSlots.length > 0 && (
+        <Card className="bg-white border-rose-100 shadow-soft">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-rose-700 flex items-center text-base font-bold">
+              <Clock className="mr-2 h-4 w-4 text-rose-600" />
+              Horários Sugeridos para Agendamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {suggestedSlots.map((slot, idx) => (
+                <div 
+                  key={idx} 
+                  className="p-2 bg-rose-50 rounded-md border border-rose-100 flex justify-between items-center cursor-pointer hover:bg-rose-100 transition-colors"
+                  onClick={openQuickAppointment}
+                >
+                  <div>
+                    <p className="font-medium flex items-center">
+                      💡 {isToday(slot.time) ? 'Hoje' : 'Amanhã'} às {format(slot.time, 'HH:mm')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Encaixe de {Math.floor(slot.duration)} minutos
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-rose-600">
+                    <CalendarClock className="h-4 w-4 mr-1" /> Agendar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {birthdayClients.length > 0 && (
+        <Card className="bg-white border-rose-100 shadow-soft overflow-hidden">
+          <div className="bg-[#D8A39D]/20 p-2 flex items-center justify-between">
+            <div className="flex items-center">
+              <CakeSlice className="h-5 w-5 mr-2 text-[#D8A39D]" />
+              <h3 className="font-medium text-base">🎂 Temos aniversariantes este mês!</h3>
+            </div>
+          </div>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {birthdayClients.map(client => (
+                <div key={client.id} className="inline-flex items-center bg-rose-50 px-3 py-1 rounded-full">
+                  <span className="font-medium mr-1">{client.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {client.birthdate ? format(new Date(client.birthdate), 'dd/MM') : ''}
+                  </span>
+                </div>
+              ))}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => birthdayClients.length > 0 && sendBirthdayWish(birthdayClients[0])}
+                className="ml-auto bg-rose-500 text-white hover:bg-rose-600 border-none"
+              >
+                <MessageSquare className="mr-1 h-4 w-4" />
+                Enviar parabéns no WhatsApp
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <Card className="bg-white border-rose-100 shadow-soft cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToCalendarDay}>

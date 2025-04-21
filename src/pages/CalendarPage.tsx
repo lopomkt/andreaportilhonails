@@ -60,14 +60,17 @@ export default function CalendarPage() {
   }, [location]);
   
   const handleDaySelect = (date: Date) => {
-    setCurrentDate(date);
+    // Create a new Date object to ensure we're working with a clean instance
+    const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    setCurrentDate(selectedDate);
+    
     // When selecting a day from month view, change to day view
     if (calendarView === "month") {
       setCalendarView("day");
       
       // Update URL to reflect the selected date and view
       const searchParams = new URLSearchParams();
-      searchParams.set('date', date.toISOString().split('T')[0]);
+      searchParams.set('date', selectedDate.toISOString().split('T')[0]);
       searchParams.set('view', 'day');
       navigate(`/calendario?${searchParams.toString()}`);
     }

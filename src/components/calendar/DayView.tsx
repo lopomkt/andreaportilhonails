@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader2, Lock } from "lucide-react";
+import { Edit, Trash2, CalendarX, Scissors, Star, FileSpreadsheet, Filter, MessageSquare, Bell, Loader2, Lock, Clock, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { AppointmentFormWrapper } from "@/components/AppointmentFormWrapper";
@@ -15,12 +15,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Appointment, AppointmentStatus, Client, Service } from '@/types';
+import { Appointment, AppointmentStatus, BlockedDate, Client, Service } from '@/types';
 import { BlockedDateForm } from '@/components/BlockedDateForm';
 import { cn } from "@/lib/utils";
 import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
+
 interface DayViewProps {
   date: Date;
 }
@@ -42,6 +44,13 @@ export const DayView: React.FC<DayViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
+  const [selectedBlockedDate, setSelectedBlockedDate] = useState<BlockedDate | null>(null);
+  const [deleteBlockedDateId, setDeleteBlockedDateId] = useState<string | null>(null);
+  const [confirmDeleteBlockedOpen, setConfirmDeleteBlockedOpen] = useState(false);
+  const [isAdjustingSchedule, setIsAdjustingSchedule] = useState(false);
+  const [adjustMinutes, setAdjustMinutes] = useState(15);
+  const [confirmAdjustScheduleOpen, setConfirmAdjustScheduleOpen] = useState(false);
+  
   const {
     toast
   } = useToast();
@@ -51,8 +60,11 @@ export const DayView: React.FC<DayViewProps> = ({
     clients,
     services,
     refetchAppointments,
-    refetchBlockedDates
+    refetchBlockedDates,
+    deleteBlockedDate,
+    rescheduleAppointment
   } = useSupabaseData();
+  
   const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), date));
   const dayBlocks = blockedDates.filter(block => isSameDay(new Date(block.date), date));
   const appointmentsByHour = dayAppointments.reduce((groups, appointment) => {
@@ -64,6 +76,7 @@ export const DayView: React.FC<DayViewProps> = ({
     return groups;
   }, {} as Record<string, typeof dayAppointments>);
   const hours = Object.keys(appointmentsByHour).sort();
+  
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -76,6 +89,7 @@ export const DayView: React.FC<DayViewProps> = ({
         return 'secondary';
     }
   };
+  
   const getServiceIcon = (serviceName: string) => {
     const name = serviceName?.toLowerCase() || '';
     if (name.includes('manicure') || name.includes('unha')) {
@@ -86,6 +100,7 @@ export const DayView: React.FC<DayViewProps> = ({
       return <FileSpreadsheet className="h-4 w-4" />;
     }
   };
+  
   const handleOpenManageModal = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setClientId(appointment.clientId);
@@ -98,9 +113,11 @@ export const DayView: React.FC<DayViewProps> = ({
     setManageModalOpen(true);
     setIsFormDirty(false);
   };
+  
   const handleFormChange = () => {
     setIsFormDirty(true);
   };
+  
   const handleCloseManageModal = () => {
     if (isFormDirty) {
       setConfirmSaveOpen(true);
@@ -109,6 +126,7 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
+  
   const handleSaveChanges = async () => {
     if (!selectedAppointment) return;
     setIsSaving(true);
@@ -151,6 +169,7 @@ export const DayView: React.FC<DayViewProps> = ({
       setSelectedAppointment(null);
     }
   };
+  
   const handleSendMessage = async (type: 'confirmation' | 'reminder') => {
     if (!selectedAppointment || !selectedAppointment.client) return;
     setIsSendingMessage(true);
@@ -203,9 +222,102 @@ export const DayView: React.FC<DayViewProps> = ({
       setIsSendingMessage(false);
     }
   };
+  
   const handleOpenBlockedDateDialog = () => {
     setOpenBlockedDateDialog(true);
   };
+  
+  const handleEditBlockedDate = (blockedDate: BlockedDate) => {
+    setSelectedBlockedDate(blockedDate);
+    setOpenBlockedDateDialog(true);
+  };
+  
+  const handleDeleteBlockedDate = (id: string) => {
+    setDeleteBlockedDateId(id);
+    setConfirmDeleteBlockedOpen(true);
+  };
+  
+  const confirmDeleteBlockedDate = async () => {
+    if (!deleteBlockedDateId) return;
+    
+    try {
+      const success = await deleteBlockedDate(deleteBlockedDateId);
+      if (success) {
+        toast({
+          title: "Sucesso",
+          description: "Bloqueio removido com sucesso"
+        });
+        await refetchBlockedDates();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Falha ao remover bloqueio",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting blocked date:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao remover o bloqueio",
+        variant: "destructive"
+      });
+    } finally {
+      setConfirmDeleteBlockedOpen(false);
+      setDeleteBlockedDateId(null);
+    }
+  };
+  
+  const handleAdjustSchedule = () => {
+    setIsAdjustingSchedule(true);
+  };
+  
+  const confirmAdjustSchedule = async () => {
+    try {
+      const dayAppointments = appointments.filter(appt => {
+        const apptDate = new Date(appt.date);
+        return isSameDay(apptDate, date) && 
+               apptDate > new Date() && 
+               appt.status !== 'canceled';
+      });
+      
+      dayAppointments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      const updatePromises = dayAppointments.map(appt => {
+        const currentDate = new Date(appt.date);
+        const newDate = new Date(currentDate);
+        newDate.setMinutes(currentDate.getMinutes() + adjustMinutes);
+        return rescheduleAppointment(appt.id, newDate);
+      });
+      
+      const results = await Promise.all(updatePromises);
+      
+      if (results.every(result => result)) {
+        toast({
+          title: "Agenda ajustada",
+          description: `Todos os agendamentos foram adiados em ${adjustMinutes} minutos`
+        });
+        await refetchAppointments();
+      } else {
+        toast({
+          title: "Aviso",
+          description: "Alguns agendamentos não puderam ser atualizados",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error adjusting schedule:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao ajustar a agenda",
+        variant: "destructive"
+      });
+    } finally {
+      setConfirmAdjustScheduleOpen(false);
+      setIsAdjustingSchedule(false);
+    }
+  };
+  
   return <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex justify-between items-center py-0 my-[24px] px-[16px]">
         <h2 className="font-bold text-lg md:text-2xl">
@@ -219,6 +331,25 @@ export const DayView: React.FC<DayViewProps> = ({
             Filtrar
           </Button>
           
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleAdjustSchedule} 
+            className="flex items-center gap-1 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+          >
+            <Clock className="h-4 w-4" /> 
+            Ajustar Agenda
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setOpenBlockedDateDialog(true)} 
+            className="flex items-center gap-1"
+          >
+            <Lock className="h-4 w-4" /> 
+            Bloquear
+          </Button>
         </div>
       </div>
       
@@ -248,10 +379,10 @@ export const DayView: React.FC<DayViewProps> = ({
                       <p className="text-sm text-muted-foreground">{block.reason || block.motivo || 'Sem motivo especificado'}</p>
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditBlockedDate(block)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteBlockedDate(block.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -454,27 +585,34 @@ export const DayView: React.FC<DayViewProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Blocked Date Dialog */}
       <Dialog open={openBlockedDateDialog} onOpenChange={setOpenBlockedDateDialog}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
           <DialogHeader>
             <DialogTitle className="text-xl text-rose-700 flex items-center">
               <span className="mr-2">🔒</span>
-              Bloquear Horário
+              {selectedBlockedDate ? "Editar Bloqueio" : "Bloquear Horário"}
             </DialogTitle>
             <DialogDescription>
-              Preencha os dados para bloquear um horário
+              {selectedBlockedDate 
+                ? "Edite as informações do bloqueio" 
+                : "Preencha os dados para bloquear um horário"}
             </DialogDescription>
           </DialogHeader>
-          <BlockedDateForm onSuccess={() => {
-          // This function is called after successfully creating a blocked date
-          refetchBlockedDates(); // Refresh data
-          setOpenBlockedDateDialog(false); // Close dialog
-          toast({
-            title: "Sucesso",
-            description: "Horário bloqueado com sucesso"
-          });
-        }} initialDate={date} />
+          <BlockedDateForm 
+            blockedDate={selectedBlockedDate}
+            onSuccess={() => {
+              refetchBlockedDates();
+              setOpenBlockedDateDialog(false);
+              setSelectedBlockedDate(null);
+              toast({
+                title: "Sucesso",
+                description: selectedBlockedDate 
+                  ? "Bloqueio atualizado com sucesso" 
+                  : "Horário bloqueado com sucesso"
+              });
+            }} 
+            initialDate={date} 
+          />
         </DialogContent>
       </Dialog>
       
@@ -496,6 +634,108 @@ export const DayView: React.FC<DayViewProps> = ({
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleSaveChanges} disabled={isSaving}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={confirmDeleteBlockedOpen} onOpenChange={setConfirmDeleteBlockedOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este bloqueio?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setConfirmDeleteBlockedOpen(false);
+              setDeleteBlockedDateId(null);
+            }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteBlockedDate} className="bg-red-500 text-white hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <Dialog open={isAdjustingSchedule} onOpenChange={setIsAdjustingSchedule}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-rose-700 flex items-center">
+              <span className="mr-2">⏰</span>
+              Ajustar Agenda do Dia
+            </DialogTitle>
+            <DialogDescription>
+              Realoque todos os agendamentos subsequentes
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="adjustMinutes">Empurrar agenda em</Label>
+              <Select value={adjustMinutes.toString()} onValueChange={(value) => setAdjustMinutes(parseInt(value))}>
+                <SelectTrigger id="adjustMinutes">
+                  <SelectValue placeholder="Selecione os minutos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 minutos</SelectItem>
+                  <SelectItem value="30">30 minutos</SelectItem>
+                  <SelectItem value="45">45 minutos</SelectItem>
+                  <SelectItem value="60">1 hora</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200 text-sm">
+              <p className="font-medium text-yellow-800 flex items-center">
+                <ArrowDown className="h-4 w-4 mr-2" />
+                Esta ação irá:</p>
+              <p className="mt-2 text-yellow-700">
+                • Adiar todos os agendamentos pendentes de hoje em {adjustMinutes} minutos
+                <br />
+                • Atualizar automaticamente os horários no calendário
+                <br />
+                • Manter a sequência e a duração original de cada agendamento
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAdjustingSchedule(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => setConfirmAdjustScheduleOpen(true)} 
+              className="bg-rose-500 hover:bg-rose-600 text-white"
+            >
+              Ajustar Horários
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={confirmAdjustScheduleOpen} onOpenChange={setConfirmAdjustScheduleOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar ajuste de agenda</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja empurrar todos os agendamentos restantes em {adjustMinutes} minutos?
+              <br /><br />
+              <span className="font-semibold">Esta ação não pode ser desfeita.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmAdjustScheduleOpen(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmAdjustSchedule} 
+              className="bg-rose-500 text-white hover:bg-rose-600"
+            >
               Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>

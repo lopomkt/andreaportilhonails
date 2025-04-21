@@ -25,6 +25,31 @@ export const BlockedDateService = {
     }
   },
 
+  async update(id: string, data: { date?: string; reason?: string; allDay?: boolean }): Promise<boolean> {
+    try {
+      const updateData: any = {};
+      
+      if (data.date) updateData.data = data.date;
+      if (data.reason !== undefined) updateData.motivo = data.reason;
+      if (data.allDay !== undefined) updateData.dia_todo = data.allDay;
+      
+      const { error } = await supabase
+        .from('datas_bloqueadas')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating blocked date:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Unexpected error updating blocked date:', error);
+      return false;
+    }
+  },
+
   async getAll(): Promise<BlockedDate[]> {
     try {
       const { data, error } = await supabase
