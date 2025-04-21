@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -314,10 +313,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const createClient = async (clientData: any) => {
     try {
       if (supabaseCreateClient) {
-        const { data, error } = await supabaseCreateClient(clientData);
-        if (error) throw error;
+        const result = await supabaseCreateClient(clientData);
+        if (result && typeof result === 'object' && 'error' in result && result.error) {
+          throw result.error;
+        }
         await refetchClients();
-        return { success: true, data };
+        return { success: true, data: result };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -329,10 +330,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const updateClient = async (clientId: string, clientData: any) => {
     try {
       if (supabaseUpdateClient) {
-        const { data, error } = await supabaseUpdateClient(clientId, clientData);
-        if (error) throw error;
+        const result = await supabaseUpdateClient(clientId, clientData);
+        if (result && typeof result === 'object' && 'error' in result && result.error) {
+          throw result.error;
+        }
         await refetchClients();
-        return { success: true, data };
+        return { success: true, data: result };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
