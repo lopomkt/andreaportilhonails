@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -373,6 +374,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
+        // For boolean results, return a simple success object instead of trying to cast to Record
+        if (typeof result === 'boolean') {
+          return { 
+            success: true, 
+            data: { success: result } 
+          };
+        }
+        
         // Return success with data as object type
         return { 
           success: true, 
@@ -459,6 +468,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
+        
+        // For boolean results, return a simple success object instead of trying to cast to Record
+        if (typeof response === 'boolean') {
+          return { 
+            success: true,
+            data: { success: response }
+          };
+        }
         
         // Return success with data as object type
         return { 
