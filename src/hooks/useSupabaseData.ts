@@ -87,12 +87,48 @@ export const useSupabaseData = () => {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .order('nome', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching services:', error);
+        return [];
+      }
+      
+      if (data) {
+        const mappedServices: Service[] = data.map(item => ({
+          id: item.id,
+          name: item.nome,
+          price: item.preco,
+          durationMinutes: item.duracao_minutos,
+          description: item.descricao
+        }));
+        
+        setServices(mappedServices);
+        return mappedServices;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      return [];
+    }
+  };
+
   const refetchAppointments = useCallback(async () => {
     return await fetchAppointments();
   }, []);
 
   const refetchClients = useCallback(async () => {
     return await fetchClients();
+  }, []);
+
+  const refetchServices = useCallback(async () => {
+    return await fetchServices();
   }, []);
 
   useEffect(() => {
@@ -102,6 +138,7 @@ export const useSupabaseData = () => {
         await Promise.all([
           fetchAppointments(),
           fetchClients(),
+          fetchServices(),
           fetchBlockedDates()
         ]);
       } catch (error) {
@@ -800,8 +837,5 @@ export const useSupabaseData = () => {
     createClient: createSupabaseClient,
     updateClient: updateSupabaseClient,
     deleteClient,
-    
-    
-    calculatedMonthlyRevenue: calculatedMonthlyRevenue,
   };
 };

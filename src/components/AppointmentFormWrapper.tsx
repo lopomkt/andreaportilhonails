@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ClientAutocomplete } from './ClientAutocomplete';
 import ClientForm from './ClientForm';
@@ -46,7 +47,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
               return (
                 <div>
                   <ClientAutocomplete 
-                    onClientSelect={handleClientSelect}
+                    onClientSelect={(client) => handleClientSelect(client)}
                     selectedClient={selectedClient}
                   />
                 </div>
