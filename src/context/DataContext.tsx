@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -313,11 +314,18 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseCreateClient) {
         const result = await supabaseCreateClient(clientData);
+        
+        if (!result) {
+          console.error("Error creating client: null result");
+          return { success: false, error: "Failed to create client" };
+        }
+        
         if (result && typeof result === 'object' && 'error' in result && result.error) {
           throw result.error;
         }
+        
         await refetchClients();
-        return { success: true, data: result ? result : null };
+        return { success: true, data: result ?? null };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -330,9 +338,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseUpdateClient) {
         const result = await supabaseUpdateClient(clientId, clientData);
+        
+        if (!result) {
+          console.error("Error updating client: null result");
+          return { success: false, error: "Failed to update client" };
+        }
+        
         if (result && typeof result === 'object' && 'error' in result && result.error) {
           throw result.error;
         }
+        
         await refetchClients();
         return { success: true, data: result ?? null };
       }
@@ -366,12 +381,19 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseAddAppointment) {
         const response = await supabaseAddAppointment(appointment);
+        
+        if (!response) {
+          console.error("Error adding appointment: null response");
+          return { success: false, error: "Failed to add appointment" };
+        }
+        
         // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
+        
         await refetchAppointments();
-        return { success: true, data: response ? response : null };
+        return { success: true, data: response ?? null };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -384,10 +406,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseUpdateAppointment) {
         const response = await supabaseUpdateAppointment(id, data);
+        
+        if (!response) {
+          console.error("Error updating appointment: null response");
+          return { success: false, error: "Failed to update appointment" };
+        }
+        
         // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
+        
         await refetchAppointments();
         return { success: true, data: response ?? null };
       }
@@ -402,10 +431,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseAddExpense) {
         const response = await supabaseAddExpense(expense);
+        
+        if (!response) {
+          console.error("Error adding expense: null response");
+          return { success: false, error: "Failed to add expense" };
+        }
+        
         // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
+        
         await refetchAppointments();
         return { success: true, data: response ?? null };
       }
@@ -438,10 +474,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseAddService) {
         const response = await supabaseAddService(service);
+        
+        if (!response) {
+          console.error("Error adding service: null response");
+          return { success: false, error: "Failed to add service" };
+        }
+        
         // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
+        
         await fetchServices();
         return { success: true, data: response ?? null };
       }
