@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -318,7 +317,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw result.error;
         }
         await refetchClients();
-        return { success: true, data: result ?? null };
+        return { success: true, data: result ? result : null };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -372,7 +371,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           throw response.error;
         }
         await refetchAppointments();
-        return { success: true, data: response ?? null };
+        return { success: true, data: response ? response : null };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {

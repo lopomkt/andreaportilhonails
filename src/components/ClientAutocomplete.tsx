@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,9 +35,7 @@ export function ClientAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Pre-fetch clients list when the component mounts to improve responsiveness
   useEffect(() => {
-    // Only fetch if no search query to avoid conflicts with search function
     if (!searchQuery) {
       fetchClients();
     }
@@ -65,7 +62,6 @@ export function ClientAutocomplete({
       }
       
       if (data) {
-        // Map database field names to Client type fields
         const mappedClients: Client[] = data.map(item => ({
           id: item.id,
           name: item.nome,
@@ -133,10 +129,10 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  const handleNewClientSuccess = (client: Client | null) => {
+  const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
-    if (client) {
-      handleSelectClient(client);
+    if (newClient) {
+      handleSelectClient(newClient);
       toast({
         title: "Cliente cadastrado com sucesso!",
         description: "Cliente adicionado ao sistema."
@@ -233,14 +229,13 @@ export function ClientAutocomplete({
         </div>
       )}
       
-      {/* Dialog for new client form */}
       <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
+            onSuccess={(client) => handleNewClientSuccess(client)}
             onCancel={() => setShowNewClientDialog(false)}
           />
         </DialogContent>
