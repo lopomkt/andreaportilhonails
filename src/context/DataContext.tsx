@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -19,6 +18,16 @@ import {
   ServiceResponse
 } from "@/types";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+
+// Helper function to validate responses
+const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
+  return response !== null && response.data !== null && !response.error;
+};
+
+// Helper function to check if result/response is valid
+const isValidResult = <T extends unknown>(result: T | null): result is T => {
+  return result !== null && typeof result === 'object';
+};
 
 interface RevenueData {
   month: string;
@@ -315,7 +324,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseCreateClient) {
         const result = await supabaseCreateClient(clientData);
         
-        if (!result) {
+        if (!isValidResult(result)) {
           console.error("Error creating client: null result");
           return { success: false, error: "Failed to create client" };
         }
@@ -325,7 +334,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        return { success: true, data: result ?? null };
+        return { success: true, data: result };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
@@ -339,7 +348,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseUpdateClient) {
         const result = await supabaseUpdateClient(clientId, clientData);
         
-        if (!result) {
+        if (!isValidResult(result)) {
           console.error("Error updating client: null result");
           return { success: false, error: "Failed to update client" };
         }
@@ -349,7 +358,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchClients();
-        return { success: true, data: result ?? null };
+        return { success: true, data: result };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -382,7 +391,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseAddAppointment) {
         const response = await supabaseAddAppointment(appointment);
         
-        if (!response) {
+        if (!isValidResult(response)) {
           console.error("Error adding appointment: null response");
           return { success: false, error: "Failed to add appointment" };
         }
@@ -393,7 +402,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
-        return { success: true, data: response ?? null };
+        return { success: true, data: response };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -407,7 +416,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseUpdateAppointment) {
         const response = await supabaseUpdateAppointment(id, data);
         
-        if (!response) {
+        if (!isValidResult(response)) {
           console.error("Error updating appointment: null response");
           return { success: false, error: "Failed to update appointment" };
         }
@@ -418,7 +427,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
-        return { success: true, data: response ?? null };
+        return { success: true, data: response };
       }
       return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
@@ -432,7 +441,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseAddExpense) {
         const response = await supabaseAddExpense(expense);
         
-        if (!response) {
+        if (!isValidResult(response)) {
           console.error("Error adding expense: null response");
           return { success: false, error: "Failed to add expense" };
         }
@@ -443,7 +452,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await refetchAppointments();
-        return { success: true, data: response ?? null };
+        return { success: true, data: response };
       }
       return { success: false, error: "AddExpense function not available" };
     } catch (error) {
@@ -456,10 +465,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseDeleteExpense) {
         const response = await supabaseDeleteExpense(id);
-        // Check if response has error property and properly handle it
+        
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
+        
         await refetchAppointments();
         return { success: true };
       }
@@ -475,7 +485,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabaseAddService) {
         const response = await supabaseAddService(service);
         
-        if (!response) {
+        if (!isValidResult(response)) {
           console.error("Error adding service: null response");
           return { success: false, error: "Failed to add service" };
         }
@@ -486,7 +496,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         await fetchServices();
-        return { success: true, data: response ?? null };
+        return { success: true, data: response };
       }
       return { success: false, error: "AddService function not available" };
     } catch (error) {
@@ -499,34 +509,23 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (supabaseUpdateService) {
         const response = await supabaseUpdateService(id, data);
+        
+        if (!isValidResult(response)) {
+          console.error("Error updating service: null response");
+          return { success: false, error: "Failed to update service" };
+        }
+        
         // Check if response has error property and properly handle it
         if (response && typeof response === 'object' && 'error' in response && response.error) {
           throw response.error;
         }
+        
         await fetchServices();
-        return { success: true, data: response ?? null };
+        return { success: true, data: response };
       }
       return { success: false, error: "UpdateService function not available" };
     } catch (error) {
       console.error("Error updating service:", error);
-      return { success: false, error };
-    }
-  };
-
-  const deleteService = async (id: string) => {
-    try {
-      if (supabaseDeleteService) {
-        const response = await supabaseDeleteService(id);
-        // Check if response has error property and properly handle it
-        if (response && typeof response === 'object' && 'error' in response && response.error) {
-          throw response.error;
-        }
-        await fetchServices();
-        return { success: true };
-      }
-      return { success: false, error: "DeleteService function not available" };
-    } catch (error) {
-      console.error("Error deleting service:", error);
       return { success: false, error };
     }
   };

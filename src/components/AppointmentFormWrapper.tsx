@@ -64,6 +64,22 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
 
   const modifiedChildren = recursivelyModifyChildren(children);
 
+  // Handle success with proper encapsulation
+  const handleSuccess = (newClient: Client | null) => {
+    if (newClient) {
+      setShowNewClientDialog(false);
+      toast({
+        title: "Cliente cadastrado com sucesso!",
+        description: "Cliente adicionado ao sistema."
+      });
+    }
+  };
+
+  // Handle cancel with proper encapsulation 
+  const handleCancel = () => {
+    setShowNewClientDialog(false);
+  };
+
   return (
     <>
       {modifiedChildren}
@@ -74,16 +90,8 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={(newClient) => {
-              if (newClient) {
-                setShowNewClientDialog(false);
-                toast({
-                  title: "Cliente cadastrado com sucesso!",
-                  description: "Cliente adicionado ao sistema."
-                });
-              }
-            }}
-            onCancel={() => setShowNewClientDialog(false)}
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
           />
         </DialogContent>
       </Dialog>
