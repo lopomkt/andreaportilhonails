@@ -75,7 +75,7 @@ export function ClientAutocomplete({
           totalSpent: item.valor_total || 0,
           birthdate: item.data_nascimento || null,
           lastAppointment: item.ultimo_agendamento || null,
-          created_at: item.data_criacao || null
+          createdAt: item.data_criacao || null
         }));
         setSearchResults(mappedClients);
       }
@@ -147,17 +147,16 @@ export function ClientAutocomplete({
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
         <div className="flex-1">
           <DebounceInput
-            element={Input}
             minLength={2}
             debounceTimeout={300}
             type="text"
-            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder={placeholder}
             value={selectedClient ? selectedClient.name : searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
             onFocus={() => setIsOpen(true)}
             autoFocus={autofocus}
-            ref={inputRef}
+            element={Input}
           />
         </div>
         <div className="flex items-center pr-2">
@@ -234,6 +233,7 @@ export function ClientAutocomplete({
         </div>
       )}
       
+      {/* Dialog for new client form */}
       <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>

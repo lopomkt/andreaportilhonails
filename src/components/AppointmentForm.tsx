@@ -59,9 +59,9 @@ export function AppointmentForm({
   const [hasConflict, setHasConflict] = useState(false);
   const [conflictDetails, setConflictDetails] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string } | null>(
+  const [selectedClient, setSelectedClient] = useState<Client | null>(
     clientId && clients.find(c => c.id === clientId) 
-      ? { id: clientId, name: clients.find(c => c.id === clientId)?.name || "" }
+      ? clients.find(c => c.id === clientId) || null
       : null
   );
 
@@ -215,7 +215,7 @@ export function AppointmentForm({
     }
   };
 
-  const handleClientSelect = (client: { id: string; name: string }) => {
+  const handleClientSelect = (client: Client) => {
     setClientId(client.id);
     setSelectedClient(client);
   };

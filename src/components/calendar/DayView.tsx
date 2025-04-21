@@ -365,7 +365,7 @@ export const DayView: React.FC<DayViewProps> = ({
         });
         
         if (!blockedInTime && !appointmentInTime) {
-          const availableMinutes = (businessEndHour - hour) * 60;
+          let availableMinutes = (businessEndHour - hour) * 60;
           
           const nextEvents = [...appointments, ...blockedDates.map(block => ({
             date: block.date,
