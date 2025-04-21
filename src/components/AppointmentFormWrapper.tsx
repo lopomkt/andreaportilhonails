@@ -84,14 +84,14 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
     <>
       {modifiedChildren}
       
-      <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
+      <Dialog open={showNewClientDialog} onOpenChange={() => setShowNewClientDialog(false)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
+            onSuccess={(client) => handleSuccess(client)}
+            onCancel={() => handleCancel()}
           />
         </DialogContent>
       </Dialog>

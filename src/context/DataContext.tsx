@@ -480,53 +480,173 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const addService = async (service: Omit<Service, "id">) => {
+  const addService = useCallback(async (service: Omit<Service, "id">) => {
     try {
-      if (supabaseAddService) {
-        const response = await supabaseAddService(service);
-        
-        if (!isValidResult(response)) {
-          console.error("Error adding service: null response");
-          return { success: false, error: "Failed to add service" };
-        }
-        
-        // Check if response has error property and properly handle it
-        if (response && typeof response === 'object' && 'error' in response && response.error) {
-          throw response.error;
-        }
-        
-        await fetchServices();
-        return { success: true, data: response };
+      const { data, error } = await supabase
+        .from('servicos')
+        .insert({
+          nome: service.name,
+          preco: service.price,
+          duracao_minutos: service.durationMinutes,
+          descricao: service.description || null
+        })
+        .select('*')
+        .single();
+
+      if (error || !data) {
+        console.error('Error adding service:', error);
+        toast({
+          title: 'Erro ao adicionar serviço',
+          description: 'Ocorreu um erro ao adicionar o serviço. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return null;
       }
-      return { success: false, error: "AddService function not available" };
+      
+      const newService: Service = {
+        id: data.id,
+        name: data.nome,
+        price: data.preco,
+        durationMinutes: data.duracao_minutos,
+        description: data.descricao
+      };
+      
+      setServices(prev => [...prev, newService]);
+      
+      toast({
+        title: 'Serviço adicionado',
+        description: 'Serviço adicionado com sucesso!',
+      });
+      
+      return newService;
     } catch (error) {
-      console.error("Error adding service:", error);
-      return { success: false, error };
+      console.error('Error adding service:', error);
+      toast({
+        title: 'Erro ao adicionar serviço',
+        description: 'Ocorreu um erro ao adicionar o serviço. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return null;
+      }
+    }, [services]);
+
+  const deleteService = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('servicos')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting service:', error);
+        toast({
+          title: 'Erro ao excluir serviço',
+          description: 'Ocorreu um erro ao excluir o serviço. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      setServices(prev => prev.filter(service => service.id !== id));
+      
+      toast({
+        title: 'Serviço excluído',
+        description: 'Serviço excluído com sucesso!',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast({
+        title: 'Erro ao excluir serviço',
+        description: 'Ocorreu um erro ao excluir o serviço. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, []);
+
+  // Implement the isValidResponse helper
+  const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
+    return response !== null && response.data !== null && !response.error;
+  };
+
+  // Update createClient with proper null checks
+  const createSupabaseClient = async (clientData: any) => {
+    try {
+      const response = await supabase
+        .from('clientes')
+        .insert([clientData])
+        .select()
+        .single();
+
+      if (!isValidResponse(response)) {
+        console.error('Error creating client:', response?.error);
+        toast({
+          title: 'Erro ao criar cliente',
+          description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      const newClient: Client = {
+        id: response.data.id,
+        name: response.data.nome,
+        phone: response.data.telefone,
+        email: response.data.email || '',
+        notes: response.data.observacoes || '',
+        totalSpent: response.data.valor_total ?? 0,
+        birthdate: response.data.data_nascimento || null,
+        lastAppointment: response.data.ultimo_agendamento || null,
+        createdAt: response.data.data_criacao || null
+      };
+
+      setClients(prev => [...prev, newClient]);
+      return newClient;
+    } catch (error) {
+      console.error('Error creating client:', error);
+      toast({
+        title: 'Erro ao criar cliente',
+        description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+      return null;
     }
   };
 
-  const updateService = async (id: string, data: Partial<Service>) => {
+  const updateSupabaseClient = async (clientId: string, clientData: any) => {
     try {
-      if (supabaseUpdateService) {
-        const response = await supabaseUpdateService(id, data);
-        
-        if (!isValidResult(response)) {
-          console.error("Error updating service: null response");
-          return { success: false, error: "Failed to update service" };
-        }
-        
-        // Check if response has error property and properly handle it
-        if (response && typeof response === 'object' && 'error' in response && response.error) {
-          throw response.error;
-        }
-        
-        await fetchServices();
-        return { success: true, data: response };
+      const response = await supabase
+        .from('clientes')
+        .update(clientData)
+        .eq('id', clientId)
+        .select()
+        .single();
+
+      if (!isValidResponse(response)) {
+        console.error('Error updating client:', response?.error);
+        toast({
+          title: 'Erro ao atualizar cliente',
+          description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return false;
       }
-      return { success: false, error: "UpdateService function not available" };
+
+      setClients(prev =>
+        prev.map(client => client.id === clientId ? { ...client, ...response.data } : client)
+      );
+
+      return true;
     } catch (error) {
-      console.error("Error updating service:", error);
-      return { success: false, error };
+      console.error('Error updating client:', error);
+      toast({
+        title: 'Erro ao atualizar cliente',
+        description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+      return false;
     }
   };
 

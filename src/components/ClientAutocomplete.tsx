@@ -239,8 +239,8 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
-            onCancel={handleCloseDialog}
+            onSuccess={(client) => handleNewClientSuccess(client)}
+            onCancel={() => handleCloseDialog()}
           />
         </DialogContent>
       </Dialog>
