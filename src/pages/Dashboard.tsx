@@ -16,7 +16,6 @@ import { FinancialDashboard } from "@/components/FinancialDashboard";
 import { ServiceTimeStatistics } from "@/components/ServiceTimeStatistics";
 import { AppointmentsByWeek } from "@/components/AppointmentsByWeek";
 import { supabase } from "@/integrations/supabase/client";
-
 export default function Dashboard() {
   const {
     dashboardStats,
@@ -34,11 +33,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const todayAppointments = getAppointmentsForDate(new Date());
   const topClients = getTopClients(3);
-  const todaySortedAppointments = [...todayAppointments].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  const todaySortedAppointments = [...todayAppointments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const firstAppointment = todaySortedAppointments.length > 0 ? todaySortedAppointments[0] : null;
-
   useEffect(() => {
     const currentMonth = getMonth(new Date());
     const clientsWithBirthdaysThisMonth = clients.filter(client => {
@@ -46,16 +42,13 @@ export default function Dashboard() {
       const birthdate = new Date(client.birthdate);
       return getMonth(birthdate) === currentMonth;
     });
-    
     clientsWithBirthdaysThisMonth.sort((a, b) => {
       const dateA = new Date(a.birthdate || "");
       const dateB = new Date(b.birthdate || "");
       return dateA.getDate() - dateB.getDate();
     });
-    
     setBirthdayClients(clientsWithBirthdaysThisMonth);
   }, [clients]);
-
   const inactiveClients = clients.filter(client => {
     if (!client.lastAppointment) return true;
     const lastAppointmentDate = new Date(client.lastAppointment);
@@ -63,98 +56,63 @@ export default function Dashboard() {
     const days = differenceInDays(today, lastAppointmentDate);
     return days > 30;
   }).slice(0, 3);
-
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
-
   const calculateAverageClientValue = () => {
     const now = new Date();
     const firstDayOfMonth = startOfMonth(now);
     const lastDayOfMonth = endOfMonth(now);
-
     const confirmedAppointments = appointments.filter(appt => {
       const apptDate = new Date(appt.date);
       return appt.status === "confirmed" && isAfter(apptDate, firstDayOfMonth) && isBefore(apptDate, lastDayOfMonth);
     });
-
     const uniqueClientIds = new Set(confirmedAppointments.map(appt => appt.clientId));
-
     const totalRevenue = confirmedAppointments.reduce((sum, appt) => sum + appt.price, 0);
-
     const avgValue = uniqueClientIds.size > 0 ? totalRevenue / uniqueClientIds.size : 0;
     return avgValue;
   };
-
   const calculateProjectedRevenue = () => {
     const now = new Date();
     const lastDayOfMonth = endOfMonth(now);
-
     const pendingAppointments = appointments.filter(appt => {
       const apptDate = new Date(appt.date);
       return appt.status === "pending" && isAfter(apptDate, now) && isBefore(apptDate, lastDayOfMonth);
     });
-
     return pendingAppointments.reduce((sum, appt) => sum + appt.price, 0);
   };
-
   const getCurrentTimeOfDay = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
   };
-
   const [motivationalMessage, setMotivationalMessage] = useState<string>("");
-
   useEffect(() => {
     const fetchMotivationalMessage = async () => {
       try {
         const {
           data: lastViewed,
           error: lastViewedError
-        } = await supabase
-          .from('ultima_mensagem_vista')
-          .select('*')
-          .eq('id', 'andrea')
-          .single();
-
+        } = await supabase.from('ultima_mensagem_vista').select('*').eq('id', 'andrea').single();
         if (lastViewedError) throw lastViewedError;
-        
         const now = new Date();
         const lastViewedTime = new Date(lastViewed.data_visualizacao);
         const hoursSinceLastView = (now.getTime() - lastViewedTime.getTime()) / (1000 * 60 * 60);
-        
         if (hoursSinceLastView >= 24) {
           const {
             data: newMessage,
             error: messageError
-          } = await supabase
-            .from('mensagens_motivacionais')
-            .select('*')
-            .order('random()')
-            .limit(1)
-            .single();
-
+          } = await supabase.from('mensagens_motivacionais').select('*').order('random()').limit(1).single();
           if (messageError) throw messageError;
-
-          await supabase
-            .from('ultima_mensagem_vista')
-            .update({
-              mensagem_id: newMessage.id,
-              data_visualizacao: now.toISOString()
-            })
-            .eq('id', 'andrea');
-
+          await supabase.from('ultima_mensagem_vista').update({
+            mensagem_id: newMessage.id,
+            data_visualizacao: now.toISOString()
+          }).eq('id', 'andrea');
           setMotivationalMessage(newMessage.mensagem);
         } else {
           const {
             data: message,
             error: messageError
-          } = await supabase
-            .from('mensagens_motivacionais')
-            .select('mensagem')
-            .eq('id', lastViewed.mensagem_id)
-            .single();
-
+          } = await supabase.from('mensagens_motivacionais').select('mensagem').eq('id', lastViewed.mensagem_id).single();
           if (messageError) throw messageError;
           setMotivationalMessage(message.mensagem);
         }
@@ -162,19 +120,15 @@ export default function Dashboard() {
         console.error('Error fetching motivational message:', error);
       }
     };
-
     fetchMotivationalMessage();
   }, []);
-  
   const sendBirthdayWish = async (client: Client) => {
     try {
       const message = `Olá ${client.name}! 🎂✨ A *Nail Studio Andrea* deseja um Feliz Aniversário para você! Que seu dia seja maravilhoso e repleto de alegrias. Como presente especial, temos um desconto exclusivo esperando por você no seu próximo atendimento. 💅💖`;
-      
       const whatsAppLink = await generateWhatsAppLink({
         client,
         message
       });
-      
       if (whatsAppLink) {
         window.open(whatsAppLink, '_blank');
       }
@@ -182,46 +136,40 @@ export default function Dashboard() {
       console.error("Error sending birthday wish:", error);
     }
   };
-
   const openQuickAppointment = () => {
     const quickAppointmentButton = document.getElementById('quick-appointment-button');
     if (quickAppointmentButton) {
       quickAppointmentButton.click();
     }
   };
-
   const navigateToCalendarDay = () => {
     navigate("/calendario");
   };
-
   const navigateToInactiveClients = () => {
     navigate("/clientes?filter=inactive");
   };
-
   const averageClientValue = calculateAverageClientValue();
   const projectedRevenue = calculateProjectedRevenue();
-
-  const [suggestedSlots, setSuggestedSlots] = useState<{time: Date, duration: number}[]>([]);
-  
+  const [suggestedSlots, setSuggestedSlots] = useState<{
+    time: Date;
+    duration: number;
+  }[]>([]);
   useEffect(() => {
     const calculateAvailableSlots = () => {
       const today = new Date();
       const tomorrow = addDays(today, 1);
-      
       const todayAppointments = getAppointmentsForDate(today).filter(appt => appt.status !== 'canceled');
       const tomorrowAppointments = getAppointmentsForDate(tomorrow).filter(appt => appt.status !== 'canceled');
-      
       const businessHoursStart = 8; // 8 AM
       const businessHoursEnd = 19; // 7 PM
       const avgServiceDuration = 90; // 1.5 hours in minutes
-      
+
       const findGapsInDay = (dayDate: Date, dayAppointments: Appointment[]) => {
-        const sortedAppointments = [...dayAppointments].sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-        
-        const slots: {time: Date, duration: number}[] = [];
-        
+        const sortedAppointments = [...dayAppointments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const slots: {
+          time: Date;
+          duration: number;
+        }[] = [];
         let startTime: Date;
         if (isToday(dayDate)) {
           startTime = new Date();
@@ -230,12 +178,9 @@ export default function Dashboard() {
           startTime = new Date(dayDate);
           startTime.setHours(businessHoursStart, 0, 0, 0);
         }
-        
         const endTime = new Date(dayDate);
         endTime.setHours(businessHoursEnd, 0, 0, 0);
-        
         if (startTime > endTime) return [];
-        
         if (sortedAppointments.length === 0) {
           const duration = (endTime.getTime() - startTime.getTime()) / (60 * 1000);
           if (duration >= avgServiceDuration) {
@@ -246,10 +191,8 @@ export default function Dashboard() {
           }
           return slots;
         }
-        
         const firstAppt = sortedAppointments[0];
         const firstApptTime = new Date(firstAppt.date);
-        
         if (firstApptTime > startTime) {
           const duration = (firstApptTime.getTime() - startTime.getTime()) / (60 * 1000);
           if (duration >= avgServiceDuration) {
@@ -259,7 +202,6 @@ export default function Dashboard() {
             });
           }
         }
-        
         for (let i = 0; i < sortedAppointments.length - 1; i++) {
           const currentEnd = new Date(sortedAppointments[i].date);
           if (sortedAppointments[i].endTime) {
@@ -267,9 +209,7 @@ export default function Dashboard() {
           } else {
             currentEnd.setMinutes(currentEnd.getMinutes() + 60);
           }
-          
           const nextStart = new Date(sortedAppointments[i + 1].date);
-          
           if (nextStart > currentEnd) {
             const duration = (nextStart.getTime() - currentEnd.getTime()) / (60 * 1000);
             if (duration >= avgServiceDuration) {
@@ -280,7 +220,6 @@ export default function Dashboard() {
             }
           }
         }
-        
         const lastAppt = sortedAppointments[sortedAppointments.length - 1];
         const lastApptEnd = new Date(lastAppt.date);
         if (lastAppt.endTime) {
@@ -288,7 +227,6 @@ export default function Dashboard() {
         } else {
           lastApptEnd.setMinutes(lastApptEnd.getMinutes() + 60);
         }
-        
         if (lastApptEnd < endTime) {
           const duration = (endTime.getTime() - lastApptEnd.getTime()) / (60 * 1000);
           if (duration >= avgServiceDuration) {
@@ -298,26 +236,20 @@ export default function Dashboard() {
             });
           }
         }
-        
         return slots;
       };
-      
       const todaySlots = findGapsInDay(today, todayAppointments);
       const tomorrowSlots = findGapsInDay(tomorrow, tomorrowAppointments);
-      
       const allSlots = [...todaySlots, ...tomorrowSlots].sort((a, b) => {
         if (Math.abs(a.duration - avgServiceDuration) !== Math.abs(b.duration - avgServiceDuration)) {
           return Math.abs(a.duration - avgServiceDuration) - Math.abs(b.duration - avgServiceDuration);
         }
         return a.time.getTime() - b.time.getTime();
       });
-      
       setSuggestedSlots(allSlots.slice(0, 3));
     };
-    
     calculateAvailableSlots();
   }, [appointments, getAppointmentsForDate]);
-
   return <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0">
       <Card className="bg-gradient-to-r from-rose-500 to-rose-400 text-white border-0 shadow-premium">
         <CardContent className="p-4 md:p-6">
@@ -328,16 +260,14 @@ export default function Dashboard() {
                 {todayAppointments.length > 0 ? `Você tem ${todayAppointments.length} agendamento${todayAppointments.length !== 1 ? 's' : ''} hoje` : "Você não tem agendamentos hoje"}
               </p>
               
-              {firstAppointment && firstAppointment.client && (
-                <div className="mt-2">
+              {firstAppointment && firstAppointment.client && <div className="mt-2">
                   <p className="text-white/90 text-sm">
                     Primeiro cliente: <span className="font-semibold">{firstAppointment.client.name}</span> às {format(new Date(firstAppointment.date), 'HH:mm')}
                   </p>
                   <p className="text-white/90 text-sm mt-1">
                     Faturamento previsto hoje: <span className="font-semibold">{formatCurrency(todayRevenue)}</span>
                   </p>
-                </div>
-              )}
+                </div>}
             </div>
             <div className="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 w-full md:w-auto">
               <Button className="bg-white text-rose-600 hover:bg-rose-50 shadow-soft w-full md:w-auto" onClick={() => navigate("/calendario")}>
@@ -353,8 +283,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {suggestedSlots.length > 0 && (
-        <Card className="bg-white border-rose-100 shadow-soft">
+      {suggestedSlots.length > 0 && <Card className="bg-white border-rose-100 shadow-soft">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-rose-700 flex items-center text-base font-bold">
               <Clock className="mr-2 h-4 w-4 text-rose-600" />
@@ -363,12 +292,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {suggestedSlots.map((slot, idx) => (
-                <div 
-                  key={idx} 
-                  className="p-2 bg-rose-50 rounded-md border border-rose-100 flex justify-between items-center cursor-pointer hover:bg-rose-100 transition-colors"
-                  onClick={openQuickAppointment}
-                >
+              {suggestedSlots.map((slot, idx) => <div key={idx} className="p-2 bg-rose-50 rounded-md border border-rose-100 flex justify-between items-center cursor-pointer hover:bg-rose-100 transition-colors" onClick={openQuickAppointment}>
                   <div>
                     <p className="font-medium flex items-center">
                       💡 {isToday(slot.time) ? 'Hoje' : 'Amanhã'} às {format(slot.time, 'HH:mm')}
@@ -380,15 +304,12 @@ export default function Dashboard() {
                   <Button variant="ghost" size="sm" className="text-rose-600">
                     <CalendarClock className="h-4 w-4 mr-1" /> Agendar
                   </Button>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
-      {birthdayClients.length > 0 && (
-        <Card className="bg-white border-rose-100 shadow-soft overflow-hidden">
+      {birthdayClients.length > 0 && <Card className="bg-white border-rose-100 shadow-soft overflow-hidden">
           <div className="bg-[#D8A39D]/20 p-2 flex items-center justify-between">
             <div className="flex items-center">
               <CakeSlice className="h-5 w-5 mr-2 text-[#D8A39D]" />
@@ -397,28 +318,20 @@ export default function Dashboard() {
           </div>
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-2">
-              {birthdayClients.map(client => (
-                <div key={client.id} className="inline-flex items-center bg-rose-50 px-3 py-1 rounded-full">
+              {birthdayClients.map(client => <div key={client.id} className="inline-flex items-center bg-rose-50 px-3 py-1 rounded-full">
                   <span className="font-medium mr-1">{client.name}</span>
                   <span className="text-xs text-muted-foreground">
                     {client.birthdate ? format(new Date(client.birthdate), 'dd/MM') : ''}
                   </span>
-                </div>
-              ))}
+                </div>)}
               
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => birthdayClients.length > 0 && sendBirthdayWish(birthdayClients[0])}
-                className="ml-auto bg-rose-500 text-white hover:bg-rose-600 border-none"
-              >
+              <Button variant="outline" size="sm" onClick={() => birthdayClients.length > 0 && sendBirthdayWish(birthdayClients[0])} className="ml-auto bg-rose-500 text-white hover:bg-rose-600 border-none">
                 <MessageSquare className="mr-1 h-4 w-4" />
                 Enviar parabéns no WhatsApp
               </Button>
             </div>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <Card className="bg-white border-rose-100 shadow-soft cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToCalendarDay}>
@@ -444,20 +357,7 @@ export default function Dashboard() {
         
         <AppointmentsByWeek appointments={appointments} />
         
-        {inactiveClients.length > 0 && <Card className="card-premium cursor-pointer hover:bg-rose-50 transition-colors" onClick={navigateToInactiveClients}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium text-rose-700 flex items-center">
-                <UserMinus className="mr-2 h-5 w-5 text-rose-600" />
-                Clientes Inativos (sem agendamento há mais de 30 dias)
-              </CardTitle>
-              <span className="text-xl font-bold text-rose-600">{inactiveClients.length}</span>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {inactiveClients.map(client => <InactiveClientCard key={client.id} client={client} />)}
-              </div>
-            </CardContent>
-          </Card>}
+        {inactiveClients.length > 0}
         
         <StatsCard title="Total do Mês" value={formatCurrency(dashboardStats.monthRevenue)} icon={DollarSign} description="faturamento até o momento" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
         
@@ -481,7 +381,6 @@ export default function Dashboard() {
         </Card>}
     </div>;
 }
-
 interface StatsCardProps {
   title: string;
   value: string;
@@ -491,7 +390,6 @@ interface StatsCardProps {
   iconClassName?: string;
   onClick?: () => void;
 }
-
 function StatsCard({
   title,
   value,
@@ -512,11 +410,9 @@ function StatsCard({
       </CardContent>
     </Card>;
 }
-
 interface InactiveClientCardProps {
   client: Client;
 }
-
 function InactiveClientCard({
   client
 }: InactiveClientCardProps) {
