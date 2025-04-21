@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Loader2, UserPlus } from "lucide-react";
 import { verifySupabaseConnection } from "@/utils/supabaseConnectionCheck";
+import { Client } from "@/types";
 
-interface Client {
+interface ClientData {
   id: string;
   nome: string;
   telefone: string;
@@ -123,9 +124,9 @@ export function ClientAutocomplete({ onClientSelect, selectedClient, initialQuer
   };
 
   // Handle client form success
-  const handleClientFormSuccess = (clientId: string, clientName: string) => {
-    onClientSelect({ id: clientId, name: clientName });
-    setQuery(clientName);
+  const handleClientFormSuccess = (client: Client) => {
+    onClientSelect({ id: client.id, name: client.name });
+    setQuery(client.name);
     setShowNewClientDialog(false);
     toast({
       title: "Cliente adicionado",

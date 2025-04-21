@@ -73,9 +73,9 @@ const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) 
       setBirthdate(null);
       setNotes("");
       
-      // Call onSuccess with the newly created client to update the parent component
+      // Call onSuccess with the newly created client
       if (onSuccess && newClient) {
-        onSuccess({
+        const client: Client = {
           id: newClient.id,
           name: newClient.nome,
           phone: newClient.telefone,
@@ -84,7 +84,8 @@ const ClientForm = ({ onSuccess, onCancel, initialName = "" }: ClientFormProps) 
           notes: newClient.observacoes || "",
           lastAppointment: null,
           totalSpent: 0
-        });
+        };
+        onSuccess(client);
       }
     } catch (error) {
       console.error("Error creating client:", error);

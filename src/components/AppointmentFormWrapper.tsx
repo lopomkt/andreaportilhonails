@@ -5,6 +5,7 @@ import ClientForm from './ClientForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { verifySupabaseConnection } from '@/utils/supabaseConnectionCheck';
 import { useToast } from '@/hooks/use-toast';
+import { Client } from '@/types';
 
 // This component will wrap the AppointmentForm but intercept and modify specific parts
 // For now, focusing on wrapping the client selection with our new autocomplete component
@@ -85,8 +86,8 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={(clientId, clientName) => {
-              setSelectedClient({ id: clientId, name: clientName });
+            onSuccess={(client: Client) => {
+              setSelectedClient({ id: client.id, name: client.name });
               setShowNewClientDialog(false);
             }}
             onCancel={() => setShowNewClientDialog(false)}
