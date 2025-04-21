@@ -37,7 +37,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             // Check if we want to render our autocomplete
             if (field && field.onChange) {
               // Set up connection between autocomplete and form field
-              const handleClientSelect = (client: Client) => {
+              const handleClientSelect = (client: Client | null) => {
                 if (client && client.id) {
                   field.onChange(client.id);
                   setSelectedClient(client);
@@ -47,7 +47,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
               return (
                 <div>
                   <ClientAutocomplete 
-                    onClientSelect={(client) => handleClientSelect(client)}
+                    onClientSelect={handleClientSelect}
                     selectedClient={selectedClient}
                   />
                 </div>

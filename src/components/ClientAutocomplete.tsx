@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DebounceInput } from 'react-debounce-input';
 
 interface ClientAutocompleteProps {
-  onClientSelect: (client: Client) => void;
+  onClientSelect: (client: Client | null) => void;
   selectedClient?: Client | null;
   autofocus?: boolean;
   placeholder?: string;
@@ -133,13 +133,15 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  const handleNewClientSuccess = (client: Client) => {
+  const handleNewClientSuccess = (client: Client | null) => {
     setShowNewClientDialog(false);
-    handleSelectClient(client);
-    toast({
-      title: "Cliente cadastrado com sucesso!",
-      description: "Cliente adicionado ao sistema."
-    });
+    if (client) {
+      handleSelectClient(client);
+      toast({
+        title: "Cliente cadastrado com sucesso!",
+        description: "Cliente adicionado ao sistema."
+      });
+    }
   };
 
   return (
