@@ -27,8 +27,8 @@ const isValidResponse = <T extends unknown>(response: { data: T | null; error: a
 };
 
 // Helper function to check if result/response is valid
-const isValidResult = <T extends unknown>(result: T | null): result is T => {
-  return result !== null && typeof result === 'object';
+const isValidResult = <T extends unknown>(result: T | null | undefined): result is T => {
+  return result !== null && result !== undefined && typeof result === 'object';
 };
 
 // Helper function to safely access properties on possibly null objects
@@ -382,7 +382,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Return success with data as object type, ensuring result is not null before accessing
-        if (isValidResult(result)) {
+        if (result && typeof result === 'object') {
           return { 
             success: true, 
             data: result as Record<string, any> 
@@ -485,8 +485,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type, ensuring response is not null before accessing
-        if (isValidResult(response)) {
+        // Return success with data as object type
+        if (response && typeof response === 'object') {
           return { 
             success: true, 
             data: response as Record<string, any> 
@@ -529,7 +529,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Return success with data as object type
-        if (isValidResult(response)) {
+        if (response && typeof response === 'object') {
           return { 
             success: true, 
             data: response as Record<string, any> 
@@ -564,7 +564,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         await refetchAppointments();
         
         // Return success with data as object type
-        if (isValidResult(response)) {
+        if (response && typeof response === 'object') {
           return { 
             success: true, 
             data: response as Record<string, any> 
