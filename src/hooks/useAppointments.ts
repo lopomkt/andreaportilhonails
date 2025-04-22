@@ -64,22 +64,33 @@ export function useAppointments() {
         throw new Error('Cliente, serviço e data são obrigatórios');
       }
       
+      // Convert Date objects to ISO strings for Supabase
+      const data = typeof appointment.date === 'string' 
+        ? appointment.date 
+        : appointment.date.toISOString();
+      
+      const hora_fim = appointment.endTime 
+        ? (typeof appointment.endTime === 'string' 
+           ? appointment.endTime 
+           : appointment.endTime.toISOString()) 
+        : null;
+      
       // Create data object with required fields
       const dataToInsert = {
         cliente_id: dbAppointmentData.cliente_id,
         servico_id: dbAppointmentData.servico_id,
-        data: dbAppointmentData.data,
+        data: data,
         preco: dbAppointmentData.preco || 0,
         status: dbAppointmentData.status || 'pendente',
-        hora_fim: dbAppointmentData.hora_fim || null,
+        hora_fim: hora_fim,
         motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
         observacoes: dbAppointmentData.observacoes || null,
         status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
       };
       
-      const { data, error } = await supabase
+      const { data: responseData, error } = await supabase
         .from('agendamentos')
-        .insert(dataToInsert)
+        .insert(dataToInsert as any) // Type assertion to bypass Supabase's strict typing
         .select(`
           *,
           clientes(*),
@@ -91,8 +102,8 @@ export function useAppointments() {
         throw error;
       }
       
-      if (data) {
-        const newAppointment = mapDbAppointmentToApp(data, data.clientes, data.servicos);
+      if (responseData) {
+        const newAppointment = mapDbAppointmentToApp(responseData, responseData.clientes, responseData.servicos);
         setAppointments(prev => [...prev, newAppointment]);
         
         toast({

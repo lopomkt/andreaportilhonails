@@ -1,5 +1,7 @@
-import { Appointment, Client, Service } from '@/types';
-import { DbAppointment, DbClient, DbService } from './database-types';
+
+import { Appointment, AppointmentStatus, BlockedDate, Client, Service } from '@/types';
+import { Database } from './types';
+import { DbAppointment, DbClient, DbService, DbBlockedDate } from './database-types';
 
 export function mapDbAppointmentToApp(
   dbAppointment: DbAppointment,
@@ -17,7 +19,7 @@ export function mapDbAppointmentToApp(
     endTime: dbAppointment.hora_fim,
     cancellationReason: dbAppointment.motivo_cancelamento,
     notes: dbAppointment.observacoes,
-    confirmationStatus: dbAppointment.status_confirmacao as any || 'not_confirmed',
+    confirmationStatus: dbAppointment.status_confirmacao as 'not_confirmed' | 'confirmed' | 'canceled' || 'not_confirmed',
     client: dbClient ? {
       id: dbClient.id,
       name: dbClient.nome,
@@ -45,23 +47,32 @@ export function mapAppAppointmentToDb(
   id?: string;
   cliente_id?: string;
   servico_id?: string;
-  data?: string | Date;
+  data?: string;
   preco?: number;
   status?: string;
-  hora_fim?: string | Date | null;
+  hora_fim?: string | null;
   motivo_cancelamento?: string | null;
   observacoes?: string | null;
   status_confirmacao?: string | null;
 } {
+  // Ensure Date objects are converted to ISO strings
+  const data = appointment.date ? 
+    (typeof appointment.date === 'string' ? appointment.date : appointment.date.toISOString()) : 
+    undefined;
+  
+  const hora_fim = appointment.endTime ? 
+    (typeof appointment.endTime === 'string' ? appointment.endTime : appointment.endTime.toISOString()) : 
+    null;
+
   return {
     id: appointment.id,
     cliente_id: appointment.clientId,
     servico_id: appointment.serviceId,
-    data: appointment.date,
+    data: data,
     preco: appointment.price,
     status: appointment.status === 'pending' ? 'pendente' :
             appointment.status === 'confirmed' ? 'confirmado' : 'cancelado',
-    hora_fim: appointment.endTime,
+    hora_fim: hora_fim,
     motivo_cancelamento: appointment.cancellationReason,
     observacoes: appointment.notes,
     status_confirmacao: appointment.confirmationStatus

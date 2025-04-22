@@ -6,7 +6,8 @@ import {
   mapAppAppointmentToDb,
   mapDbClientToApp,
   mapDbServiceToApp,
-  mapDbBlockedDateToApp
+  mapDbBlockedDateToApp,
+  mapAppStatusToDbStatus
 } from './mappers';
 import {
   DbAppointment,
@@ -16,7 +17,7 @@ import {
   DbAppointmentUpdate,
   DbBlockedDate,
   DbBlockedDateInsert
-} from './types/database-types';
+} from './database-types';
 
 // Define a type for appointment with relationships as returned by Supabase
 interface AppointmentWithRelations extends DbAppointment {
@@ -96,22 +97,27 @@ export const appointmentService = {
         endTime.setHours(endTime.getHours() + 1);
       }
 
+      // Ensure dates are converted to ISO strings for Supabase
+      const appointmentDateString = appointmentDate.toISOString();
+      const endTimeString = endTime.toISOString();
+
       // We need to ensure all required fields are present
       const insertData: DbAppointmentInsert = {
         cliente_id: appointment.clientId,
         servico_id: appointment.serviceId,
-        data: appointment.date,
-        hora_fim: endTime.toISOString(),
+        data: appointmentDateString,
+        hora_fim: endTimeString,
         preco: appointment.price,
         // Optional fields
-        status: appointment.status ? mapAppAppointmentToDb(appointment).status : undefined,
+        status: appointment.status ? mapAppStatusToDbStatus(appointment.status) : 'pendente',
         observacoes: appointment.notes,
-        motivo_cancelamento: appointment.cancellationReason
+        motivo_cancelamento: appointment.cancellationReason,
+        status_confirmacao: appointment.confirmationStatus
       };
 
       const { data, error } = await supabase
         .from('agendamentos')
-        .insert(insertData)
+        .insert(insertData as any) // Type assertion to bypass Supabase's strict typing
         .select(`
           *,
           clientes (*),
@@ -134,7 +140,7 @@ export const appointmentService = {
 
   async update(id: string, updates: Partial<Appointment>): Promise<boolean> {
     try {
-      const dbUpdates: DbAppointmentUpdate = mapAppAppointmentToDb(updates);
+      const dbUpdates = mapAppAppointmentToDb(updates);
       
       // If we're updating the date, recalculate the end time
       if (updates.date) {
@@ -163,7 +169,7 @@ export const appointmentService = {
       
       const { error } = await supabase
         .from('agendamentos')
-        .update(dbUpdates)
+        .update(dbUpdates as any) // Type assertion to bypass Supabase's strict typing
         .eq('id', id);
 
       if (error) {

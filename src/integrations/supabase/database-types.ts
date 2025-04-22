@@ -1,8 +1,11 @@
 
 import { Tables, TablesRow, TablesInsert, TablesUpdate } from './type-utils';
+import { Database } from './types';
 
 // Type aliases for Supabase tables
-export type DbAppointment = TablesRow<'agendamentos'>;
+export type DbAppointment = TablesRow<'agendamentos'> & {
+  status_confirmacao?: string;  // Added missing field
+};
 export type DbClient = TablesRow<'clientes'>;
 export type DbService = TablesRow<'servicos'>;
 export type DbConfig = TablesRow<'configuracoes'>;
@@ -10,8 +13,12 @@ export type DbMotivationalMessage = TablesRow<'mensagens_motivacionais'>;
 export type DbLastViewedMessage = TablesRow<'ultima_mensagem_vista'>;
 
 // Appointment-specific types for insert and update operations
-export type DbAppointmentInsert = TablesInsert<'agendamentos'>;
-export type DbAppointmentUpdate = TablesUpdate<'agendamentos'>;
+export type DbAppointmentInsert = TablesInsert<'agendamentos'> & {
+  status_confirmacao?: string;  // Added missing field
+};
+export type DbAppointmentUpdate = TablesUpdate<'agendamentos'> & {
+  status_confirmacao?: string;  // Added missing field
+};
 
 // Define type for blocked dates
 export interface DbBlockedDate extends TablesRow<'datas_bloqueadas'> {}
