@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -105,7 +104,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize all the hooks
   const {
     clients,
     loading: clientsLoading,
@@ -164,7 +162,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     getRevenueData,
   } = useDashboardStats(appointments);
 
-  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -190,7 +187,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     loadData();
   }, [fetchAppointments, fetchClients, fetchServices, fetchExpenses, fetchBlockedDates]);
 
-  // Update global loading and error states
   useEffect(() => {
     const isLoading = clientsLoading || appointmentsLoading || servicesLoading || expensesLoading || blockedDatesLoading;
     setLoading(isLoading);
@@ -202,15 +198,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clientsError, appointmentsError, servicesError, expensesError, blockedDatesError
   ]);
 
-  // Public refetch methods
   const refetchAppointments = useCallback(async () => {
     console.log("DataProvider: refetchAppointments called");
-    return await fetchAppointments();
+    await fetchAppointments();
   }, [fetchAppointments]);
 
   const refetchClients = useCallback(async () => {
     console.log("DataProvider: refetchClients called");
-    return await fetchClients();
+    await fetchClients();
   }, [fetchClients]);
 
   return (
