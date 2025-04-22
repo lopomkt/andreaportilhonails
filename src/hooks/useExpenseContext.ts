@@ -1,4 +1,3 @@
-
 import { Expense } from '@/types';
 import { useCallback } from 'react';
 
@@ -6,9 +5,9 @@ export const useExpenseContext = (
   expenses: Expense[],
   setExpenses?: React.Dispatch<React.SetStateAction<Expense[]>>
 ) => {
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (): Promise<void> => {
     // Implementação existente ou mock
-    return [];
+    return;
   };
 
   const addExpense = useCallback(async (expense: Omit<Expense, "id">) => {

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { Appointment, AppointmentStatus, WhatsAppMessageData, Service } from '@/types';
@@ -9,15 +8,14 @@ export const useAppointmentContext = (
   setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>,
   appointments: Appointment[]
 ) => {
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (): Promise<void> => {
     try {
       const appointmentsData = await appointmentService.getAll();
       if (!appointmentsData) {
         console.error('Error: No appointments data returned');
-        return [];
+        return;
       }
       setAppointments(appointmentsData);
-      return appointmentsData;
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast({
@@ -25,7 +23,6 @@ export const useAppointmentContext = (
         description: 'Ocorreu um erro ao carregar os agendamentos. Por favor, tente novamente.',
         variant: 'destructive',
       });
-      return [];
     }
   };
 

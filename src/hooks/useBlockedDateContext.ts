@@ -1,4 +1,3 @@
-
 import { BlockedDate } from '@/types';
 import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
 import { useCallback } from 'react';
@@ -8,14 +7,12 @@ export const useBlockedDateContext = (
   setBlockedDates: React.Dispatch<React.SetStateAction<BlockedDate[]>>,
   blockedDates: BlockedDate[]
 ) => {
-  const fetchBlockedDates = async () => {
+  const fetchBlockedDates = async (): Promise<void> => {
     try {
       const blockedDates = await BlockedDateService.getAll();
       setBlockedDates(blockedDates);
-      return blockedDates;
     } catch (error) {
       console.error("Error fetching blocked dates:", error);
-      return [];
     }
   };
 

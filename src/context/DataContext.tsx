@@ -125,7 +125,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   
   const serviceContext = useServiceContext(setServices, services);
   
-  const expenseContext = useExpenseContext(expenses);
+  const expenseContext = useExpenseContext(expenses, setExpenses); // Added setExpenses param
   
   const blockedDateContext = useBlockedDateContext(setBlockedDates, blockedDates);
   
