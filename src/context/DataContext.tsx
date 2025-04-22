@@ -374,7 +374,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
-        // For boolean results, return a simple success object instead of trying to cast to Record
+        // For boolean results, return a simple success object
         if (typeof result === 'boolean') {
           return { 
             success: true, 
@@ -383,7 +383,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Return success with data as object type, ensuring result is not null before accessing
-        if (result) {
+        if (result && typeof result === 'object') {
           return { 
             success: true, 
             data: result as Record<string, any> 
@@ -416,7 +416,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchClients();
         
-        // For boolean results, return a simple success object instead of trying to cast to Record
+        // For boolean results, return a simple success object
         if (typeof result === 'boolean') {
           return { 
             success: true,
@@ -424,15 +424,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type - Add null check before accessing properties
-        if (result) {
+        // Return success with data as object type, ensuring result is not null before accessing
+        if (result && typeof result === 'object') {
           return { 
             success: true, 
             data: result as Record<string, any> 
           };
         }
         
-        // Fallback if result is somehow null here (which shouldn't happen due to earlier check)
+        // Fallback success response
         return { success: true };
       }
       return { success: false, error: "UpdateClient function not available" };
@@ -478,7 +478,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // For boolean results, return a simple success object instead of trying to cast to Record
+        // For boolean results, return a simple success object
         if (typeof response === 'boolean') {
           return { 
             success: true,
@@ -486,15 +486,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type - Add null check before accessing properties
-        if (response) {
+        // Return success with data as object type, ensuring response is not null before accessing
+        if (response && typeof response === 'object') {
           return { 
             success: true, 
             data: response as Record<string, any> 
           };
         }
         
-        // Fallback if response is somehow null here (which shouldn't happen due to earlier check)
+        // Fallback success response
         return { success: true };
       }
       return { success: false, error: "AddAppointment function not available" };
@@ -521,7 +521,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // For boolean results, return a simple success object instead of trying to cast to Record
+        // For boolean results, return a simple success object
         if (typeof response === 'boolean') {
           return { 
             success: true,
@@ -529,15 +529,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type - Add null check before accessing properties
-        if (response) {
+        // Return success with data as object type, ensuring response is not null before accessing
+        if (response && typeof response === 'object') {
           return { 
             success: true, 
             data: response as Record<string, any> 
           };
         }
         
-        // Fallback if response is somehow null here (which shouldn't happen due to earlier check)
+        // Fallback success response
         return { success: true };
       }
       return { success: false, error: "UpdateAppointment function not available" };
@@ -564,15 +564,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // Return success with data as object type - Add null check before accessing properties
-        if (response) {
+        // Return success with data as object type, ensuring response is not null before accessing
+        if (response && typeof response === 'object') {
           return { 
             success: true, 
             data: response as Record<string, any> 
           };
         }
         
-        // Fallback if response is somehow null here (which shouldn't happen due to earlier check)
+        // Fallback success response
         return { success: true };
       }
       return { success: false, error: "AddExpense function not available" };
