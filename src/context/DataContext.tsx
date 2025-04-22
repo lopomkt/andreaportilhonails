@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -381,11 +382,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type
-        return { 
-          success: true, 
-          data: result as Record<string, any> 
-        };
+        // Return success with data as object type, ensuring result is not null before accessing
+        if (result) {
+          return { 
+            success: true, 
+            data: result as Record<string, any> 
+          };
+        }
+        
+        return { success: true };
       }
       return { success: false, error: "CreateClient function not available" };
     } catch (error) {
