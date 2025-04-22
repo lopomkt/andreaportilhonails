@@ -38,16 +38,18 @@ export default function ClientsPage() {
 
   // Fetch clients when component mounts
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchData = async () => {
+      console.log("Fetching clients...");
       await refetchClients();
     };
     
-    fetchClients();
+    fetchData();
   }, [refetchClients]);
 
   // Update filtered clients when clients, searchTerm, or view changes
   useEffect(() => {
-    let filtered = clients || [];
+    console.log("Clients in state:", clients);
+    let filtered = [...(clients || [])]; // Make sure we're working with an array
     
     if (searchTerm) {
       filtered = filtered.filter(client => 
@@ -65,11 +67,12 @@ export default function ClientsPage() {
     }
     
     setFilteredClients(filtered);
+    console.log("Filtered clients:", filtered);
   }, [clients, searchTerm, view]);
 
-  const handleNewClientSuccess = () => {
+  const handleNewClientSuccess = async () => {
     setShowNewClientModal(false);
-    refetchClients();
+    await refetchClients(); // Ensure refetch happens when a new client is added
     toast({
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
@@ -81,9 +84,9 @@ export default function ClientsPage() {
     setShowEditClientModal(true);
   };
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = async () => {
     setShowEditClientModal(false);
-    refetchClients();
+    await refetchClients(); // Ensure refetch happens after edit
     toast({
       title: "Cliente atualizado",
       description: "Cliente atualizado com sucesso!"
@@ -101,7 +104,7 @@ export default function ClientsPage() {
         setShowDeleteAlert(false);
         setShowEditClientModal(false);
         setSelectedClient(null);
-        refetchClients();
+        await refetchClients(); // Ensure refetch happens after delete
       } catch (error) {
         toast({
           title: "Erro",
@@ -137,11 +140,8 @@ export default function ClientsPage() {
     });
   };
 
-  console.log("Clients:", clients);
-  console.log("Filtered Clients:", filteredClients);
-
   return (
-    <div className="space-y-4 animate-fade-in max-w-3xl mx-auto px-4">
+    <div className="space-y-4 animate-fade-in max-w-3xl mx-auto px-4 py-4 pb-20">
       <div className="flex flex-col md:flex-row gap-4 justify-between mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -178,7 +178,7 @@ export default function ClientsPage() {
       </div>
 
       <div className="space-y-3 pb-6">
-        {filteredClients.length > 0 ? (
+        {filteredClients && filteredClients.length > 0 ? (
           filteredClients.map(client => (
             <ClientListItem
               key={client.id}
@@ -368,10 +368,9 @@ function ClientListItem({ client, onEditClick, onScheduleClick, onClick }: Clien
   
   return (
     <div 
-      className={cn(
-        "p-4 border rounded-lg hover:shadow-sm transition-all cursor-pointer",
+      className={`p-4 border rounded-lg hover:shadow-sm transition-all cursor-pointer ${
         isInactive ? "border-l-4 border-l-status-pending" : ""
-      )}
+      }`}
       onClick={onClick}
     >
       <div className="flex flex-col sm:flex-row justify-between">
@@ -446,7 +445,8 @@ function ClientAppointmentsHistory({
       </div>;
   }
   return <div className="space-y-2">
-      {clientAppointments.map(appointment => <div key={appointment.id} className="flex items-center justify-between p-3 border rounded-md bg-background hover:bg-muted/50 transition-colors">
+      {clientAppointments.map(appointment => (
+        <div key={appointment.id} className="flex items-center justify-between p-3 border rounded-md bg-background hover:bg-muted/50 transition-colors">
           <div className="flex items-center gap-3">
             <div className="flex flex-col items-center justify-center bg-nail-50 text-nail-700 rounded-md p-2 w-14">
               <span className="text-xs">{format(new Date(appointment.date), 'MMM')}</span>
@@ -470,10 +470,7 @@ function ClientAppointmentsHistory({
               {appointment.status === "confirmed" ? "Confirmado" : appointment.status === "pending" ? "Pendente" : "Cancelado"}
             </span>
           </div>
-        </div>)}
+        </div>
+      ))}
     </div>;
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
 }

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +17,7 @@ export function useClients() {
 
   const fetchClients = useCallback(async (): Promise<Client[]> => {
     setLoading(true);
+    console.log("fetchClients called");
     try {
       const { data, error } = await supabase
         .from('clientes')
@@ -25,10 +25,12 @@ export function useClients() {
         .order('nome', { ascending: true });
       
       if (error) {
+        console.error("Error fetching clients:", error);
         throw error;
       }
 
       if (data) {
+        console.log("Client data from Supabase:", data);
         const mappedClients: Client[] = data.map(item => {
           // We need to safely map the database fields to our app model
           return {
@@ -44,11 +46,13 @@ export function useClients() {
           };
         });
         
+        console.log("Mapped clients:", mappedClients);
         setClients(mappedClients);
         return mappedClients;
       }
       return [];
     } catch (err: any) {
+      console.error("Error in fetchClients:", err);
       const errorMessage = err?.message || 'Erro ao buscar clientes';
       setError(errorMessage);
       toast({

@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatCurrency, formatDuration } from "@/lib/formatters";
-import { Clock, Pencil, Trash, Plus } from "lucide-react";
+import { Clock, Pencil, Trash } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
 import { toast } from "@/hooks/use-toast";
 
 export function ServiceList() {
   const { services, deleteService } = useData();
   const [selectedService, setSelectedService] = useState<Service | undefined>(undefined);
-  const [showAddForm, setShowAddForm] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   const handleEdit = (service: Service) => {
@@ -41,41 +40,28 @@ export function ServiceList() {
 
   const sortedServices = [...services].sort((a, b) => a.name.localeCompare(b.name));
 
-  return <div className="space-y-4">
+  return (
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-medium px-0 mx-[15px]">Lista de Serviços</h2>
-        <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-          <DialogTrigger asChild>
-            <Button className="gap-1 bg-nail-500 hover:bg-nail-600">
-              <Plus className="h-4 w-4" />
-              Novo Serviço
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Serviço</DialogTitle>
-              <DialogDescription>
-                Preencha os dados para criar um novo serviço.
-              </DialogDescription>
-            </DialogHeader>
-            <ServiceForm onSuccess={() => setShowAddForm(false)} />
-          </DialogContent>
-        </Dialog>
       </div>
       
-      {sortedServices.length === 0 ? <div className="text-center p-8 border rounded-lg bg-muted/30">
+      {sortedServices.length === 0 ? (
+        <div className="text-center p-8 border rounded-lg bg-muted/30">
           <p className="text-muted-foreground">Nenhum serviço cadastrado ainda.</p>
-          
-        </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {sortedServices.map(service => <Card key={service.id} className="hover:shadow-md transition-shadow">
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {sortedServices.map(service => (
+            <Card key={service.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="flex justify-between items-start">
                     <h3 className="font-medium truncate">{service.name}</h3>
                     <div className="flex gap-1 shrink-0">
                       <Dialog open={selectedService?.id === service.id} onOpenChange={open => {
-                  if (!open) setSelectedService(undefined);
-                }}>
+                        if (!open) setSelectedService(undefined);
+                      }}>
                         <DialogTrigger asChild>
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(service)}>
                             <Pencil className="h-4 w-4" />
@@ -108,8 +94,10 @@ export function ServiceList() {
                   {service.description && <p className="text-xs text-muted-foreground mt-2">{service.description}</p>}
                 </div>
               </CardContent>
-            </Card>)}
-        </div>}
+            </Card>
+          ))}
+        </div>
+      )}
       
       <AlertDialog open={!!serviceToDelete} onOpenChange={open => !open && setServiceToDelete(null)}>
         <AlertDialogContent>
@@ -127,5 +115,6 @@ export function ServiceList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>;
+    </div>
+  );
 }

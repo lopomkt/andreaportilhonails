@@ -7,7 +7,15 @@ import { LoginScreen } from "@/components/auth/LoginScreen";
 import { CRMContent } from "@/components/CRMContent";
 import { useEffect, useState } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -39,7 +47,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <DataProvider>
         <TooltipProvider>
-          <div className="min-h-screen bg-gradient-to-br from-rose-50 to-rose-100">
+          <div className="min-h-screen bg-gradient-to-br from-rose-50 to-rose-100 overflow-y-auto">
             <Toaster />
             {!isAuthenticated ? <LoginScreen /> : <CRMContent />}
           </div>

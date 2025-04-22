@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useServices } from "@/hooks/useServices";
@@ -93,6 +93,14 @@ export const DataContext = createContext<DataContextType>({
   deleteService: async () => ({}),
 });
 
+export const useData = () => {
+  const context = React.useContext(DataContext);
+  if (context === undefined) {
+    throw new Error("useData must be used within a DataProvider");
+  }
+  return context;
+};
+
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +169,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const loadData = async () => {
       setLoading(true);
       try {
+        console.log("DataProvider: Loading data...");
         await Promise.all([
           fetchAppointments(),
           fetchClients(),
@@ -168,8 +177,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           fetchExpenses(),
           fetchBlockedDates()
         ]);
+        console.log("DataProvider: All data loaded");
       } catch (err: any) {
-        setError(err.message || "Erro ao carregar os dados.");
+        const errorMsg = err.message || "Erro ao carregar os dados.";
+        console.error("DataProvider error:", errorMsg);
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -191,13 +203,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   ]);
 
   // Public refetch methods
-  const refetchAppointments = async () => {
-    await fetchAppointments();
-  };
+  const refetchAppointments = useCallback(async () => {
+    console.log("DataProvider: refetchAppointments called");
+    return await fetchAppointments();
+  }, [fetchAppointments]);
 
-  const refetchClients = async () => {
-    await fetchClients();
-  };
+  const refetchClients = useCallback(async () => {
+    console.log("DataProvider: refetchClients called");
+    return await fetchClients();
+  }, [fetchClients]);
 
   return (
     <DataContext.Provider
