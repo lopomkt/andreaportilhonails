@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -382,7 +383,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Return success with data as object type, ensuring result is not null before accessing
-        if (result && typeof result === 'object') {
+        if (isValidResult(result)) {
           return { 
             success: true, 
             data: result as Record<string, any> 
@@ -486,7 +487,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Return success with data as object type, ensuring response is not null before accessing
-        if (response && typeof response === 'object') {
+        if (isValidResult(response)) {
           return { 
             success: true, 
             data: response as Record<string, any> 
@@ -529,7 +530,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // Return success with data as object type, ensuring response is not null before accessing
-        if (response && typeof response === 'object') {
+        if (isValidResult(response)) {
           return { 
             success: true, 
             data: response as Record<string, any> 
@@ -564,7 +565,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         await refetchAppointments();
         
         // Return success with data as object type, ensuring response is not null before accessing
-        if (response && typeof response === 'object') {
+        if (isValidResult(response)) {
           return { 
             success: true, 
             data: response as Record<string, any> 
