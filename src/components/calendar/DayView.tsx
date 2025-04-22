@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval } from 'date-fns';
+import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarX, Scissors, Star, MessageSquare, Loader2, Clock, CalendarClock } from "lucide-react";
+import { Edit, Trash2, CalendarX, Scissors, Star, MessageSquare, Loader2, Clock, CalendarClock, ArrowLeft, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Appointment, AppointmentStatus, BlockedDate } from '@/types';
@@ -29,8 +28,16 @@ export const DayView: React.FC<DayViewProps> = ({
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
 
-  // Normalize date to avoid timezone issues - using correct parameters
-  const normalizedDate = setHours(new Date(date), 12);
+  // Normalize date (sem forçar horário fixo)
+  const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  // Adicionar navegação entre dias
+  const handlePrevDay = () => {
+    if (onDaySelect) onDaySelect(subDays(normalizedDate, 1));
+  };
+  const handleNextDay = () => {
+    if (onDaySelect) onDaySelect(addDays(normalizedDate, 1));
+  };
 
   // Generate time slots for the day (from 7:00 to 22:00)
   useEffect(() => {
@@ -73,30 +80,59 @@ export const DayView: React.FC<DayViewProps> = ({
     setTimeSlots(slots);
   }, [normalizedDate, appointments, blockedDates]);
 
-  const handleTimeClick = (time: Date) => {
-    if (onSuggestedTimeSelect) {
-      onSuggestedTimeSelect(normalizedDate, format(time, 'HH:mm'));
-    }
-  };
-
   return (
-    <div className="day-view-container px-6 pt-4">
-      <h3 className="text-lg font-medium mb-4 md:flex justify-between items-center">
-        {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
-      </h3>
+    <div className="day-view-container px-2 pt-4">
+      {/* Navegação entre dias */}
+      <div className="flex items-center justify-between mb-3">
+        <Button
+          size="icon"
+          variant="outline"
+          className="md:hidden"
+          onClick={handlePrevDay}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex-1 flex items-center justify-center">
+          <Button
+            size="icon"
+            variant="outline"
+            className="hidden md:inline-flex mr-2"
+            onClick={handlePrevDay}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h3 className="text-body md:text-lg font-medium text-center flex-1">
+            {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+          </h3>
+          <Button
+            size="icon"
+            variant="outline"
+            className="hidden md:inline-flex ml-2"
+            onClick={handleNextDay}
+          >
+            <ArrowRight className="w-5 h-5" />
+          </Button>
+        </div>
+        <Button
+          size="icon"
+          variant="outline"
+          className="md:hidden"
+          onClick={handleNextDay}
+        >
+          <ArrowRight className="w-5 h-5" />
+        </Button>
+      </div>
       
       <div className="time-slots grid gap-3">
         {timeSlots.map((slot, index) => (
           <TimeSlot 
             key={index} 
             slot={slot} 
-            onTimeClick={handleTimeClick} 
+            onTimeClick={onSuggestedTimeSelect ? (t) => onSuggestedTimeSelect(normalizedDate, format(t, 'HH:mm')) : () => {}} 
             onAppointmentClick={setSelectedAppointment} 
           />
         ))}
       </div>
-
-      {/* Appointment details dialog would go here */}
     </div>
   );
 };

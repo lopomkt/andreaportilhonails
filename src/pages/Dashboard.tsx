@@ -1,4 +1,3 @@
-
 import { useData } from "@/context/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
@@ -41,18 +40,18 @@ export default function Dashboard() {
   const firstAppointment = todaySortedAppointments.length > 0 ? todaySortedAppointments[0] : null;
   
   useEffect(() => {
-    const currentMonth = getMonth(new Date());
-    const clientsWithBirthdaysThisMonth = clients.filter(client => {
+    const currentMonth = new Date().getMonth();
+    const birthdayList = clients.filter(client => {
       if (!client.birthdate) return false;
       const birthdate = new Date(client.birthdate);
-      return getMonth(birthdate) === currentMonth;
+      return birthdate.getMonth() === currentMonth;
     });
-    clientsWithBirthdaysThisMonth.sort((a, b) => {
+    birthdayList.sort((a, b) => {
       const dateA = new Date(a.birthdate || "");
       const dateB = new Date(b.birthdate || "");
       return dateA.getDate() - dateB.getDate();
     });
-    setBirthdayClients(clientsWithBirthdaysThisMonth);
+    setBirthdayClients(birthdayList);
   }, [clients]);
   
   const inactiveClients = clients.filter(client => {
@@ -295,7 +294,7 @@ export default function Dashboard() {
   }, [appointments, getAppointmentsForDate]);
   
   return (
-    <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0">
+    <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0 min-h-dvh flex flex-col">
       {/* Line 1: Welcome Card */}
       <Card className="bg-gradient-to-r from-rose-500 to-rose-400 text-white border-0 shadow-premium">
         <CardContent className="p-4 md:p-6">
@@ -414,7 +413,7 @@ export default function Dashboard() {
           <div className="bg-[#D8A39D]/20 p-2 flex items-center justify-between">
             <div className="flex items-center">
               <CakeSlice className="h-5 w-5 mr-2 text-[#D8A39D]" />
-              <h3 className="font-medium text-base">🎂 Temos aniversariantes este mês!</h3>
+              <h3 className="font-medium text-base">🎂 Temos {birthdayClients.length} aniversariante{birthdayClients.length > 1 ? 's' : ''} este mês! Que tal uma surpresa?</h3>
             </div>
           </div>
           <CardContent className="p-4">
@@ -438,7 +437,6 @@ export default function Dashboard() {
                   </Button>
                 </div>
               ))}
-              
               <Button variant="outline" size="sm" onClick={() => birthdayClients.length > 0 && sendBirthdayWish(birthdayClients[0])} className="ml-auto bg-rose-500 text-white hover:bg-rose-600 border-none">
                 <MessageSquare className="mr-1 h-4 w-4" />
                 Enviar parabéns no WhatsApp
@@ -461,6 +459,11 @@ export default function Dashboard() {
         
         <StatsCard title="Receita Prevista" value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"} icon={Users} description="agendamentos pendentes até o fim do mês" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
       </div>
+
+      {/* Rodapé fixo - identidade visual Andrea Portilho */}
+      <footer className="bg-[#E7A1B0] text-white py-3 w-full text-center mt-8 text-sm font-medium rounded-t-lg bottom-0">
+        CRM criado para Andrea Portilho – Nails Designer
+      </footer>
     </div>
   );
 }

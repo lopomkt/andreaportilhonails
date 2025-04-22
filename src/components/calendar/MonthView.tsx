@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addDays, getDay, differenceInMinutes, parseISO, set, addMonths, subMonths } from 'date-fns';
@@ -120,17 +119,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
     setCurrentMonth(addMonths(currentMonth, 1));
   };
   
-  // Handle day click - FIXED to select the correct date
+  // Handle day click - FIXED para selecionar corretamente a data clicada (sem ajuste de horário)
   const handleDayClick = (day: Date) => {
     if (day) {
-      // Fix: Create a new Date object with the exact same year, month, and day
-      // to avoid timezone issues without changing the selected date
-      const selectedDate = new Date(
-        day.getFullYear(),
-        day.getMonth(),
-        day.getDate(),
-        12, 0, 0, 0 // Set to noon to avoid any timezone issues
-      );
+      // Ajuste para criar um novo objeto Date, mas manter data exatamente igual ao dia clicado
+      const selectedDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
       onDaySelect(selectedDate);
     }
   };

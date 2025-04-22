@@ -1,4 +1,3 @@
-
 import { useData } from "@/context/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,14 +36,13 @@ export default function ClientsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch clients when component mounts
   useEffect(() => {
     const fetchData = async () => {
       console.log("ClientsPage: Fetching clients...");
       setIsLoading(true);
       try {
         await refetchClients();
-        console.log("ClientsPage: Clients fetched successfully");
+        console.log("ClientsPage: Clients fetched successfully:", clients);
       } catch (error) {
         console.error("Error fetching clients:", error);
         toast({
@@ -56,29 +54,27 @@ export default function ClientsPage() {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
+
+    return () => {
+      setIsLoading(false);
+    };
   }, [refetchClients, toast]);
 
-  // Update filtered clients when clients, searchTerm, or view changes
   useEffect(() => {
     console.log("ClientsPage: Filtering clients:", clients);
-    
-    if (!clients) {
-      console.log("ClientsPage: No clients available");
+    if (!clients || !Array.isArray(clients)) {
       setFilteredClients([]);
       return;
     }
-    
     let filtered = [...clients]; 
-    
     if (searchTerm) {
       filtered = filtered.filter(client => 
         client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         client.phone?.includes(searchTerm)
       );
     }
-
     if (view === "inactive") {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 40);
@@ -86,7 +82,6 @@ export default function ClientsPage() {
         return !client.lastAppointment || new Date(client.lastAppointment) < cutoffDate;
       });
     }
-    
     setFilteredClients(filtered);
     console.log("ClientsPage: Filtered clients:", filtered);
   }, [clients, searchTerm, view]);
@@ -164,12 +159,11 @@ export default function ClientsPage() {
     });
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-nail-200 border-t-nail-500"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-rose-200 border-t-rose-500"></div>
           <p className="text-sm text-muted-foreground">Carregando clientes...</p>
         </div>
       </div>
@@ -214,7 +208,7 @@ export default function ClientsPage() {
       </div>
 
       <div className="space-y-3 pb-6">
-        {filteredClients && filteredClients.length > 0 ? (
+        {Array.isArray(filteredClients) && filteredClients.length > 0 ? (
           filteredClients.map(client => (
             <ClientListItem
               key={client.id}
@@ -226,8 +220,8 @@ export default function ClientsPage() {
           ))
         ) : (
           <div className="text-center py-12">
-            <Avatar className="h-16 w-16 mx-auto text-nail-300 mb-4 opacity-30">
-              <AvatarFallback className="bg-nail-100/50 text-nail-400 text-2xl">
+            <Avatar className="h-16 w-16 mx-auto text-rose-300 mb-4 opacity-30">
+              <AvatarFallback className="bg-rose-100/50 text-rose-400 text-2xl">
                 ?
               </AvatarFallback>
             </Avatar>
@@ -244,7 +238,6 @@ export default function ClientsPage() {
         )}
       </div>
 
-      {/* Only render dialog when state is true */}
       {selectedClient && (
         <Dialog open={!!selectedClient && !showEditClientModal} onOpenChange={open => !open && setSelectedClient(null)}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">

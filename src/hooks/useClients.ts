@@ -29,10 +29,15 @@ export function useClients() {
         throw error;
       }
 
+      // NOVO fallback defensivo para garantir sempre array e evitar states quebrados
+      if (!data || !Array.isArray(data)) {
+        setClients([]);
+        return [];
+      }
+
       if (data) {
         console.log("useClients: Client data from Supabase:", data);
         const mappedClients: Client[] = data.map(item => {
-          // We need to safely map the database fields to our app model
           return {
             id: item.id,
             name: item.nome || '',
@@ -45,12 +50,9 @@ export function useClients() {
             createdAt: item.data_criacao || null
           };
         });
-        
-        console.log("useClients: Mapped clients:", mappedClients);
         setClients(mappedClients);
         return mappedClients;
       }
-      
       setClients([]);
       return [];
     } catch (err: any) {
