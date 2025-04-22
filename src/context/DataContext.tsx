@@ -419,11 +419,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type
-        return { 
-          success: true, 
-          data: result as Record<string, any> 
-        };
+        // Return success with data as object type - Add null check before accessing properties
+        if (result) {
+          return { 
+            success: true, 
+            data: result as Record<string, any> 
+          };
+        }
+        
+        // Fallback if result is somehow null here (which shouldn't happen due to earlier check)
+        return { success: true };
       }
       return { success: false, error: "UpdateClient function not available" };
     } catch (error) {
@@ -476,11 +481,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type
-        return { 
-          success: true, 
-          data: response as Record<string, any> 
-        };
+        // Return success with data as object type - Add null check before accessing properties
+        if (response) {
+          return { 
+            success: true, 
+            data: response as Record<string, any> 
+          };
+        }
+        
+        // Fallback if response is somehow null here (which shouldn't happen due to earlier check)
+        return { success: true };
       }
       return { success: false, error: "AddAppointment function not available" };
     } catch (error) {
@@ -514,11 +524,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type
-        return { 
-          success: true, 
-          data: response as Record<string, any> 
-        };
+        // Return success with data as object type - Add null check before accessing properties
+        if (response) {
+          return { 
+            success: true, 
+            data: response as Record<string, any> 
+          };
+        }
+        
+        // Fallback if response is somehow null here (which shouldn't happen due to earlier check)
+        return { success: true };
       }
       return { success: false, error: "UpdateAppointment function not available" };
     } catch (error) {
@@ -544,11 +559,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // Return success with data as object type
-        return { 
-          success: true, 
-          data: response as Record<string, any> 
-        };
+        // Return success with data as object type - Add null check before accessing properties
+        if (response) {
+          return { 
+            success: true, 
+            data: response as Record<string, any> 
+          };
+        }
+        
+        // Fallback if response is somehow null here (which shouldn't happen due to earlier check)
+        return { success: true };
       }
       return { success: false, error: "AddExpense function not available" };
     } catch (error) {
