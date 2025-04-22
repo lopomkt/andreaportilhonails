@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -529,7 +528,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           };
         }
         
-        // Return success with data as object type, ensuring response is not null before accessing
+        // Return success with data as object type
         if (isValidResult(response)) {
           return { 
             success: true, 
@@ -564,7 +563,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         
         await refetchAppointments();
         
-        // Return success with data as object type, ensuring response is not null before accessing
+        // Return success with data as object type
         if (isValidResult(response)) {
           return { 
             success: true, 
