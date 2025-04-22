@@ -27,10 +27,15 @@ export const CRMContent = () => {
     const checkAuth = () => {
       const storedAccess = localStorage.getItem("acessoAndrea");
       if (storedAccess) {
-        const lastAccess = new Date(storedAccess);
-        const now = new Date();
-        const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
-        setIsAuthenticated(hoursDiff < 48);
+        try {
+          const lastAccess = new Date(storedAccess);
+          const now = new Date();
+          const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
+          setIsAuthenticated(hoursDiff < 48);
+        } catch (error) {
+          console.error("Error parsing date from localStorage:", error);
+          setIsAuthenticated(false);
+        }
       } else {
         setIsAuthenticated(false);
       }
@@ -46,8 +51,7 @@ export const CRMContent = () => {
   }
 
   return (
-    // Adding overflow-y-auto to ensure content is scrollable
-    <div id="crm-conteudo" className="min-h-screen overflow-y-auto">
+    <div id="crm-conteudo" className="min-h-dvh overflow-y-auto">
       <BrowserRouter>
         <MainLayout>
           <Routes>

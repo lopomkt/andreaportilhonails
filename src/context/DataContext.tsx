@@ -158,12 +158,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     loadData();
   }, []);
 
-  // Public refetch methods
-  const refetchAppointments = async () => {
+  // Public refetch methods with void return type
+  const refetchAppointments = async (): Promise<void> => {
+    console.log("DataContext: refetchAppointments called");
     await appointmentContext.fetchAppointments();
   };
 
-  const refetchClients = async () => {
+  const refetchClients = async (): Promise<void> => {
+    console.log("DataContext: refetchClients called");
     await clientContext.fetchClients();
   };
 

@@ -1,7 +1,7 @@
+
 import { useState, useCallback } from 'react';
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { mapDbClientToApp, mapAppClientToDb } from '@/integrations/supabase/mappers';
 import { useToast } from '@/hooks/use-toast';
 
 export function useClients() {
@@ -17,7 +17,7 @@ export function useClients() {
 
   const fetchClients = useCallback(async (): Promise<Client[]> => {
     setLoading(true);
-    console.log("fetchClients called");
+    console.log("useClients: fetchClients called");
     try {
       const { data, error } = await supabase
         .from('clientes')
@@ -25,12 +25,12 @@ export function useClients() {
         .order('nome', { ascending: true });
       
       if (error) {
-        console.error("Error fetching clients:", error);
+        console.error("useClients: Error fetching clients:", error);
         throw error;
       }
 
       if (data) {
-        console.log("Client data from Supabase:", data);
+        console.log("useClients: Client data from Supabase:", data);
         const mappedClients: Client[] = data.map(item => {
           // We need to safely map the database fields to our app model
           return {
@@ -46,10 +46,12 @@ export function useClients() {
           };
         });
         
-        console.log("Mapped clients:", mappedClients);
+        console.log("useClients: Mapped clients:", mappedClients);
         setClients(mappedClients);
         return mappedClients;
       }
+      
+      setClients([]);
       return [];
     } catch (err: any) {
       console.error("Error in fetchClients:", err);
@@ -60,6 +62,7 @@ export function useClients() {
         description: errorMessage,
         variant: 'destructive'
       });
+      setClients([]);
       return [];
     } finally {
       setLoading(false);

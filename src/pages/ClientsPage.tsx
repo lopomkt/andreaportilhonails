@@ -33,23 +33,44 @@ export default function ClientsPage() {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Fetch clients when component mounts
   useEffect(() => {
     const fetchData = async () => {
-      console.log("Fetching clients...");
-      await refetchClients();
+      console.log("ClientsPage: Fetching clients...");
+      setIsLoading(true);
+      try {
+        await refetchClients();
+        console.log("ClientsPage: Clients fetched successfully");
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+        toast({
+          title: "Erro ao carregar clientes",
+          description: "Ocorreu um erro ao buscar a lista de clientes.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     fetchData();
-  }, [refetchClients]);
+  }, [refetchClients, toast]);
 
   // Update filtered clients when clients, searchTerm, or view changes
   useEffect(() => {
-    console.log("Clients in state:", clients);
-    let filtered = [...(clients || [])]; // Make sure we're working with an array
+    console.log("ClientsPage: Filtering clients:", clients);
+    
+    if (!clients) {
+      console.log("ClientsPage: No clients available");
+      setFilteredClients([]);
+      return;
+    }
+    
+    let filtered = [...clients]; 
     
     if (searchTerm) {
       filtered = filtered.filter(client => 
@@ -67,12 +88,13 @@ export default function ClientsPage() {
     }
     
     setFilteredClients(filtered);
-    console.log("Filtered clients:", filtered);
+    console.log("ClientsPage: Filtered clients:", filtered);
   }, [clients, searchTerm, view]);
 
   const handleNewClientSuccess = async () => {
     setShowNewClientModal(false);
-    await refetchClients(); // Ensure refetch happens when a new client is added
+    console.log("ClientsPage: Client added, refetching clients");
+    await refetchClients(); 
     toast({
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
@@ -86,7 +108,8 @@ export default function ClientsPage() {
 
   const handleEditSuccess = async () => {
     setShowEditClientModal(false);
-    await refetchClients(); // Ensure refetch happens after edit
+    console.log("ClientsPage: Client edited, refetching clients");
+    await refetchClients();
     toast({
       title: "Cliente atualizado",
       description: "Cliente atualizado com sucesso!"
@@ -104,7 +127,8 @@ export default function ClientsPage() {
         setShowDeleteAlert(false);
         setShowEditClientModal(false);
         setSelectedClient(null);
-        await refetchClients(); // Ensure refetch happens after delete
+        console.log("ClientsPage: Client deleted, refetching clients");
+        await refetchClients();
       } catch (error) {
         toast({
           title: "Erro",
@@ -139,6 +163,18 @@ export default function ClientsPage() {
       message: `Olá ${client.name}, sentimos sua falta! Já faz um tempo desde seu último atendimento conosco. Que tal agendar um horário? Responda essa mensagem e vamos marcar. 😊`
     });
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-nail-200 border-t-nail-500"></div>
+          <p className="text-sm text-muted-foreground">Carregando clientes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 animate-fade-in max-w-3xl mx-auto px-4 py-4 pb-20">
@@ -208,6 +244,7 @@ export default function ClientsPage() {
         )}
       </div>
 
+      {/* Only render dialog when state is true */}
       {selectedClient && (
         <Dialog open={!!selectedClient && !showEditClientModal} onOpenChange={open => !open && setSelectedClient(null)}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
