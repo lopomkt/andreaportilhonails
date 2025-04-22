@@ -105,7 +105,19 @@ export default function Dashboard() {
           data: lastViewed,
           error: lastViewedError
         } = await supabase.from('ultima_mensagem_vista').select('*').eq('id', 'andrea').single();
-        if (lastViewedError) throw lastViewedError;
+        if (lastViewedError) {
+          console.error('Error fetching last viewed message:', lastViewedError);
+          // If there's an error fetching last viewed, at least try to get a random message
+          const { data: randomMsg } = await supabase.from('mensagens_motivacionais').select('mensagem').order('random()').limit(1).single();
+          if (randomMsg) {
+            setMotivationalMessage(randomMsg.mensagem);
+          } else {
+            // If even that fails, set a default message
+            setMotivationalMessage("Transformando unhas, elevando autoestima!");
+          }
+          return;
+        }
+        
         const now = new Date();
         const lastViewedTime = new Date(lastViewed.data_visualizacao);
         const hoursSinceLastView = (now.getTime() - lastViewedTime.getTime()) / (1000 * 60 * 60);
@@ -125,11 +137,22 @@ export default function Dashboard() {
             data: message,
             error: messageError
           } = await supabase.from('mensagens_motivacionais').select('mensagem').eq('id', lastViewed.mensagem_id).single();
-          if (messageError) throw messageError;
-          setMotivationalMessage(message.mensagem);
+          if (messageError) {
+            // If error getting the specific message, get any random message
+            const { data: randomMsg } = await supabase.from('mensagens_motivacionais').select('mensagem').order('random()').limit(1).single();
+            if (randomMsg) {
+              setMotivationalMessage(randomMsg.mensagem);
+            } else {
+              setMotivationalMessage("Transformando unhas, elevando autoestima!");
+            }
+          } else {
+            setMotivationalMessage(message.mensagem);
+          }
         }
       } catch (error) {
         console.error('Error fetching motivational message:', error);
+        // Provide a default motivational message as fallback
+        setMotivationalMessage("Transformando unhas, elevando autoestima!");
       }
     };
     fetchMotivationalMessage();
@@ -257,6 +280,7 @@ export default function Dashboard() {
         }
         return slots;
       };
+
       const todaySlots = findGapsInDay(today, todayAppointments);
       const tomorrowSlots = findGapsInDay(tomorrow, tomorrowAppointments);
       const allSlots = [...todaySlots, ...tomorrowSlots].sort((a, b) => {
@@ -437,8 +461,6 @@ export default function Dashboard() {
         
         <StatsCard title="Receita Prevista" value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"} icon={Users} description="agendamentos pendentes até o fim do mês" className="bg-white border-rose-100 shadow-soft" iconClassName="text-rose-500" />
       </div>
-      
-      {/* Removed "Dashboard Financeiro" text */}
     </div>
   );
 }

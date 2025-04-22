@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/ClientForm";
 import { format, differenceInDays } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -27,7 +27,7 @@ export default function ClientsPage() {
   } = useData();
   
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filteredClients, setFilteredClients] = useState<Client[]>(clients);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [view, setView] = useState<"all" | "inactive">("all");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
@@ -36,14 +36,21 @@ export default function ClientsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Fetch clients when component mounts
   useEffect(() => {
-    refetchClients();
+    const fetchClients = async () => {
+      await refetchClients();
+    };
+    
+    fetchClients();
   }, [refetchClients]);
 
+  // Update filtered clients when clients, searchTerm, or view changes
   useEffect(() => {
     let filtered = clients || [];
+    
     if (searchTerm) {
-      filtered = (clients || []).filter(client => 
+      filtered = filtered.filter(client => 
         client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         client.phone?.includes(searchTerm)
       );
@@ -118,6 +125,10 @@ export default function ClientsPage() {
     navigate("/calendario", { state: { selectedClient: client } });
   };
 
+  const handleClientClick = (client: Client) => {
+    setSelectedClient(client);
+  };
+
   const generateInactiveMessage = async (client: Client) => {
     if (!client) return "";
     return generateWhatsAppLink({
@@ -125,6 +136,9 @@ export default function ClientsPage() {
       message: `Olá ${client.name}, sentimos sua falta! Já faz um tempo desde seu último atendimento conosco. Que tal agendar um horário? Responda essa mensagem e vamos marcar. 😊`
     });
   };
+
+  console.log("Clients:", clients);
+  console.log("Filtered Clients:", filteredClients);
 
   return (
     <div className="space-y-4 animate-fade-in max-w-3xl mx-auto px-4">
@@ -171,6 +185,7 @@ export default function ClientsPage() {
               client={client}
               onEditClick={() => handleEditClient(client)}
               onScheduleClick={() => handleScheduleForClient(client)}
+              onClick={() => handleClientClick(client)}
             />
           ))
         ) : (
@@ -341,9 +356,10 @@ interface ClientListItemProps {
   client: Client;
   onEditClick: () => void;
   onScheduleClick: () => void;
+  onClick: () => void;
 }
 
-function ClientListItem({ client, onEditClick, onScheduleClick }: ClientListItemProps) {
+function ClientListItem({ client, onEditClick, onScheduleClick, onClick }: ClientListItemProps) {
   const daysSinceLastAppointment = client.lastAppointment 
     ? differenceInDays(new Date(), new Date(client.lastAppointment)) 
     : null;
@@ -351,10 +367,13 @@ function ClientListItem({ client, onEditClick, onScheduleClick }: ClientListItem
   const isInactive = !client.lastAppointment || (daysSinceLastAppointment && daysSinceLastAppointment >= 40);
   
   return (
-    <div className={cn(
-      "p-4 border rounded-lg hover:shadow-sm transition-all",
-      isInactive ? "border-l-4 border-l-status-pending" : ""
-    )}>
+    <div 
+      className={cn(
+        "p-4 border rounded-lg hover:shadow-sm transition-all cursor-pointer",
+        isInactive ? "border-l-4 border-l-status-pending" : ""
+      )}
+      onClick={onClick}
+    >
       <div className="flex flex-col sm:flex-row justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -387,7 +406,10 @@ function ClientListItem({ client, onEditClick, onScheduleClick }: ClientListItem
             size="sm" 
             variant="outline" 
             className="gap-1"
-            onClick={onEditClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditClick();
+            }}
           >
             <Pencil className="h-4 w-4" />
             <span className="md:hidden">Editar</span>
@@ -395,7 +417,10 @@ function ClientListItem({ client, onEditClick, onScheduleClick }: ClientListItem
           <Button 
             size="sm" 
             className="gap-1 bg-nail-500 hover:bg-nail-600"
-            onClick={onScheduleClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onScheduleClick();
+            }}
           >
             <Calendar className="h-4 w-4" />
             Agendar

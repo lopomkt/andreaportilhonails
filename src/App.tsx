@@ -41,8 +41,7 @@ const App = () => {
         <TooltipProvider>
           <div className="min-h-screen bg-gradient-to-br from-rose-50 to-rose-100">
             <Toaster />
-            <LoginScreen />
-            <CRMContent />
+            {!isAuthenticated ? <LoginScreen /> : <CRMContent />}
           </div>
         </TooltipProvider>
       </DataProvider>

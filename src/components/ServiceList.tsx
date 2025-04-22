@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useData } from "@/context/DataContext";
 import { Service } from "@/types";
@@ -45,7 +46,10 @@ export function ServiceList() {
         <h2 className="text-lg font-medium px-0 mx-[15px]">Lista de Serviços</h2>
         <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
           <DialogTrigger asChild>
-            
+            <Button className="gap-1 bg-nail-500 hover:bg-nail-600">
+              <Plus className="h-4 w-4" />
+              Novo Serviço
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -99,33 +103,25 @@ export function ServiceList() {
                     <span>{formatDuration(service.durationMinutes)}</span>
                   </div>
                   
-                  <div className="text-lg font-bold text-primary">
-                    {formatCurrency(service.price)}
-                  </div>
+                  <div className="font-medium text-lg">{formatCurrency(service.price)}</div>
                   
-                  {service.description && <p className="text-sm text-muted-foreground line-clamp-2">
-                      {service.description}
-                    </p>}
+                  {service.description && <p className="text-xs text-muted-foreground mt-2">{service.description}</p>}
                 </div>
               </CardContent>
             </Card>)}
         </div>}
       
-      {/* Delete Confirmation */}
-      <AlertDialog open={serviceToDelete !== null} onOpenChange={open => !open && setServiceToDelete(null)}>
+      <AlertDialog open={!!serviceToDelete} onOpenChange={open => !open && setServiceToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Serviço</AlertDialogTitle>
+            <AlertDialogTitle>Excluir serviço</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o serviço "{serviceToDelete?.name}"?
-              <br />
-              <br />
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o serviço "{serviceToDelete?.name}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => serviceToDelete && handleDelete(serviceToDelete.id)}>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => serviceToDelete?.id && handleDelete(serviceToDelete.id)}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
