@@ -385,7 +385,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (result && typeof result === 'object') {
           return { 
             success: true, 
-            data: result as Record<string, any> 
+            data: result 
           };
         }
         
@@ -427,7 +427,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (result && typeof result === 'object') {
           return { 
             success: true, 
-            data: result as Record<string, any> 
+            data: result 
           };
         }
         
@@ -489,7 +489,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (response && typeof response === 'object') {
           return { 
             success: true, 
-            data: response as Record<string, any> 
+            data: response 
           };
         }
         
@@ -532,7 +532,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (response && typeof response === 'object') {
           return { 
             success: true, 
-            data: response as Record<string, any> 
+            data: response 
           };
         }
         
@@ -567,7 +567,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         if (response && typeof response === 'object') {
           return { 
             success: true, 
-            data: response as Record<string, any> 
+            data: response 
           };
         }
         
