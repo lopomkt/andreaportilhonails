@@ -10,11 +10,13 @@ import { Appointment, Service } from "@/types";
 
 // Colors for the charts
 const COLORS = ["#B76E79", "#E5989B", "#FFB4A2", "#FFCDB2", "#E5E5E5"];
+
 interface ServiceRevenue {
   name: string;
   value: number;
   count: number;
 }
+
 export function FinancialDashboard() {
   const {
     appointments,
@@ -22,10 +24,12 @@ export function FinancialDashboard() {
     calculateDailyRevenue,
     getRevenueData
   } = useData();
+  
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
   const [projectedRevenue, setProjectedRevenue] = useState(0);
   const [averageClientValue, setAverageClientValue] = useState(0);
   const [topServices, setTopServices] = useState<ServiceRevenue[]>([]);
+  
   useEffect(() => {
     // Calculate current month's revenue
     const now = new Date();
@@ -78,33 +82,7 @@ export function FinancialDashboard() {
   // Get revenue data for charts
   const revenueData = getRevenueData();
   
-  // Fix: Return JSX content instead of void
-  return (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle>Dashboard Financeiro</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Placeholder for financial dashboard content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(currentMonthRevenue)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Receita Projetada</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(projectedRevenue)}</div>
-            </CardContent>
-          </Card>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  // We removed the Dashboard Financeiro card here as requested
+  
+  return null; // This component is no longer used separately
 }

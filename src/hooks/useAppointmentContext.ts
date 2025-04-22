@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { appointmentService } from '@/integrations/supabase/appointmentService';
 import { Appointment, AppointmentStatus, WhatsAppMessageData, Service } from '@/types';

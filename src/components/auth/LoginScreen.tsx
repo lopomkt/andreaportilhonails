@@ -74,7 +74,7 @@ export const LoginScreen = () => {
             checked={keepLoggedIn}
             onCheckedChange={(checked) => setKeepLoggedIn(checked === true)}
           />
-          <Label htmlFor="manter-logado">Manter logado por 48 horas</Label>
+          <Label htmlFor="manter-logado">Manter logado</Label>
         </div>
         
         <button

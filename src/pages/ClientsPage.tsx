@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import ClientForm from "@/components/ClientForm";
 import { format, differenceInDays } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -368,7 +368,7 @@ function ClientListItem({ client, onEditClick, onScheduleClick }: ClientListItem
           
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-muted-foreground" />
-            <a href={`tel:${client.phone}`} className="text-sm">
+            <a href={`tel:${client.phone}`} onClick={(e) => e.stopPropagation()} className="text-sm">
               {formatPhone(client.phone)}
             </a>
           </div>

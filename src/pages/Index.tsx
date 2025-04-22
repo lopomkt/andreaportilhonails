@@ -6,8 +6,8 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to dashboard
-    navigate("/");
+    // Redirect to dashboard immediately
+    navigate("/", { replace: true });
   }, [navigate]);
 
   // Loading state while redirect happens

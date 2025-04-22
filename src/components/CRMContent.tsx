@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MobileNavbar";
 import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
 import { WhatsAppButtonMenu } from "@/components/WhatsAppButtonMenu";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
