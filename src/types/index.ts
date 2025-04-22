@@ -1,26 +1,22 @@
-
 // Types related to appointments
-export type AppointmentStatus = 'confirmed' | 'pending' | 'canceled';
+export type AppointmentStatus = 'pending' | 'confirmed' | 'canceled';
+export type ConfirmationStatus = 'not_confirmed' | 'confirmed' | 'canceled';
 
 export interface Appointment {
   id: string;
-  client?: Client;
   clientId: string;
-  service?: Service;
   serviceId: string;
-  date: string; // ISO format string
-  endTime: string;
+  date: string | Date;
   price: number;
   status: AppointmentStatus;
-  createdAt?: string;
-  updatedAt?: string;
-  blockTotal?: boolean;
-  confirmationMessage?: string;
-  notes?: string;
-  cancellationReason?: string;
+  endTime?: string | Date | null;
+  cancellationReason?: string | null;
+  notes?: string | null;
+  client?: Client;
+  service?: Service;
+  confirmationStatus?: ConfirmationStatus;
 }
 
-// Types related to clients
 export interface Client {
   id: string;
   name: string;
@@ -33,7 +29,6 @@ export interface Client {
   createdAt?: string;
 }
 
-// Types related to services
 export interface Service {
   id: string;
   name: string;
@@ -42,7 +37,6 @@ export interface Service {
   description?: string;
 }
 
-// Types related to blocked dates
 export interface BlockedDate {
   id: string;
   date: string; // ISO format string
@@ -54,10 +48,8 @@ export interface BlockedDate {
   motivo?: string; // Added to match usage
 }
 
-// Types related to the calendar
 export type CalendarView = 'day' | 'week' | 'month';
 
-// Types related to message templates
 export interface MessageTemplate {
   id: string;
   type: string;
@@ -65,7 +57,6 @@ export interface MessageTemplate {
   active: boolean;
 }
 
-// Types related to absences
 export interface AbsenceRule {
   id: string;
   date: string; // ISO format string
@@ -75,13 +66,11 @@ export interface AbsenceRule {
   allDay: boolean;
 }
 
-// Types related to cancellation reasons
 export interface CancellationReason {
   id: string;
   reason: string;
 }
 
-// Types related to expenses
 export interface Expense {
   id: string;
   name: string;
@@ -92,7 +81,6 @@ export interface Expense {
   notes?: string;
 }
 
-// Types related to dashboard statistics
 export interface DashboardStats {
   monthRevenue: number;
   newClients: number;
@@ -102,7 +90,6 @@ export interface DashboardStats {
   weekAppointments: number;
 }
 
-// Types related to revenue data
 export interface MonthlyRevenueData {
   month: string;
   revenue: number;
@@ -110,25 +97,21 @@ export interface MonthlyRevenueData {
   profit?: number;
 }
 
-// Types related to revenue data
 export interface RevenueData {
   month: string;
   revenue: number;
 }
 
-// Types related to WhatsApp messaging
 export interface WhatsAppMessageData {
   client?: Client;
   message?: string;
   appointment?: Appointment;
 }
 
-// Type for refetch functions
 export interface RefetchFunction {
   (): Promise<any>;
 }
 
-// Types for function responses
 export interface ServiceResponse<T> {
   data?: T;
   error?: any;

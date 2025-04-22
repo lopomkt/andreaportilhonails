@@ -1,9 +1,73 @@
+import { Appointment, Client, Service } from '@/types';
+import { DbAppointment, DbClient, DbService } from './database-types';
 
-import { Database } from './types';
-import { Appointment, AppointmentStatus, Client, Service, BlockedDate } from '@/types';
-import { DbAppointment, DbClient, DbService, DbBlockedDate } from './types/database-types';
+export function mapDbAppointmentToApp(
+  dbAppointment: DbAppointment,
+  dbClient?: DbClient,
+  dbService?: DbService
+): Appointment {
+  return {
+    id: dbAppointment.id,
+    clientId: dbAppointment.cliente_id,
+    serviceId: dbAppointment.servico_id,
+    date: dbAppointment.data,
+    price: dbAppointment.preco,
+    status: dbAppointment.status === 'pendente' ? 'pending' :
+            dbAppointment.status === 'confirmado' ? 'confirmed' : 'canceled',
+    endTime: dbAppointment.hora_fim,
+    cancellationReason: dbAppointment.motivo_cancelamento,
+    notes: dbAppointment.observacoes,
+    confirmationStatus: dbAppointment.status_confirmacao as any || 'not_confirmed',
+    client: dbClient ? {
+      id: dbClient.id,
+      name: dbClient.nome,
+      phone: dbClient.telefone,
+      email: dbClient.email,
+      notes: dbClient.observacoes,
+      birthdate: dbClient.data_nascimento,
+      lastAppointment: dbClient.ultimo_agendamento,
+      totalSpent: dbClient.valor_total,
+      createdAt: dbClient.data_criacao
+    } : undefined,
+    service: dbService ? {
+      id: dbService.id,
+      name: dbService.nome,
+      description: dbService.descricao,
+      price: dbService.preco,
+      durationMinutes: dbService.duracao_minutos
+    } : undefined
+  };
+}
 
-// Map Supabase status to our application status
+export function mapAppAppointmentToDb(
+  appointment: Partial<Appointment>
+): {
+  id?: string;
+  cliente_id?: string;
+  servico_id?: string;
+  data?: string | Date;
+  preco?: number;
+  status?: string;
+  hora_fim?: string | Date | null;
+  motivo_cancelamento?: string | null;
+  observacoes?: string | null;
+  status_confirmacao?: string | null;
+} {
+  return {
+    id: appointment.id,
+    cliente_id: appointment.clientId,
+    servico_id: appointment.serviceId,
+    data: appointment.date,
+    preco: appointment.price,
+    status: appointment.status === 'pending' ? 'pendente' :
+            appointment.status === 'confirmed' ? 'confirmado' : 'cancelado',
+    hora_fim: appointment.endTime,
+    motivo_cancelamento: appointment.cancellationReason,
+    observacoes: appointment.notes,
+    status_confirmacao: appointment.confirmationStatus
+  };
+}
+
 export const mapDbStatusToAppStatus = (dbStatus: Database['public']['Enums']['status_agendamento']): AppointmentStatus => {
   switch (dbStatus) {
     case 'confirmado': return 'confirmed';
@@ -13,7 +77,6 @@ export const mapDbStatusToAppStatus = (dbStatus: Database['public']['Enums']['st
   }
 };
 
-// Map our application status to Supabase status
 export const mapAppStatusToDbStatus = (status: AppointmentStatus): Database['public']['Enums']['status_agendamento'] => {
   switch (status) {
     case 'confirmed': return 'confirmado';
@@ -23,41 +86,6 @@ export const mapAppStatusToDbStatus = (status: AppointmentStatus): Database['pub
   }
 };
 
-// Convert Supabase appointment to our application Appointment type
-export const mapDbAppointmentToApp = (dbAppointment: DbAppointment, client?: DbClient, service?: DbService): Appointment => {
-  return {
-    id: dbAppointment.id,
-    clientId: dbAppointment.cliente_id,
-    serviceId: dbAppointment.servico_id,
-    date: dbAppointment.data,
-    endTime: dbAppointment.hora_fim || new Date(new Date(dbAppointment.data).getTime() + (service?.duracao_minutos || 60) * 60000).toISOString(),
-    status: mapDbStatusToAppStatus(dbAppointment.status),
-    notes: dbAppointment.observacoes || undefined,
-    price: Number(dbAppointment.preco),
-    client: client ? mapDbClientToApp(client) : undefined,
-    service: service ? mapDbServiceToApp(service) : undefined,
-    cancellationReason: dbAppointment.motivo_cancelamento || undefined
-  };
-};
-
-// Convert our application Appointment to Supabase format for insert/update
-export const mapAppAppointmentToDb = (appointment: Partial<Appointment>): Partial<DbAppointment> => {
-  const dbAppointment: Partial<DbAppointment> = {};
-  
-  if (appointment.id) dbAppointment.id = appointment.id;
-  if (appointment.clientId) dbAppointment.cliente_id = appointment.clientId;
-  if (appointment.serviceId) dbAppointment.servico_id = appointment.serviceId;
-  if (appointment.date) dbAppointment.data = appointment.date;
-  if (appointment.endTime) dbAppointment.hora_fim = appointment.endTime;
-  if (appointment.notes) dbAppointment.observacoes = appointment.notes;
-  if (appointment.price !== undefined) dbAppointment.preco = appointment.price;
-  if (appointment.status) dbAppointment.status = mapAppStatusToDbStatus(appointment.status);
-  if (appointment.cancellationReason) dbAppointment.motivo_cancelamento = appointment.cancellationReason;
-  
-  return dbAppointment;
-};
-
-// Convert Supabase client to our application Client type
 export const mapDbClientToApp = (dbClient: DbClient): Client => {
   return {
     id: dbClient.id,
@@ -71,7 +99,6 @@ export const mapDbClientToApp = (dbClient: DbClient): Client => {
   };
 };
 
-// Convert our application Client to Supabase format for insert/update
 export const mapAppClientToDb = (client: Partial<Client>): Partial<DbClient> => {
   const dbClient: Partial<DbClient> = {};
   
@@ -86,7 +113,6 @@ export const mapAppClientToDb = (client: Partial<Client>): Partial<DbClient> => 
   return dbClient;
 };
 
-// Convert Supabase service to our application Service type
 export const mapDbServiceToApp = (dbService: DbService): Service => {
   return {
     id: dbService.id,
@@ -97,7 +123,6 @@ export const mapDbServiceToApp = (dbService: DbService): Service => {
   };
 };
 
-// Convert our application Service to Supabase format for insert/update
 export const mapAppServiceToDb = (service: Partial<Service>): Partial<DbService> => {
   const dbService: Partial<DbService> = {};
   
@@ -110,7 +135,6 @@ export const mapAppServiceToDb = (service: Partial<Service>): Partial<DbService>
   return dbService;
 };
 
-// Map DbBlockedDate to BlockedDate
 export const mapDbBlockedDateToApp = (dbBlockedDate: DbBlockedDate): BlockedDate => {
   return {
     id: dbBlockedDate.id,
@@ -124,7 +148,6 @@ export const mapDbBlockedDateToApp = (dbBlockedDate: DbBlockedDate): BlockedDate
   };
 };
 
-// Map BlockedDate to DbBlockedDate
 export const mapAppBlockedDateToDb = (blockedDate: Partial<BlockedDate>): Partial<DbBlockedDate> => {
   const dbBlockedDate: Partial<DbBlockedDate> = {};
   

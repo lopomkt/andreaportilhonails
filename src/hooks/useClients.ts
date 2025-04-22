@@ -29,32 +29,32 @@ export function useClients() {
         throw error;
       }
 
-      // NOVO fallback defensivo para garantir sempre array e evitar states quebrados
+      // IMPORTANTE: fallback defensivo aprimorado para garantir integridade dos dados
       if (!data || !Array.isArray(data)) {
+        console.warn("useClients: Data from API is not an array or is null:", data);
         setClients([]);
         return [];
       }
 
-      if (data) {
-        console.log("useClients: Client data from Supabase:", data);
-        const mappedClients: Client[] = data.map(item => {
-          return {
-            id: item.id,
-            name: item.nome || '',
-            phone: item.telefone || '',
-            email: item.email || '',
-            notes: item.observacoes || '',
-            totalSpent: item.valor_total || 0,
-            birthdate: item.data_nascimento || null,
-            lastAppointment: item.ultimo_agendamento || null,
-            createdAt: item.data_criacao || null
-          };
-        });
-        setClients(mappedClients);
-        return mappedClients;
-      }
-      setClients([]);
-      return [];
+      console.log("useClients: Client data from Supabase:", data);
+      const mappedClients: Client[] = data.map(item => {
+        return {
+          id: item.id,
+          name: item.nome || '',
+          phone: item.telefone || '',
+          email: item.email || '',
+          notes: item.observacoes || '',
+          totalSpent: item.valor_total || 0,
+          birthdate: item.data_nascimento || null,
+          lastAppointment: item.ultimo_agendamento || null,
+          createdAt: item.data_criacao || null
+        };
+      });
+      
+      // Atualizar o state com os clientes mapeados
+      setClients(mappedClients);
+      console.log("useClients: State updated with clients:", mappedClients.length);
+      return mappedClients;
     } catch (err: any) {
       console.error("Error in fetchClients:", err);
       const errorMessage = err?.message || 'Erro ao buscar clientes';

@@ -66,8 +66,10 @@ export default function ClientsPage() {
     console.log("ClientsPage: Filtering clients:", clients);
     if (!clients || !Array.isArray(clients)) {
       setFilteredClients([]);
+      console.log("ClientsPage: clients is not an array or is null");
       return;
     }
+    
     let filtered = [...clients]; 
     if (searchTerm) {
       filtered = filtered.filter(client => 
@@ -166,6 +168,55 @@ export default function ClientsPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-rose-200 border-t-rose-500"></div>
           <p className="text-sm text-muted-foreground">Carregando clientes...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!Array.isArray(clients) || clients.length === 0) {
+    return (
+      <div className="space-y-4 animate-fade-in max-w-3xl mx-auto px-4 py-4 pb-20">
+        <div className="flex flex-col md:flex-row gap-4 justify-between mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar cliente..." 
+              className="pl-9" 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+            />
+          </div>
+          <Button 
+            onClick={() => setShowNewClientModal(true)} 
+            className="gap-1 bg-nail-500 hover:bg-nail-600"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
+        
+        <div className="text-center py-12">
+          <Avatar className="h-16 w-16 mx-auto text-rose-300 mb-4 opacity-30">
+            <AvatarFallback className="bg-rose-100/50 text-rose-400 text-2xl">
+              ?
+            </AvatarFallback>
+          </Avatar>
+          <h3 className="text-lg font-medium mb-1">Nenhum cliente encontrado</h3>
+          <p className="text-muted-foreground">
+            {searchTerm 
+              ? "Tente outro termo de busca" 
+              : "Adicione um novo cliente para começar"
+            }
+          </p>
+        </div>
+
+        <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Cadastrar novo cliente</DialogTitle>
+            </DialogHeader>
+            <ClientForm onSuccess={handleNewClientSuccess} onCancel={() => setShowNewClientModal(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

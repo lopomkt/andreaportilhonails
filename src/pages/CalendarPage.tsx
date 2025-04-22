@@ -153,7 +153,7 @@ export default function CalendarPage() {
     setOpenBlockedDateDialog(true);
   };
   
-  return <div className="p-6 space-y-6 animate-fade-in">
+  return <div className="p-6 space-y-6 animate-fade-in overflow-y-auto">
       <Card className="border-rose-100 shadow-soft">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-3">
           <div>
@@ -201,6 +201,7 @@ export default function CalendarPage() {
               <TabsContent value="day" className="m-0">
                 <DayView 
                   date={currentDate}
+                  onDaySelect={handleDaySelect}
                   onSuggestedTimeSelect={(date, time) => handleOpenAppointmentDialog(date, time)}
                 />
               </TabsContent>

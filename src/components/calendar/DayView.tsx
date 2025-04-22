@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
@@ -12,6 +13,7 @@ import { Appointment, AppointmentStatus, BlockedDate } from '@/types';
 import { cn } from "@/lib/utils";
 import { formatMinutesToHumanTime } from '@/lib/formatters';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface DayViewProps {
   date: Date;
@@ -27,6 +29,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const { appointments, blockedDates, services } = useSupabaseData();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
+  const isMobile = useIsMobile();
 
   // Normalize date (sem forçar horário fixo)
   const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -82,45 +85,59 @@ export const DayView: React.FC<DayViewProps> = ({
 
   return (
     <div className="day-view-container px-2 pt-4">
-      {/* Navegação entre dias */}
+      {/* Navegação entre dias - Versão melhorada para desktop e mobile */}
       <div className="flex items-center justify-between mb-3">
-        <Button
-          size="icon"
-          variant="outline"
-          className="md:hidden"
-          onClick={handlePrevDay}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1 flex items-center justify-center">
-          <Button
-            size="icon"
-            variant="outline"
-            className="hidden md:inline-flex mr-2"
-            onClick={handlePrevDay}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h3 className="text-body md:text-lg font-medium text-center flex-1">
-            {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
-          </h3>
-          <Button
-            size="icon"
-            variant="outline"
-            className="hidden md:inline-flex ml-2"
-            onClick={handleNextDay}
-          >
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-        </div>
-        <Button
-          size="icon"
-          variant="outline"
-          className="md:hidden"
-          onClick={handleNextDay}
-        >
-          <ArrowRight className="w-5 h-5" />
-        </Button>
+        {isMobile ? (
+          // Mobile layout: seta esquerda | data | seta direita
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handlePrevDay}
+              className="flex-shrink-0"
+              aria-label="Dia anterior"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="text-body font-medium text-center px-1 truncate">
+              {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+            </div>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleNextDay}
+              className="flex-shrink-0"
+              aria-label="Próximo dia"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </>
+        ) : (
+          // Desktop layout: texto centralizado com setas nas laterais
+          <div className="w-full flex items-center justify-center gap-4">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handlePrevDay}
+              className="flex-shrink-0"
+              aria-label="Dia anterior"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <h3 className="text-body font-medium text-center">
+              {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+            </h3>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleNextDay}
+              className="flex-shrink-0"
+              aria-label="Próximo dia"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
       
       <div className="time-slots grid gap-3">

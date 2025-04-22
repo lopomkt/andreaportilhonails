@@ -73,7 +73,8 @@ export function useAppointments() {
         status: dbAppointmentData.status || 'pendente',
         hora_fim: dbAppointmentData.hora_fim || null,
         motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
-        observacoes: dbAppointmentData.observacoes || null
+        observacoes: dbAppointmentData.observacoes || null,
+        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
       };
       
       const { data, error } = await supabase
@@ -134,6 +135,7 @@ export function useAppointments() {
       if (dbAppointmentData.hora_fim !== undefined) updateData.hora_fim = dbAppointmentData.hora_fim;
       if (dbAppointmentData.motivo_cancelamento !== undefined) updateData.motivo_cancelamento = dbAppointmentData.motivo_cancelamento;
       if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
+      if (dbAppointmentData.status_confirmacao !== undefined) updateData.status_confirmacao = dbAppointmentData.status_confirmacao;
       
       const { data, error } = await supabase
         .from('agendamentos')

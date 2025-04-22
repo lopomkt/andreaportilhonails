@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addDays, getDay, differenceInMinutes, parseISO, set, addMonths, subMonths } from 'date-fns';
@@ -119,11 +120,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
     setCurrentMonth(addMonths(currentMonth, 1));
   };
   
-  // Handle day click - FIXED para selecionar corretamente a data clicada (sem ajuste de horário)
+  // Handle day click - Fixed to preserve exact date when clicked
   const handleDayClick = (day: Date) => {
     if (day) {
-      // Ajuste para criar um novo objeto Date, mas manter data exatamente igual ao dia clicado
-      const selectedDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+      // Create a new Date object with the exact same day that was clicked
+      // This fixes the issue where clicking on day 21 was selecting day 20
+      const selectedDate = new Date(day);
       onDaySelect(selectedDate);
     }
   };
