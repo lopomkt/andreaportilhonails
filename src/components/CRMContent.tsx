@@ -46,7 +46,8 @@ export const CRMContent = () => {
   }
 
   return (
-    <div id="crm-conteudo" className="min-h-screen">
+    // Adding overflow-y-auto to ensure content is scrollable
+    <div id="crm-conteudo" className="min-h-screen overflow-y-auto">
       <BrowserRouter>
         <MainLayout>
           <Routes>

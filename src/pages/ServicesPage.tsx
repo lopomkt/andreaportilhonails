@@ -1,20 +1,34 @@
-import { Button } from "@/components/ui/button";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ServiceList } from "@/components/ServiceList";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
+import { ServiceList } from "@/components/ServiceList";
 import { ServiceForm } from "@/components/ServiceForm";
 import { Plus } from "lucide-react";
+import { Animation } from "@/components/ui/animation"; 
+import { Button } from "@/components/ui/button";
+
 export default function ServicesPage() {
   const [showAddService, setShowAddService] = useState(false);
-  return <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="tracking-tight px-0 text-lg mx-[15px] font-bold">Cadastre Serviços</h1>
-        <Button onClick={() => setShowAddService(true)} className="bg-primary hover:bg-primary/90 gap-2 mx-[15px]">
-          <Plus className="h-4 w-4" />
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleAddService = () => {
+    setIsLoading(true);
+    setShowAddService(true);
+    // Simulate loading to provide feedback
+    setTimeout(() => setIsLoading(false), 500);
+  };
+  
+  return (
+    <div className="p-6 space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="tracking-tight text-lg font-bold">Cadastre Serviços</h1>
+        <Button 
+          onClick={handleAddService} 
+          className="bg-primary hover:bg-primary/90 gap-2 w-full sm:w-auto"
+          disabled={isLoading}
+        >
+          {isLoading ? <Animation className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           Novo Serviço
         </Button>
       </div>
@@ -24,13 +38,16 @@ export default function ServicesPage() {
       </div>
       
       {/* Only render dialog when state is true */}
-      {showAddService && <Dialog open={showAddService} onOpenChange={setShowAddService}>
-          <DialogContent>
+      {showAddService && 
+        <Dialog open={showAddService} onOpenChange={setShowAddService}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Novo Serviço</DialogTitle>
             </DialogHeader>
             <ServiceForm onSuccess={() => setShowAddService(false)} />
           </DialogContent>
-        </Dialog>}
-    </div>;
+        </Dialog>
+      }
+    </div>
+  );
 }

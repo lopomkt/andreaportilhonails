@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -110,8 +111,23 @@
   * {
     @apply border-border;
   }
+  
+  /* Fix for scroll issue - removing overflow:hidden from body */
+  html, body {
+    @apply overflow-x-hidden overflow-y-auto;
+    max-height: none;
+    height: auto;
+  }
+  
+  /* Ensure root element doesn't block scrolling */
+  #root, #__next {
+    @apply min-h-screen w-full;
+    overflow: visible;
+    position: relative;
+  }
+  
   body {
-    @apply bg-background text-foreground font-poppins overflow-hidden;
+    @apply bg-background text-foreground font-poppins;
   }
 }
 
@@ -160,6 +176,16 @@
   .tag-premium {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800;
   }
+  
+  /* Make sure buttons and inputs don't overflow on mobile */
+  .responsive-container {
+    @apply w-full flex flex-wrap gap-2;
+  }
+  
+  /* Fix for modal/dialog open without body scroll locking permanently */
+  .dialog-open {
+    @apply overflow-hidden;
+  }
 }
 
 @keyframes fadeIn {
@@ -192,4 +218,19 @@
 
 .client-tag-inactive {
   @apply bg-gray-100 text-gray-800;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .mobile-full {
+    @apply w-full flex-wrap;
+  }
+  
+  .mobile-stacked {
+    @apply flex-col w-full;
+  }
+  
+  .mobile-padded {
+    @apply px-4 py-4;
+  }
 }

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AppointmentFormWrapper } from "@/components/AppointmentFormWrapper";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BlockedDateForm } from "@/components/BlockedDateForm";
+import { Animation } from "@/components/ui/animation";
 
 const LoadingView = () => <div className="flex items-center justify-center p-8">
     <div className="animate-pulse space-y-4 w-full">
@@ -31,6 +32,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [suggestedTime, setSuggestedTime] = useState<string | null>(null);
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const location = useLocation();
@@ -103,6 +105,7 @@ export default function CalendarPage() {
   };
   
   const handleViewChange = (value: string) => {
+    setIsLoading(true);
     toast({
       title: "Carregando...",
       description: `Atualizando visualização do calendário`,
@@ -119,6 +122,7 @@ export default function CalendarPage() {
       const searchParams = new URLSearchParams(location.search);
       searchParams.set('view', value);
       navigate(`/calendario?${searchParams.toString()}`);
+      setIsLoading(false);
     }, 100);
   };
   
@@ -149,24 +153,29 @@ export default function CalendarPage() {
     setOpenBlockedDateDialog(true);
   };
   
-  return <div className="p-4 space-y-6 animate-fade-in px-[5px]">
+  return <div className="p-6 space-y-6 animate-fade-in">
       <Card className="border-rose-100 shadow-soft">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-3">
           <div>
             <CardTitle className="font-bold text-rose-700 text-xl">Calendário</CardTitle>
             <CardDescription className="text-sm">Gerencie seus Agendamentos</CardDescription>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
             <Button 
-              className="bg-gray-500 text-white shadow-soft hover:bg-gray-600" 
+              className="bg-gray-500 text-white shadow-soft hover:bg-gray-600 w-full sm:w-auto" 
               onClick={handleOpenBlockedDateDialog}
+              disabled={isLoading}
             >
-              <Lock className="mr-2 h-4 w-4" />
+              {isLoading ? <Animation className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
               {isMobile ? "Bloquear" : "Bloquear Horário"}
             </Button>
-            <Button className="bg-rose-500 text-white shadow-soft hover:bg-rose-600" onClick={() => handleOpenAppointmentDialog()}>
-              <CalendarClock className="mr-2 h-4 w-4" />
+            <Button 
+              className="bg-rose-500 text-white shadow-soft hover:bg-rose-600 w-full sm:w-auto" 
+              onClick={() => handleOpenAppointmentDialog()}
+              disabled={isLoading}
+            >
+              {isLoading ? <Animation className="mr-2 h-4 w-4" /> : <CalendarClock className="mr-2 h-4 w-4" />}
               {isMobile ? "Agendar" : "Novo Agendamento"}
             </Button>
           </div>

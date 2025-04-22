@@ -47,7 +47,8 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <DataProvider>
         <TooltipProvider>
-          <div className="min-h-screen bg-gradient-to-br from-rose-50 to-rose-100 overflow-y-auto">
+          {/* Changed from min-h-screen to min-h-dvh and removed overflow-y-auto */}
+          <div className="min-h-dvh bg-gradient-to-br from-rose-50 to-rose-100">
             <Toaster />
             {!isAuthenticated ? <LoginScreen /> : <CRMContent />}
           </div>
