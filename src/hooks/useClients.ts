@@ -62,7 +62,7 @@ export function useClients(): UseClientsReturnType {
 
       if (error) throw error;
       
-      await fetchClients(); // Refresh client list
+      // Removed fetchClients() call from here to avoid duplicate fetching
       return { success: true, data };
     } catch (err: any) {
       console.error("Error creating client:", err);
@@ -86,7 +86,7 @@ export function useClients(): UseClientsReturnType {
 
       if (error) throw error;
       
-      await fetchClients(); // Refresh client list
+      // Removed fetchClients() call from here to avoid duplicate fetching
       return { success: true, data };
     } catch (err: any) {
       console.error("Error updating client:", err);
@@ -103,7 +103,7 @@ export function useClients(): UseClientsReturnType {
 
       if (error) throw error;
       
-      await fetchClients(); // Refresh client list
+      // Removed fetchClients() call from here to avoid duplicate fetching
       return { success: true };
     } catch (err: any) {
       console.error("Error deleting client:", err);
@@ -118,6 +118,7 @@ export function useClients(): UseClientsReturnType {
     return sortedClients.slice(0, limit);
   }, [clients]);
 
+  // Single useEffect with no dependencies to avoid infinite loops
   useEffect(() => {
     fetchClients();
   }, []);
@@ -127,7 +128,7 @@ export function useClients(): UseClientsReturnType {
     loading,
     error,
     fetchClients,
-    refetchClients: fetchClients,
+    refetchClients: fetchClients, // Using fetchClients as refetchClients for consistency
     createClient,
     updateClient,
     deleteClient,
