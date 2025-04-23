@@ -77,20 +77,27 @@ const DayHeader: React.FC<DayHeaderProps> = ({ selectedDate, setSelectedDate }) 
 // ---------- AppointmentList ----------
 interface AppointmentListProps {
   appointments: Appointment[];
+  onSuggestedTimeSelect?: (date: Date, time: string) => void;
 }
-const AppointmentList: React.FC<AppointmentListProps> = ({ appointments }) => (
+const AppointmentList: React.FC<AppointmentListProps> = ({ appointments, onSuggestedTimeSelect }) => (
   <div className="flex flex-col gap-3 w-full">
     {appointments.map(appt => (
       <div
         key={appt.id}
         className={cn(
-          "bg-white border rounded-lg p-4 max-w-full min-w-0 shadow hover:shadow-md transition-shadow",
+          "bg-white border rounded-lg p-4 max-w-full min-w-0 shadow hover:shadow-md transition-shadow cursor-pointer",
           appt.status === "confirmed"
             ? "border-green-200"
             : appt.status === "pending"
             ? "border-amber-200"
             : "border-red-200"
         )}
+        onClick={() => onSuggestedTimeSelect && 
+          onSuggestedTimeSelect(
+            new Date(appt.date),
+            format(new Date(appt.date), "HH:mm")
+          )
+        }
       >
         <div className="flex flex-col md:flex-row md:justify-between gap-2">
           <div>
@@ -135,11 +142,13 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ appointments }) => (
 export interface DayViewProps {
   date: Date;
   onDaySelect?: (date: Date) => void;
+  onSuggestedTimeSelect?: (date: Date, time: string) => void;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   date,
-  onDaySelect
+  onDaySelect,
+  onSuggestedTimeSelect
 }) => {
   // Normalização segura da data selecionada
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -179,7 +188,10 @@ export const DayView: React.FC<DayViewProps> = ({
       {/* Lista de agendamentos ou estado vazio */}
       {!loading && (
         appointments.length > 0
-          ? <AppointmentList appointments={appointments} />
+          ? <AppointmentList 
+              appointments={appointments} 
+              onSuggestedTimeSelect={onSuggestedTimeSelect}
+            />
           : <EmptyState />
       )}
     </div>
