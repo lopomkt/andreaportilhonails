@@ -116,3 +116,11 @@ export interface ServiceResponse<T> {
   data?: T;
   error?: any;
 }
+
+// Adicionando a tipagem para retorno do hook useClients:
+export interface UseClientsReturnType {
+  clients: Client[];
+  loading: boolean;
+  error: string | null;
+  refetchClients: () => Promise<void>;
+}
