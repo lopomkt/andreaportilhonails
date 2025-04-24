@@ -1,6 +1,6 @@
-
 import { useState, useEffect, FormEvent } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,7 @@ export const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isExpired, setIsExpired] = useLocalStorage("acessoAndrea", "");
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const validateLogin = (event: FormEvent) => {
     event.preventDefault();
@@ -30,6 +31,9 @@ export const LoginScreen = () => {
         title: "Login realizado com sucesso!",
         description: "Bem-vinda ao seu sistema de gerenciamento, Andrea!"
       });
+      
+      // Redirect to dashboard after successful login
+      navigate("/", { replace: true });
     } else {
       setIsLoading(false);
       toast({
@@ -41,19 +45,21 @@ export const LoginScreen = () => {
   };
 
   useEffect(() => {
-    // Check if login is still valid
+    // Check if login is still valid and redirect if necessary
     const storedAccess = localStorage.getItem("acessoAndrea");
     if (storedAccess) {
       const lastAccess = new Date(storedAccess);
       const now = new Date();
       const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
       
-      // If more than 48 hours have passed since last access, clear session
-      if (hoursDiff >= 48) {
+      // If less than 48 hours have passed and user is already logged in, redirect to dashboard
+      if (hoursDiff < 48) {
+        navigate("/", { replace: true });
+      } else {
         localStorage.removeItem("acessoAndrea");
       }
     }
-  }, []);
+  }, [navigate]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-nail-50/50 p-4 animate-fade-in">
@@ -119,4 +125,3 @@ export const LoginScreen = () => {
     </div>
   );
 };
-
