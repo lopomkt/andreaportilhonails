@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { Client } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import ClientForm from "@/components/ClientForm";
+import ClientForm from "@/components/clients/ClientForm";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -47,7 +47,7 @@ export default function ClientsPage() {
 
     // Subscribe to realtime changes
     const channel = supabase
-      .channel('public:clientes')
+      .channel('clientes-changes')
       .on(
         'postgres_changes',
         {

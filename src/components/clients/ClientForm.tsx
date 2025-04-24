@@ -53,9 +53,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
       const clientData = {
         name,
         phone: phone.replace(/\D/g, ''),
-        email: email || null,
-        birthdate: birthdate ? new Date(birthdate).toISOString() : null,
-        notes: notes || null
+        email: email || undefined,
+        birthdate: birthdate ? new Date(birthdate).toISOString() : undefined,
+        notes: notes || undefined
       };
       
       if (client) {
