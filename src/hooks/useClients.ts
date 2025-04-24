@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +9,6 @@ export function useClients() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Helper function to validate responses
   const isValidResponse = <T extends unknown>(response: { data: T | null; error: any } | null): response is { data: T; error: null } => {
     return response !== null && response.data !== null && !response.error;
   };
@@ -29,7 +27,6 @@ export function useClients() {
         throw error;
       }
 
-      // IMPORTANTE: fallback defensivo aprimorado para garantir integridade dos dados
       if (!data || !Array.isArray(data)) {
         console.warn("useClients: Data from API is not an array or is null:", data);
         setClients([]);
@@ -37,21 +34,18 @@ export function useClients() {
       }
 
       console.log("useClients: Client data from Supabase:", data);
-      const mappedClients: Client[] = data.map(item => {
-        return {
-          id: item.id,
-          name: item.nome || '',
-          phone: item.telefone || '',
-          email: item.email || '',
-          notes: item.observacoes || '',
-          totalSpent: item.valor_total || 0,
-          birthdate: item.data_nascimento || null,
-          lastAppointment: item.ultimo_agendamento || null,
-          createdAt: item.data_criacao || null
-        };
-      });
+      const mappedClients: Client[] = data.map(item => ({
+        id: item.id,
+        name: item.nome || '',
+        phone: item.telefone || '',
+        email: item.email || '',
+        notes: item.observacoes || '',
+        totalSpent: item.valor_total || 0,
+        birthdate: item.data_nascimento || null,
+        lastAppointment: item.ultimo_agendamento || null,
+        createdAt: item.data_criacao || null
+      }));
       
-      // Atualizar o state com os clientes mapeados
       setClients(mappedClients);
       console.log("useClients: State updated with clients:", mappedClients.length);
       return mappedClients;
@@ -75,12 +69,10 @@ export function useClients() {
     try {
       setLoading(true);
       
-      // Make sure required fields are present
       if (!clientData.name || !clientData.phone) {
         throw new Error('Nome e telefone são obrigatórios');
       }
       
-      // Prepare the data for insert to match database schema requirements
       const dataToInsert = {
         nome: clientData.name,
         telefone: clientData.phone,
@@ -145,7 +137,6 @@ export function useClients() {
     try {
       setLoading(true);
       
-      // Prepare the data for update
       const updateData: Record<string, any> = {};
       
       if (clientData.name !== undefined) updateData.nome = clientData.name;
