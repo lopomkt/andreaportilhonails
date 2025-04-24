@@ -40,7 +40,10 @@ export const LoginScreen = () => {
         
         // Armazena data de login
         const now = new Date();
-        setIsExpired(now.toISOString());
+        const nowString = now.toISOString();
+        
+        // Usar diretamente o localStorage para evitar problemas com o hook
+        localStorage.setItem("acessoAndrea", JSON.stringify(nowString));
         
         toast.success("Login realizado com sucesso!", {
           description: "Bem-vinda ao seu sistema de gerenciamento, Andrea!"
@@ -49,6 +52,7 @@ export const LoginScreen = () => {
         // Redireciona para o dashboard
         setTimeout(() => {
           console.log("Redirecionando para o dashboard...");
+          setIsLoading(false);
           navigate("/", { replace: true });
         }, 800);
       } else {

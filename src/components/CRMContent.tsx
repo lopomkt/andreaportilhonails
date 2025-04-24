@@ -27,7 +27,7 @@ export const CRMContent = () => {
       const storedAccess = localStorage.getItem("acessoAndrea");
       if (storedAccess) {
         try {
-          const lastAccess = new Date(storedAccess);
+          const lastAccess = new Date(JSON.parse(storedAccess));
           const now = new Date();
           const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
           setIsAuthenticated(hoursDiff < 48);
@@ -54,6 +54,7 @@ export const CRMContent = () => {
       <MainLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/calendario" element={<CalendarPage />} />
           <Route path="/clientes" element={<ClientsPage />} />
           <Route path="/servicos" element={<ServicesPage />} />

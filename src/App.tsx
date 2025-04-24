@@ -6,7 +6,7 @@ import { DataProvider } from "@/context/DataProvider";
 import { LoginScreen } from "@/components/auth/LoginScreen";
 import { CRMContent } from "@/components/CRMContent";
 import { useEffect, useState } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +26,7 @@ const App = () => {
       try {
         const storedAccess = localStorage.getItem("acessoAndrea");
         if (storedAccess) {
-          const lastAccess = new Date(storedAccess);
+          const lastAccess = new Date(JSON.parse(storedAccess));
           const now = new Date();
           const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
           setIsAuthenticated(hoursDiff < 48);
@@ -56,7 +56,13 @@ const App = () => {
           <BrowserRouter>
             <div className="min-h-dvh bg-gradient-to-br from-rose-50 to-rose-100 overflow-y-auto">
               <Toaster />
-              {!isAuthenticated ? <LoginScreen /> : <CRMContent />}
+              {!isAuthenticated ? (
+                <Routes>
+                  <Route path="*" element={<LoginScreen />} />
+                </Routes>
+              ) : (
+                <CRMContent />
+              )}
             </div>
           </BrowserRouter>
         </TooltipProvider>
