@@ -6,6 +6,7 @@ import { DataProvider } from "@/context/DataProvider";
 import { LoginScreen } from "@/components/auth/LoginScreen";
 import { CRMContent } from "@/components/CRMContent";
 import { useEffect, useState } from "react";
+import { BrowserRouter } from "react-router-dom";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,10 +53,12 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <DataProvider>
         <TooltipProvider>
-          <div className="min-h-dvh bg-gradient-to-br from-rose-50 to-rose-100 overflow-y-auto">
-            <Toaster />
-            {!isAuthenticated ? <LoginScreen /> : <CRMContent />}
-          </div>
+          <BrowserRouter>
+            <div className="min-h-dvh bg-gradient-to-br from-rose-50 to-rose-100 overflow-y-auto">
+              <Toaster />
+              {!isAuthenticated ? <LoginScreen /> : <CRMContent />}
+            </div>
+          </BrowserRouter>
         </TooltipProvider>
       </DataProvider>
     </QueryClientProvider>

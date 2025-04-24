@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { BrowserRouter } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MobileNavbar";
 import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
 import { WhatsAppButtonMenu } from "@/components/WhatsAppButtonMenu";
@@ -52,26 +51,24 @@ export const CRMContent = () => {
 
   return (
     <div id="crm-conteudo" className="min-h-dvh overflow-y-auto">
-      <BrowserRouter>
-        <MainLayout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/calendario" element={<CalendarPage />} />
-            <Route path="/clientes" element={<ClientsPage />} />
-            <Route path="/servicos" element={<ServicesPage />} />
-            <Route path="/financeiro" element={<FinancePage />} />
-            <Route path="/relatorios" element={<ReportsPage />} />
-            <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
-            <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
-            <Route path="/funcionalidades/ausencias" element={<AbsenceRulesPage />} />
-            <Route path="/funcionalidades/mensagens" element={<MessagesTemplatePage />} />
-            <Route path="/funcionalidades/ranking-clientes" element={<ClientRankingPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <WhatsAppButtonMenu />
-          <QuickAppointmentButton />
-        </MainLayout>
-      </BrowserRouter>
+      <MainLayout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/calendario" element={<CalendarPage />} />
+          <Route path="/clientes" element={<ClientsPage />} />
+          <Route path="/servicos" element={<ServicesPage />} />
+          <Route path="/financeiro" element={<FinancePage />} />
+          <Route path="/relatorios" element={<ReportsPage />} />
+          <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
+          <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
+          <Route path="/funcionalidades/ausencias" element={<AbsenceRulesPage />} />
+          <Route path="/funcionalidades/mensagens" element={<MessagesTemplatePage />} />
+          <Route path="/funcionalidades/ranking-clientes" element={<ClientRankingPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <WhatsAppButtonMenu />
+        <QuickAppointmentButton />
+      </MainLayout>
     </div>
   );
 };
