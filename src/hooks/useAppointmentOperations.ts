@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useDataContext } from './useDataContext';
 
 export function useAppointmentOperations() {
-  const { appointments, fetchAppointments } = useDataContext();
+  const { appointments, refetchAppointments } = useDataContext();
   const { toast } = useToast();
 
   const getAppointmentsForDate = useCallback((date: Date): Appointment[] => {
@@ -26,14 +26,14 @@ export function useAppointmentOperations() {
     );
   }, [getAppointmentsForDate]);
 
-  const refetchAppointments = useCallback(async (): Promise<void> => {
+  const refetchAppointmentsData = useCallback(async (): Promise<void> => {
     console.log("DataContext: refetchAppointments called");
-    await fetchAppointments();
-  }, [fetchAppointments]);
+    await refetchAppointments();
+  }, [refetchAppointments]);
 
   return {
     getAppointmentsForDate,
     calculateDailyRevenue,
-    refetchAppointments,
+    refetchAppointments: refetchAppointmentsData,
   };
 }
