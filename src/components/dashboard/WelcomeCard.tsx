@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarClock, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
+import { isToday } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Appointment } from "@/types";
+import { formatCurrency } from "@/lib/formatters";
 
 interface WelcomeCardProps {
   todayAppointments: Appointment[];

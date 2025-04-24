@@ -1,7 +1,7 @@
 import { useData } from "@/context/DataContext";
 import { formatCurrency } from "@/lib/formatters";
 import { DollarSign, BadgeDollarSign, Wallet, Users } from "lucide-react";
-import { addDays, startOfMonth, endOfMonth, isAfter, isBefore } from "date-fns";
+import { addDays, startOfMonth, endOfMonth, isAfter, isBefore, isToday } from "date-fns";
 import { useState, useEffect } from "react";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { MotivationalMessage } from "@/components/dashboard/MotivationalMessage";
