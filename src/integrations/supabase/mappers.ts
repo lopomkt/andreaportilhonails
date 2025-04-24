@@ -5,7 +5,8 @@ import {
   Appointment, 
   Service, 
   BlockedDate, 
-  AppointmentStatus 
+  AppointmentStatus,
+  ConfirmationStatus
 } from '@/types';
 
 /**
@@ -69,6 +70,14 @@ export function mapDbAppointmentToApp(
     status = 'canceled';
   }
 
+  // Fix for error: Type 'string' is not assignable to type 'ConfirmationStatus'
+  let confirmationStatus: ConfirmationStatus = 'not_confirmed';
+  if (dbAppointment.status_confirmacao === 'confirmed') {
+    confirmationStatus = 'confirmed';
+  } else if (dbAppointment.status_confirmacao === 'canceled') {
+    confirmationStatus = 'canceled';
+  }
+
   return {
     id: dbAppointment.id,
     clientId: dbAppointment.cliente_id,
@@ -79,7 +88,7 @@ export function mapDbAppointmentToApp(
     status: status,
     cancellationReason: dbAppointment.motivo_cancelamento || undefined,
     notes: dbAppointment.observacoes || undefined,
-    confirmationStatus: dbAppointment.status_confirmacao || 'not_confirmed',
+    confirmationStatus: confirmationStatus,
     client,
     service
   };
@@ -94,22 +103,29 @@ export function mapAppAppointmentToDb(appointment: Partial<Appointment>): Partia
   if (appointment.clientId !== undefined) dbAppointment.cliente_id = appointment.clientId;
   if (appointment.serviceId !== undefined) dbAppointment.servico_id = appointment.serviceId;
   if (appointment.date !== undefined) {
-    // Convert Date objects to ISO strings
+    // Convert Date objects to ISO strings - Fix for error: Property 'toISOString' does not exist on type 'never'
     dbAppointment.data = typeof appointment.date === 'string'
       ? appointment.date
-      : appointment.date.toISOString();
+      : appointment.date instanceof Date
+        ? appointment.date.toISOString()
+        : String(appointment.date); // Fallback
   }
   if (appointment.endTime !== undefined) {
     // Convert Date objects to ISO strings
     dbAppointment.hora_fim = typeof appointment.endTime === 'string'
       ? appointment.endTime
-      : appointment.endTime.toISOString();
+      : appointment.endTime instanceof Date
+        ? appointment.endTime.toISOString()
+        : String(appointment.endTime); // Fallback
   }
   if (appointment.price !== undefined) dbAppointment.preco = appointment.price;
   if (appointment.status !== undefined) dbAppointment.status = mapAppStatusToDbStatus(appointment.status);
   if (appointment.cancellationReason !== undefined) dbAppointment.motivo_cancelamento = appointment.cancellationReason;
   if (appointment.notes !== undefined) dbAppointment.observacoes = appointment.notes;
-  if (appointment.confirmationStatus !== undefined) dbAppointment.status_confirmacao = appointment.confirmationStatus;
+  if (appointment.confirmationStatus !== undefined) {
+    // Ensure confirmationStatus is properly mapped to a string that matches valid values
+    dbAppointment.status_confirmacao = appointment.confirmationStatus;
+  }
 
   return dbAppointment;
 }
@@ -165,10 +181,12 @@ export function mapAppBlockedDateToDb(blockedDate: Partial<BlockedDate>): Partia
   
   if (blockedDate.id !== undefined) dbBlockedDate.id = blockedDate.id;
   if (blockedDate.date !== undefined) {
-    // Convert Date objects to ISO strings
+    // Convert Date objects to ISO strings - Fix for error: Property 'toISOString' does not exist on type 'never'
     dbBlockedDate.data = typeof blockedDate.date === 'string'
       ? blockedDate.date
-      : blockedDate.date.toISOString();
+      : blockedDate.date instanceof Date
+        ? blockedDate.date.toISOString()
+        : String(blockedDate.date); // Fallback
   }
   if (blockedDate.reason !== undefined) dbBlockedDate.motivo = blockedDate.reason;
   if (blockedDate.motivo !== undefined) dbBlockedDate.motivo = blockedDate.motivo;
@@ -182,7 +200,7 @@ export function mapAppBlockedDateToDb(blockedDate: Partial<BlockedDate>): Partia
 /**
  * Maps appointment status from application format to database format
  */
-export function mapAppStatusToDbStatus(status: AppointmentStatus): string {
+export function mapAppStatusToDbStatus(status: AppointmentStatus): "confirmado" | "pendente" | "cancelado" {
   switch (status) {
     case 'confirmed': return 'confirmado';
     case 'canceled': return 'cancelado';

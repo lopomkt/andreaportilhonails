@@ -1,4 +1,3 @@
-
 import { supabase } from './client';
 import { Appointment, AppointmentStatus, BlockedDate, Client, Service, WhatsAppMessageData } from '@/types';
 import {
@@ -19,7 +18,6 @@ import {
   DbBlockedDateInsert
 } from './database-types';
 
-// Define a type for appointment with relationships as returned by Supabase
 interface AppointmentWithRelations extends DbAppointment {
   clientes: DbClient;
   servicos: DbService;
@@ -86,29 +84,24 @@ export const appointmentService = {
 
   async create(appointment: Omit<Appointment, 'id'>): Promise<Appointment | null> {
     try {
-      // Calculate end time based on date and service duration
       const appointmentDate = new Date(appointment.date);
       const endTime = new Date(appointmentDate);
       
       if (appointment.service?.durationMinutes) {
         endTime.setMinutes(endTime.getMinutes() + appointment.service.durationMinutes);
       } else {
-        // Default to 1 hour if no duration is provided
         endTime.setHours(endTime.getHours() + 1);
       }
 
-      // Ensure dates are converted to ISO strings for Supabase
       const appointmentDateString = appointmentDate.toISOString();
       const endTimeString = endTime.toISOString();
 
-      // We need to ensure all required fields are present
       const insertData: DbAppointmentInsert = {
         cliente_id: appointment.clientId,
         servico_id: appointment.serviceId,
         data: appointmentDateString,
         hora_fim: endTimeString,
         preco: appointment.price,
-        // Optional fields
         status: appointment.status ? mapAppStatusToDbStatus(appointment.status) : 'pendente',
         observacoes: appointment.notes,
         motivo_cancelamento: appointment.cancellationReason,
@@ -117,7 +110,7 @@ export const appointmentService = {
 
       const { data, error } = await supabase
         .from('agendamentos')
-        .insert(insertData as any) // Type assertion to bypass Supabase's strict typing
+        .insert(insertData as any)
         .select(`
           *,
           clientes (*),
@@ -142,16 +135,13 @@ export const appointmentService = {
     try {
       const dbUpdates = mapAppAppointmentToDb(updates);
       
-      // If we're updating the date, recalculate the end time
       if (updates.date) {
         const endTime = new Date(updates.date);
         
-        // Get the service duration if possible
-        let duration = 60; // Default to 1 hour
+        let duration = 60;
         if (updates.service?.durationMinutes) {
           duration = updates.service.durationMinutes;
         } else if (updates.serviceId) {
-          // Try to fetch the service
           const { data: serviceData } = await supabase
             .from('servicos')
             .select('duracao_minutos')
@@ -169,7 +159,7 @@ export const appointmentService = {
       
       const { error } = await supabase
         .from('agendamentos')
-        .update(dbUpdates as any) // Type assertion to bypass Supabase's strict typing
+        .update(dbUpdates as any)
         .eq('id', id);
 
       if (error) {
@@ -187,7 +177,7 @@ export const appointmentService = {
   async changeStatus(id: string, status: AppointmentStatus, cancellationReason?: string): Promise<boolean> {
     try {
       const updates: DbAppointmentUpdate = {
-        status: status === 'confirmed' ? 'confirmado' : status === 'pending' ? 'pendente' : 'cancelado'
+        status: mapAppStatusToDbStatus(status)
       };
 
       if (status === 'canceled' && cancellationReason) {
@@ -270,17 +260,13 @@ export const appointmentService = {
   },
 
   generateWhatsAppLink(phoneNumber: string, message: string): string {
-    // Remove any non-digit characters from the phone number
     const cleanNumber = phoneNumber.replace(/\D/g, '');
-    // Make sure the phone number has the country code (Brazil: 55)
     const fullNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
-    // Encode the message for a URL
     const encodedMessage = encodeURIComponent(message);
     
     return `https://wa.me/${fullNumber}?text=${encodedMessage}`;
   },
 
-  // Helper method to create a WhatsApp message from data
   generateMessageFromData(data: WhatsAppMessageData): string {
     if (data.message) {
       return data.message;
@@ -290,7 +276,6 @@ export const appointmentService = {
       return '';
     }
 
-    // Get the template and replace placeholders
     return this.getWhatsAppTemplate().then(template => {
       const date = new Date(data.appointment!.date);
       const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
@@ -308,7 +293,6 @@ export const appointmentService = {
     });
   },
 
-  // Methods for blocked dates
   async createBlockedDate(blockedDate: { date: Date; reason?: string; allDay: boolean }): Promise<BlockedDate | null> {
     try {
       const blockedDateData: DbBlockedDateInsert = {
