@@ -1,4 +1,3 @@
-
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbClientToApp } from '@/integrations/supabase/mappers';
@@ -39,23 +38,28 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
     data_ultimo_agendamento: clientData.lastAppointment || null
   };
   
-  const { data, error } = await supabase
-    .from('clientes')
-    .insert(dataToInsert)
-    .select('*')
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('clientes')
+      .insert(dataToInsert)
+      .select('*')
+      .single();
+      
+    if (error) {
+      console.error('Error creating client:', error);
+      return { error: error.message };
+    }
     
-  if (error) {
-    console.error('Error creating client:', error);
-    return { error: error.message };
-  }
-  
-  if (data) {
+    if (!data) {
+      return { error: 'Falha ao criar cliente: Nenhum dado retornado' };
+    }
+    
     const newClient = mapDbClientToApp(data);
     return { data: newClient };
+  } catch (err: any) {
+    console.error('Unexpected error creating client:', err);
+    return { error: err.message || 'Erro inesperado ao criar cliente' };
   }
-  
-  return { error: 'Falha ao criar cliente' };
 }
 
 export async function updateClientInApi(clientId: string, clientData: Partial<Client>): Promise<ServiceResponse<Client>> {

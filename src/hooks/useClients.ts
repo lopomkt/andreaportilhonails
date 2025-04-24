@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Client } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -31,15 +30,17 @@ export function useClients() {
         description: errorMessage,
         variant: 'destructive'
       });
-      setClients([]);
       return [];
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
-  // Subscribe to real-time changes
   useEffect(() => {
+    // Initial fetch
+    fetchClients();
+
+    // Subscribe to real-time changes
     const channel = supabase
       .channel('public:clientes')
       .on(
@@ -56,9 +57,6 @@ export function useClients() {
       )
       .subscribe();
 
-    // Initial fetch
-    fetchClients();
-
     return () => {
       supabase.removeChannel(channel);
     };
@@ -72,12 +70,12 @@ export function useClients() {
       if (result.error) {
         throw new Error(result.error);
       }
-      
+
       if (result.data) {
         setClients(prev => [...prev, result.data]);
         toast({
-          title: 'Cliente criado',
-          description: 'Cliente cadastrado com sucesso'
+          title: 'Cliente cadastrado',
+          description: 'Cliente cadastrado com sucesso!'
         });
       }
       
