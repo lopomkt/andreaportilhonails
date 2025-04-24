@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Appointment } from '@/types';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 
 interface TimeSlotProps {
   slot: { 
