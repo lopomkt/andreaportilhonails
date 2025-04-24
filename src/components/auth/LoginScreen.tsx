@@ -1,3 +1,4 @@
+
 import { useState, useEffect, FormEvent } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useNavigate } from "react-router-dom";
@@ -8,56 +9,84 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Animation } from "@/components/ui/animation";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpired, setIsExpired] = useLocalStorage("acessoAndrea", "");
-  const { toast } = useToast();
   const navigate = useNavigate();
   
-  const validateLogin = (event: FormEvent) => {
+  const validateLogin = async (event: FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     
-    // Simplified login - only one password
-    if (password === "senha123") {
-      const now = new Date();
-      setIsExpired(now.toISOString());
+    console.log("Tentativa de login com senha:", password);
+    
+    try {
+      // Senha fixa para validação
+      const correctPassword = "141226";
       
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vinda ao seu sistema de gerenciamento, Andrea!"
-      });
-      
-      // Redirect to dashboard after successful login
-      navigate("/", { replace: true });
-    } else {
+      if (password === correctPassword) {
+        console.log("Senha correta, autenticando...");
+        
+        const now = new Date();
+        setIsExpired(now.toISOString());
+        
+        toast.success("Login realizado com sucesso!", {
+          description: "Bem-vinda ao seu sistema de gerenciamento, Andrea!"
+        });
+        
+        // Adicionar um pequeno delay para a toast aparecer antes da navegação
+        setTimeout(() => {
+          console.log("Redirecionando para o dashboard...");
+          navigate("/", { replace: true });
+        }, 500);
+      } else {
+        console.error("Senha incorreta:", password);
+        setIsLoading(false);
+        toast.error("Senha inválida. Tente novamente.", {
+          description: "Por favor, verifique sua senha e tente novamente."
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao processar login:", error);
       setIsLoading(false);
-      toast({
-        title: "Erro de autenticação",
-        description: "Senha incorreta. Tente novamente.",
-        variant: "destructive",
+      toast.error("Erro ao processar login", {
+        description: "Ocorreu um erro ao processar seu login. Tente novamente."
       });
     }
   };
 
   useEffect(() => {
     // Check if login is still valid and redirect if necessary
-    const storedAccess = localStorage.getItem("acessoAndrea");
-    if (storedAccess) {
-      const lastAccess = new Date(storedAccess);
-      const now = new Date();
-      const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
-      
-      // If less than 48 hours have passed and user is already logged in, redirect to dashboard
-      if (hoursDiff < 48) {
-        navigate("/", { replace: true });
+    try {
+      const storedAccess = localStorage.getItem("acessoAndrea");
+      if (storedAccess) {
+        const lastAccess = new Date(storedAccess);
+        const now = new Date();
+        const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
+        
+        console.log("Verificando acesso armazenado:", { 
+          lastAccess: lastAccess.toISOString(), 
+          hoursDiff 
+        });
+        
+        // If less than 48 hours have passed and user is already logged in, redirect to dashboard
+        if (hoursDiff < 48) {
+          console.log("Acesso válido, redirecionando para o dashboard");
+          navigate("/", { replace: true });
+        } else {
+          console.log("Acesso expirado após 48 horas");
+          localStorage.removeItem("acessoAndrea");
+        }
       } else {
-        localStorage.removeItem("acessoAndrea");
+        console.log("Nenhum acesso armazenado encontrado");
       }
+    } catch (error) {
+      console.error("Erro ao verificar estado de autenticação:", error);
     }
   }, [navigate]);
   
@@ -84,6 +113,7 @@ export const LoginScreen = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="text-center"
+                  autoFocus
                 />
               </div>
             </div>
