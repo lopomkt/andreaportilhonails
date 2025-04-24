@@ -1,160 +1,20 @@
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { addDays, format, isSameDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { Appointment } from "@/types";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Edit, Trash2, CalendarX, Scissors, Star, MessageSquare, Loader2, Clock, CalendarClock, ArrowLeft, ArrowRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Appointment, AppointmentStatus, BlockedDate } from '@/types';
+import { cn } from "@/lib/utils";
+import { formatMinutesToHumanTime } from '@/lib/formatters';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from '@/hooks/use-mobile';
 
-// ---------- DayLoader ----------
-const DayLoader: React.FC = () => (
-  <div className="w-full flex items-center justify-center py-16">
-    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-400"></div>
-  </div>
-);
-
-// ---------- EmptyState ----------
-const EmptyState: React.FC = () => (
-  <div className="py-10 text-center text-gray-600 text-sm">
-    Nenhum agendamento para este dia.
-  </div>
-);
-
-// ---------- DayHeader ----------
-interface DayHeaderProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date | ((prev: Date) => Date)) => void;
-}
-
-const DayHeader: React.FC<DayHeaderProps> = ({ selectedDate, setSelectedDate }) => {
-  // Normalização robusta para evitar bugs de fuso
-  const normalizedDate = useMemo(() => {
-    const d = new Date(selectedDate);
-    d.setHours(12, 0, 0, 0);
-    return d;
-  }, [selectedDate]);
-
-  // Responsividade
-  const isMobile = window.innerWidth < 640;
-
-  // Handlers para navegação de dias, com normalização de data
-  const handlePreviousDay = useCallback(() => {
-    setSelectedDate(prev => {
-      const d = new Date(prev);
-      d.setHours(12, 0, 0, 0);
-      return addDays(d, -1);
-    });
-  }, [setSelectedDate]);
-
-  const handleNextDay = useCallback(() => {
-    setSelectedDate(prev => {
-      const d = new Date(prev);
-      d.setHours(12, 0, 0, 0);
-      return addDays(d, 1);
-    });
-  }, [setSelectedDate]);
-
-  return (
-    <div className="flex items-center justify-between gap-2 mb-3 w-full">
-      <Button
-        size="icon"
-        variant="outline"
-        aria-label="Dia anterior"
-        onClick={handlePreviousDay}
-      >
-        <ArrowLeft className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
-      </Button>
-      <div className="flex-1 min-w-0 text-center text-body font-medium truncate select-none px-1">
-        {isMobile
-          ? format(normalizedDate, "EEEE',' dd/MM", { locale: ptBR })
-          : format(normalizedDate, "EEEE',' dd/MM/yyyy", { locale: ptBR })
-        }
-      </div>
-      <Button
-        size="icon"
-        variant="outline"
-        aria-label="Próximo dia"
-        onClick={handleNextDay}
-      >
-        <ArrowRight className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
-      </Button>
-    </div>
-  );
-};
-
-// ---------- AppointmentList ----------
-interface AppointmentListProps {
-  appointments: Appointment[];
-  onSuggestedTimeSelect?: (date: Date, time: string) => void;
-}
-
-const AppointmentList: React.FC<AppointmentListProps> = ({ appointments, onSuggestedTimeSelect }) => {
-  // Garantimos que appointments é um array válido
-  const safeAppointments = useMemo(() => Array.isArray(appointments) ? appointments : [], [appointments]);
-  
-  return (
-    <div className="flex flex-col gap-3 w-full">
-      {safeAppointments.map(appt => (
-        <div
-          key={appt.id}
-          className={cn(
-            "bg-white border rounded-lg p-4 max-w-full min-w-0 shadow hover:shadow-md transition-shadow cursor-pointer",
-            appt.status === "confirmed"
-              ? "border-green-200"
-              : appt.status === "pending"
-              ? "border-amber-200"
-              : "border-red-200"
-          )}
-          onClick={() => onSuggestedTimeSelect && 
-            onSuggestedTimeSelect(
-              new Date(appt.date),
-              format(new Date(appt.date), "HH:mm")
-            )
-          }
-        >
-          <div className="flex flex-col md:flex-row md:justify-between gap-2">
-            <div>
-              <div className="font-semibold text-base truncate">{appt.client?.name || "Cliente"}</div>
-              <div className="text-xs text-muted-foreground truncate">{appt.service?.name || "Serviço"}</div>
-            </div>
-            <div>
-              <span className={cn(
-                "text-xs font-semibold px-2 py-0.5 rounded",
-                appt.status === "confirmed"
-                  ? "bg-green-100 text-green-800"
-                  : appt.status === "pending"
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-red-100 text-red-800"
-              )}>
-                {appt.status === "confirmed"
-                  ? "Confirmado"
-                  : appt.status === "pending"
-                  ? "Pendente"
-                  : "Cancelado"
-                }
-              </span>
-            </div>
-          </div>
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>
-              {format(new Date(appt.date), "HH:mm")}
-              {appt.endTime && (
-                <> - {format(new Date(appt.endTime), "HH:mm")}</>
-              )}
-            </span>
-          </div>
-          {appt.notes && (
-            <div className="mt-1 text-xs italic text-gray-600">{appt.notes}</div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// ---------- Main DayView ----------
 export interface DayViewProps {
   date: Date;
   onDaySelect?: (date: Date) => void;
@@ -166,63 +26,256 @@ export const DayView: React.FC<DayViewProps> = ({
   onDaySelect,
   onSuggestedTimeSelect
 }) => {
-  // Normalização segura da data selecionada usando useMemo para evitar recálculos
-  const initialDate = useMemo(() => {
-    const normalized = new Date(date);
-    normalized.setHours(12, 0, 0, 0);
-    return normalized;
-  }, [date]);
+  const { appointments, blockedDates, services } = useSupabaseData();
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
+  const isMobile = useIsMobile();
 
-  // State mantido simples com uma única fonte de verdade
-  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+  // Normalize date (sem forçar horário fixo)
+  const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-  // Obter dados da API
-  const { getAppointmentsForDate, loading } = useSupabaseData();
+  // Adicionar navegação entre dias
+  const handlePrevDay = () => {
+    if (onDaySelect) onDaySelect(subDays(normalizedDate, 1));
+  };
+  const handleNextDay = () => {
+    if (onDaySelect) onDaySelect(addDays(normalizedDate, 1));
+  };
 
-  // Efeito para normalizar data quando date prop mudar
-  // Otimizado para evitar loops infinitos
+  // Generate time slots for the day (from 7:00 to 22:00)
   useEffect(() => {
-    const normalized = new Date(date);
-    normalized.setHours(12, 0, 0, 0);
+    const slots = [];
+    const startHour = 7;
+    const endHour = 22;
     
-    // Verificamos se realmente é uma data diferente para evitar loops
-    if (!isSameDay(normalized, selectedDate)) {
-      setSelectedDate(normalized);
+    for (let hour = startHour; hour <= endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const slotTime = new Date(normalizedDate);
+        slotTime.setHours(hour, minute, 0, 0);
+        
+        // Check if this time slot has appointments
+        const slotAppointments = appointments.filter(appointment => {
+          const appointmentDate = new Date(appointment.date);
+          const appointmentEndTime = appointment.endTime 
+            ? new Date(appointment.endTime)
+            : addMinutes(appointmentDate, appointment.service?.durationMinutes || 60);
+            
+          return isWithinInterval(slotTime, {
+            start: appointmentDate,
+            end: appointmentEndTime
+          });
+        });
+        
+        // Check if time is blocked
+        const isTimeBlocked = blockedDates.some(blockedDate => {
+          const blockDate = new Date(blockedDate.date);
+          return isSameDay(blockDate, normalizedDate) && blockedDate.allDay;
+        });
+        
+        slots.push({
+          time: slotTime,
+          appointments: slotAppointments,
+          isBlocked: isTimeBlocked
+        });
+      }
     }
-  }, [date, selectedDate]);
+    
+    setTimeSlots(slots);
+  }, [normalizedDate, appointments, blockedDates]);
 
-  // Notificação externa de mudança de data
-  // Otimizado para prevenir chamadas desnecessárias 
-  useEffect(() => {
-    if (onDaySelect && date instanceof Date && !isSameDay(selectedDate, date)) {
-      onDaySelect(selectedDate);
-    }
-  }, [selectedDate, onDaySelect, date]);
-
-  // Extrai agendamentos do hook/context e filtra apenas do dia normalizado
-  // Memorizado para evitar recálculos
-  const appointments = useMemo(() => {
-    return getAppointmentsForDate ? getAppointmentsForDate(selectedDate) || [] : [];
-  }, [getAppointmentsForDate, selectedDate]);
-
-  // Responsividade: impede overflow e quebra
   return (
-    <div className="w-full max-w-2xl mx-auto px-2 pt-4 flex flex-col min-h-[250px]">
-      {/* Header e navegação */}
-      <DayHeader selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
-
-      {/* Loader */}
-      {loading && <DayLoader />}
-
-      {/* Lista de agendamentos ou estado vazio */}
-      {!loading && (
-        Array.isArray(appointments) && appointments.length > 0
-          ? <AppointmentList 
-              appointments={appointments} 
-              onSuggestedTimeSelect={onSuggestedTimeSelect}
-            />
-          : <EmptyState />
-      )}
+    <div className="day-view-container px-2 pt-4">
+      {/* Navegação entre dias - Versão melhorada para desktop e mobile */}
+      <div className="flex items-center justify-between mb-3">
+        {isMobile ? (
+          // Mobile layout: seta esquerda | data | seta direita
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handlePrevDay}
+              className="flex-shrink-0"
+              aria-label="Dia anterior"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="text-body font-medium text-center px-1 truncate">
+              {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+            </div>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleNextDay}
+              className="flex-shrink-0"
+              aria-label="Próximo dia"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </>
+        ) : (
+          // Desktop layout: texto centralizado com setas nas laterais
+          <div className="w-full flex items-center justify-center gap-4">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handlePrevDay}
+              className="flex-shrink-0"
+              aria-label="Dia anterior"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <h3 className="text-body font-medium text-center">
+              {format(normalizedDate, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+            </h3>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleNextDay}
+              className="flex-shrink-0"
+              aria-label="Próximo dia"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      <div className="time-slots grid gap-3">
+        {timeSlots.map((slot, index) => (
+          <TimeSlot 
+            key={index} 
+            slot={slot} 
+            onTimeClick={onSuggestedTimeSelect ? (t) => onSuggestedTimeSelect(normalizedDate, format(t, 'HH:mm')) : () => {}} 
+            onAppointmentClick={setSelectedAppointment} 
+          />
+        ))}
+      </div>
     </div>
+  );
+};
+
+interface TimeSlotProps {
+  slot: { 
+    time: Date; 
+    appointments: Appointment[]; 
+    isBlocked: boolean 
+  };
+  onTimeClick: (time: Date) => void;
+  onAppointmentClick: (appointment: Appointment) => void;
+}
+
+const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppointmentClick }) => {
+  const { time, appointments, isBlocked } = slot;
+  
+  return (
+    <div 
+      className={cn(
+        "p-2 border rounded-md flex items-center justify-between",
+        isBlocked ? "bg-gray-100" : "hover:bg-gray-50 cursor-pointer",
+        appointments.length > 0 ? "bg-nail-50" : ""
+      )}
+      onClick={() => !isBlocked && appointments.length === 0 && onTimeClick(time)}
+    >
+      <div className="flex items-center">
+        <div className="text-sm font-medium mr-2">
+          {format(time, 'HH:mm')}
+        </div>
+        
+        {isBlocked && (
+          <Badge variant="outline" className="bg-gray-200 text-gray-700">
+            <CalendarX className="h-3 w-3 mr-1" />
+            Bloqueado
+          </Badge>
+        )}
+      </div>
+      
+      <div className="flex flex-wrap gap-2">
+        {appointments.map((appointment, idx) => (
+          <AppointmentCard 
+            key={idx} 
+            appointment={appointment} 
+            onClick={() => onAppointmentClick(appointment)} 
+          />
+        ))}
+        
+        {!isBlocked && appointments.length === 0 && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onTimeClick(time); 
+                  }}
+                >
+                  <Clock className="h-3 w-3 mr-1" />
+                  Agendar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clique para agendar neste horário</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface AppointmentCardProps {
+  appointment: Appointment;
+  onClick: () => void;
+}
+
+const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onClick }) => {
+  const appointmentDate = new Date(appointment.date);
+  const endTime = appointment.endTime 
+    ? new Date(appointment.endTime) 
+    : addMinutes(appointmentDate, appointment.service?.durationMinutes || 60);
+  
+  const duration = differenceInMinutes(endTime, appointmentDate);
+  
+  return (
+    <Card 
+      className={cn(
+        "w-full max-w-sm cursor-pointer hover:shadow-md transition-shadow",
+        appointment.status === "confirmed" ? "border-l-4 border-l-green-500" :
+        appointment.status === "pending" ? "border-l-4 border-l-amber-500" :
+        "border-l-4 border-l-red-500"
+      )}
+      onClick={onClick}
+    >
+      <CardContent className="p-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h4 className="text-sm font-medium">{appointment.client?.name}</h4>
+            <p className="text-xs text-muted-foreground">{appointment.service?.name}</p>
+            <div className="flex items-center text-xs text-muted-foreground mt-1">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>
+                {format(appointmentDate, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                {' '}({formatMinutesToHumanTime(duration)})
+              </span>
+            </div>
+          </div>
+          
+          <Badge 
+            className={cn(
+              "ml-2",
+              appointment.status === "confirmed" ? "bg-green-100 text-green-800" :
+              appointment.status === "pending" ? "bg-amber-100 text-amber-800" :
+              "bg-red-100 text-red-800"
+            )}
+          >
+            {appointment.status === "confirmed" ? "Confirmado" : 
+             appointment.status === "pending" ? "Pendente" : "Cancelado"}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
