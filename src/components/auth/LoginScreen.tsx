@@ -21,17 +21,24 @@ export const LoginScreen = () => {
   
   const validateLogin = async (event: FormEvent) => {
     event.preventDefault();
+    
+    if (!password) {
+      toast.error("Por favor, digite uma senha");
+      return;
+    }
+    
     setIsLoading(true);
     
-    console.log("Tentativa de login com senha:", password);
-    
     try {
+      console.log("Tentativa de login com senha");
+      
       // Senha fixa para validação
       const correctPassword = "141226";
       
       if (password === correctPassword) {
         console.log("Senha correta, autenticando...");
         
+        // Armazena data de login
         const now = new Date();
         setIsExpired(now.toISOString());
         
@@ -39,24 +46,24 @@ export const LoginScreen = () => {
           description: "Bem-vinda ao seu sistema de gerenciamento, Andrea!"
         });
         
-        // Adicionar um pequeno delay para a toast aparecer antes da navegação
+        // Redireciona para o dashboard
         setTimeout(() => {
           console.log("Redirecionando para o dashboard...");
           navigate("/", { replace: true });
-        }, 500);
+        }, 800);
       } else {
-        console.error("Senha incorreta:", password);
-        setIsLoading(false);
+        console.error("Senha incorreta");
         toast.error("Senha inválida. Tente novamente.", {
           description: "Por favor, verifique sua senha e tente novamente."
         });
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Erro ao processar login:", error);
-      setIsLoading(false);
       toast.error("Erro ao processar login", {
         description: "Ocorreu um erro ao processar seu login. Tente novamente."
       });
+      setIsLoading(false);
     }
   };
 
@@ -65,12 +72,12 @@ export const LoginScreen = () => {
     try {
       const storedAccess = localStorage.getItem("acessoAndrea");
       if (storedAccess) {
-        const lastAccess = new Date(storedAccess);
+        const lastAccess = new Date(JSON.parse(storedAccess));
         const now = new Date();
         const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
         
         console.log("Verificando acesso armazenado:", { 
-          lastAccess: lastAccess.toISOString(), 
+          lastAccess, 
           hoursDiff 
         });
         
@@ -87,6 +94,7 @@ export const LoginScreen = () => {
       }
     } catch (error) {
       console.error("Erro ao verificar estado de autenticação:", error);
+      localStorage.removeItem("acessoAndrea"); // Reset em caso de erro
     }
   }, [navigate]);
   
@@ -114,6 +122,7 @@ export const LoginScreen = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="text-center"
                   autoFocus
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -125,6 +134,7 @@ export const LoginScreen = () => {
                 onCheckedChange={(checked) => {
                   if (typeof checked === 'boolean') setRememberMe(checked);
                 }}
+                disabled={isLoading}
               />
               <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
                 Manter Logado
