@@ -181,14 +181,16 @@ export function mapAppBlockedDateToDb(blockedDate: Partial<BlockedDate>): Partia
   
   if (blockedDate.id !== undefined) dbBlockedDate.id = blockedDate.id;
   if (blockedDate.date !== undefined) {
-    // Fix for error: Property 'toISOString' does not exist on type 'never'
-    // Convert various date formats to ISO string safely
-    if (typeof blockedDate.date === 'string') {
-      dbBlockedDate.data = blockedDate.date;
-    } else if (blockedDate.date instanceof Date) {
-      dbBlockedDate.data = blockedDate.date.toISOString();
+    // Fix for errors with instanceof and toISOString()
+    // Use type assertions to help TypeScript understand what we're doing
+    const dateValue = blockedDate.date;
+    if (typeof dateValue === 'string') {
+      dbBlockedDate.data = dateValue;
+    } else if (dateValue && typeof dateValue === 'object' && 'toISOString' in dateValue) {
+      // Use in operator to check if toISOString exists on the object
+      dbBlockedDate.data = (dateValue as Date).toISOString();
     } else {
-      dbBlockedDate.data = String(blockedDate.date); // Fallback
+      dbBlockedDate.data = String(dateValue); // Fallback
     }
   }
   if (blockedDate.reason !== undefined) dbBlockedDate.motivo = blockedDate.reason;
