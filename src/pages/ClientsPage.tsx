@@ -138,7 +138,10 @@ export default function ClientsPage() {
               Preencha os campos abaixo para cadastrar um novo cliente.
             </DialogDescription>
           </DialogHeader>
-          <ClientForm onSuccess={handleNewClientSuccess} onCancel={() => setShowNewClientModal(false)} />
+          <ClientForm 
+            onSuccess={handleNewClientSuccess} 
+            onCancel={() => setShowNewClientModal(false)} 
+          />
         </DialogContent>
       </Dialog>
     </div>

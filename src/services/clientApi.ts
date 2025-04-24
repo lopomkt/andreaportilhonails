@@ -71,18 +71,20 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
 }
 
 export async function updateClientInApi(clientId: string, clientData: Partial<Client>): Promise<ServiceResponse<Client>> {
-  const updateData: Record<string, any> = {};
+  const updateData = mapAppClientToDb({
+    id: clientId,
+    name: clientData.name,
+    phone: clientData.phone,
+    email: clientData.email,
+    notes: clientData.notes,
+    birthdate: clientData.birthdate,
+    totalSpent: clientData.totalSpent,
+    lastAppointment: clientData.lastAppointment,
+    createdAt: ''
+  });
   
-  if (clientData.name !== undefined) updateData.nome = clientData.name;
-  if (clientData.phone !== undefined) updateData.telefone = clientData.phone;
-  if (clientData.email !== undefined) updateData.email = clientData.email;
-  if (clientData.notes !== undefined) updateData.observacoes = clientData.notes;
-  if (clientData.birthdate !== undefined) updateData.data_nascimento = clientData.birthdate;
-  if (clientData.totalSpent !== undefined) updateData.valor_total = clientData.totalSpent;
-  if (clientData.lastAppointment !== undefined) {
-    updateData.ultimo_agendamento = clientData.lastAppointment;
-    updateData.data_ultimo_agendamento = clientData.lastAppointment;
-  }
+  // Remove the id from update data
+  delete updateData.id;
   
   const { data, error } = await supabase
     .from('clientes')

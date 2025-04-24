@@ -1,16 +1,17 @@
 
+import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 interface ClientPersonalInfoProps {
   name: string;
-  setName: (value: string) => void;
+  setName: (name: string) => void;
   phone: string;
-  setPhone: (value: string) => void;
+  setPhone: (phone: string) => void;
   email: string;
-  setEmail: (value: string) => void;
+  setEmail: (email: string) => void;
   birthdate: string;
-  setBirthdate: (value: string) => void;
+  setBirthdate: (birthdate: string) => void;
   errors: Record<string, string>;
   formatPhoneInput: (value: string) => string;
 }
@@ -48,10 +49,7 @@ export function ClientPersonalInfo({
           id="phone"
           placeholder="(00) 00000-0000"
           value={phone}
-          onChange={(e) => {
-            const formattedValue = formatPhoneInput(e.target.value);
-            setPhone(formattedValue);
-          }}
+          onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
           required
           className={errors.phone ? "border-destructive" : ""}
         />

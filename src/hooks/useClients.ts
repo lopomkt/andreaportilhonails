@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+
+import { useState, useCallback } from 'react';
 import { Client } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,32 +39,6 @@ export function useClients() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    // Initial fetch
-    fetchClients();
-
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('public:clientes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'clientes'
-        },
-        (payload) => {
-          console.log('Real-time update received:', payload);
-          fetchClients(); // Refresh the client list when changes occur
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchClients]);
-
   const createClient = async (clientData: Partial<Client>) => {
     try {
       setLoading(true);
@@ -78,7 +53,7 @@ export function useClients() {
 
       if (result.data) {
         console.log("Client created successfully:", result.data);
-        setClients(prev => [...prev, result.data]);
+        setClients(prev => [...prev, result.data!]);
         toast({
           title: 'Cliente cadastrado',
           description: 'Cliente cadastrado com sucesso!'
@@ -112,7 +87,7 @@ export function useClients() {
       
       if (result.data) {
         setClients(prev => prev.map(client => 
-          client.id === clientId ? result.data : client
+          client.id === clientId ? result.data! : client
         ));
         toast({
           title: 'Cliente atualizado',
