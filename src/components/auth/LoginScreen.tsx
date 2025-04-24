@@ -1,3 +1,4 @@
+
 import { useState, useEffect, FormEvent } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Logo } from "@/components/Logo";
@@ -10,6 +11,7 @@ import { Animation } from "@/components/ui/animation";
 import { useToast } from "@/hooks/use-toast";
 
 export const LoginScreen = () => {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +22,8 @@ export const LoginScreen = () => {
     event.preventDefault();
     setIsLoading(true);
     
-    // Simplified login - only one password
-    if (password === "senha123") {
+    // Simplified login - only one user/pass combo
+    if (username.toLowerCase() === "andrea" && password === "senha123") {
       const now = new Date();
       setIsExpired(now.toISOString());
       
@@ -33,7 +35,7 @@ export const LoginScreen = () => {
       setIsLoading(false);
       toast({
         title: "Erro de autenticação",
-        description: "Senha incorreta. Tente novamente.",
+        description: "Usuário ou senha incorretos. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -69,7 +71,18 @@ export const LoginScreen = () => {
           <form onSubmit={validateLogin} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-center w-full block">Senha</Label>
+                <Label htmlFor="username">Usuário</Label>
+                <Input 
+                  id="username" 
+                  type="text" 
+                  placeholder="andrea" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
                 <Input 
                   id="password" 
                   type="password" 
