@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/ClientForm";
 import { ClientsTable } from "@/components/clients/ClientsTable";
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ClientsPage() {
   const {
@@ -41,6 +42,27 @@ export default function ClientsPage() {
     };
 
     fetchData();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('public:clientes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'clientes'
+        },
+        (payload) => {
+          console.log('Change received!', payload);
+          refetchClients();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [refetchClients, toast]);
 
   useEffect(() => {
