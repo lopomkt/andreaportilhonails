@@ -104,18 +104,18 @@ export function mapAppAppointmentToDb(appointment: Partial<Appointment>): Partia
   if (appointment.serviceId !== undefined) dbAppointment.servico_id = appointment.serviceId;
   if (appointment.date !== undefined) {
     // Convert Date objects to ISO strings - Fix for error: Property 'toISOString' does not exist on type 'never'
-    dbAppointment.data = typeof appointment.date === 'string'
-      ? appointment.date
-      : appointment.date instanceof Date
-        ? appointment.date.toISOString()
+    dbAppointment.data = typeof appointment.date === 'string' 
+      ? appointment.date 
+      : appointment.date instanceof Date 
+        ? appointment.date.toISOString() 
         : String(appointment.date); // Fallback
   }
   if (appointment.endTime !== undefined) {
     // Convert Date objects to ISO strings
-    dbAppointment.hora_fim = typeof appointment.endTime === 'string'
-      ? appointment.endTime
-      : appointment.endTime instanceof Date
-        ? appointment.endTime.toISOString()
+    dbAppointment.hora_fim = typeof appointment.endTime === 'string' 
+      ? appointment.endTime 
+      : appointment.endTime instanceof Date 
+        ? appointment.endTime.toISOString() 
         : String(appointment.endTime); // Fallback
   }
   if (appointment.price !== undefined) dbAppointment.preco = appointment.price;
@@ -181,12 +181,15 @@ export function mapAppBlockedDateToDb(blockedDate: Partial<BlockedDate>): Partia
   
   if (blockedDate.id !== undefined) dbBlockedDate.id = blockedDate.id;
   if (blockedDate.date !== undefined) {
-    // Convert Date objects to ISO strings - Fix for error: Property 'toISOString' does not exist on type 'never'
-    dbBlockedDate.data = typeof blockedDate.date === 'string'
-      ? blockedDate.date
-      : blockedDate.date instanceof Date
-        ? blockedDate.date.toISOString()
-        : String(blockedDate.date); // Fallback
+    // Fix for error: Property 'toISOString' does not exist on type 'never'
+    // Convert various date formats to ISO string safely
+    if (typeof blockedDate.date === 'string') {
+      dbBlockedDate.data = blockedDate.date;
+    } else if (blockedDate.date instanceof Date) {
+      dbBlockedDate.data = blockedDate.date.toISOString();
+    } else {
+      dbBlockedDate.data = String(blockedDate.date); // Fallback
+    }
   }
   if (blockedDate.reason !== undefined) dbBlockedDate.motivo = blockedDate.reason;
   if (blockedDate.motivo !== undefined) dbBlockedDate.motivo = blockedDate.motivo;
