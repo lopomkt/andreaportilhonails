@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Client } from "@/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/ClientForm";
 import { ClientsTable } from "@/components/clients/ClientsTable";
@@ -28,7 +28,9 @@ export default function ClientsPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        console.log("ClientsPage: Fetching clients...");
         await refetchClients();
+        console.log("ClientsPage: Clients fetched successfully");
       } catch (error) {
         console.error("Error fetching clients:", error);
         toast({
@@ -54,7 +56,7 @@ export default function ClientsPage() {
           table: 'clientes'
         },
         (payload) => {
-          console.log('Change received!', payload);
+          console.log('ClientsPage: Change received!', payload);
           refetchClients();
         }
       )
@@ -83,6 +85,7 @@ export default function ClientsPage() {
   }, [clients, searchTerm]);
 
   const handleNewClientSuccess = async () => {
+    console.log("ClientsPage: New client created successfully");
     setShowNewClientModal(false);
     await refetchClients();
     toast({
@@ -131,6 +134,9 @@ export default function ClientsPage() {
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
+            <DialogDescription>
+              Preencha os campos abaixo para cadastrar um novo cliente.
+            </DialogDescription>
           </DialogHeader>
           <ClientForm onSuccess={handleNewClientSuccess} onCancel={() => setShowNewClientModal(false)} />
         </DialogContent>

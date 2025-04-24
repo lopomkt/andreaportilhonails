@@ -1,3 +1,4 @@
+
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbClientToApp } from '@/integrations/supabase/mappers';
@@ -39,6 +40,8 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
   };
   
   try {
+    console.log("Attempting to insert client data:", dataToInsert);
+    
     const { data, error } = await supabase
       .from('clientes')
       .insert(dataToInsert)
@@ -51,9 +54,11 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
     }
     
     if (!data) {
+      console.error('No data returned after client creation');
       return { error: 'Falha ao criar cliente: Nenhum dado retornado' };
     }
     
+    console.log("Client successfully created:", data);
     const newClient = mapDbClientToApp(data);
     return { data: newClient };
   } catch (err: any) {

@@ -18,7 +18,9 @@ export function useClients() {
   const fetchClients = useCallback(async (): Promise<Client[]> => {
     setLoading(true);
     try {
+      console.log("Fetching clients from API...");
       const fetchedClients = await fetchClientsFromApi();
+      console.log("Clients fetched successfully:", fetchedClients);
       setClients(fetchedClients);
       return fetchedClients;
     } catch (err: any) {
@@ -65,13 +67,17 @@ export function useClients() {
   const createClient = async (clientData: Partial<Client>) => {
     try {
       setLoading(true);
+      console.log("Creating client with data:", clientData);
+      
       const result = await createClientInApi(clientData);
       
       if (result.error) {
+        console.error("Error in createClient:", result.error);
         throw new Error(result.error);
       }
 
       if (result.data) {
+        console.log("Client created successfully:", result.data);
         setClients(prev => [...prev, result.data]);
         toast({
           title: 'Cliente cadastrado',
@@ -82,6 +88,7 @@ export function useClients() {
       return result;
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao criar cliente';
+      console.error("Client creation failed:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',

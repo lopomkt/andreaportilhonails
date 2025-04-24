@@ -66,6 +66,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, on
     setIsSubmitting(true);
     
     try {
+      console.log("Form submitted with data:", { name, phone, email, birthdate, notes });
+      
       const clientData = {
         name,
         phone: phone.replace(/\D/g, ''),
@@ -76,15 +78,27 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, on
       
       if (client) {
         // Update existing client
-        await updateClient(client.id, clientData);
+        console.log("Updating client:", client.id, clientData);
+        const result = await updateClient(client.id, clientData);
+        if (result.error) {
+          console.error("Update client failed:", result.error);
+          throw new Error(result.error);
+        }
       } else {
         // Create new client
-        await createClient(clientData);
+        console.log("Creating new client:", clientData);
+        const result = await createClient(clientData);
+        if (result.error) {
+          console.error("Create client failed:", result.error);
+          throw new Error(result.error);
+        }
       }
       
+      console.log("Client saved successfully");
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving client:', error);
+      setErrors({ submit: error.message || 'Falha ao salvar cliente' });
     } finally {
       setIsSubmitting(false);
     }
@@ -131,7 +145,10 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, on
             id="phone"
             placeholder="(00) 00000-0000"
             value={phone}
-            onChange={handlePhoneChange}
+            onChange={(e) => {
+              const formattedValue = formatPhoneInput(e.target.value);
+              setPhone(formattedValue);
+            }}
             required
             className={errors.phone ? "border-destructive" : ""}
           />
@@ -172,6 +189,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, on
           />
         </div>
       </div>
+      
+      {errors.submit && <p className="text-destructive text-sm">{errors.submit}</p>}
       
       <div className="flex justify-between">
         {client && onDelete ? (
