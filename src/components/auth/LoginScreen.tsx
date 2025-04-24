@@ -45,6 +45,20 @@ export const LoginScreen = () => {
         // Usar diretamente o localStorage para evitar problemas com o hook
         localStorage.setItem("acessoAndrea", JSON.stringify(nowString));
         
+        // Também tenta fazer login no Supabase (opcional, para manter consistência)
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: 'andrea@crm.com',
+            password: correctPassword,
+          });
+          
+          if (error) {
+            console.log("Erro no login do Supabase, mas continuando com autenticação local:", error);
+          }
+        } catch (supabaseError) {
+          console.log("Erro ao tentar login no Supabase, mas continuando com autenticação local:", supabaseError);
+        }
+        
         toast.success("Login realizado com sucesso!", {
           description: "Bem-vinda ao seu sistema de gerenciamento, Andrea!"
         });
@@ -96,6 +110,16 @@ export const LoginScreen = () => {
       } else {
         console.log("Nenhum acesso armazenado encontrado");
       }
+      
+      // Também verifica a sessão do Supabase
+      const checkSupabaseSession = async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (data?.session) {
+          console.log("Sessão do Supabase encontrada");
+        }
+      };
+      
+      checkSupabaseSession();
     } catch (error) {
       console.error("Erro ao verificar estado de autenticação:", error);
       localStorage.removeItem("acessoAndrea"); // Reset em caso de erro
@@ -161,7 +185,7 @@ export const LoginScreen = () => {
           
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              Nail Designer CRM v1.0
+              Nail Designer CRM - Andrea Portilho
             </p>
           </div>
         </div>
