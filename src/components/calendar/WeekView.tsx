@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, eachDayOfInterval, getWeekOfMonth, addWeeks, subWeeks, addMonths, subMonths, isSameMonth, differenceInDays } from 'date-fns';
@@ -10,12 +9,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
 interface WeekViewProps {
   date: Date;
   onDaySelect: (date: Date) => void;
 }
-
 export const WeekView: React.FC<WeekViewProps> = ({
   date,
   onDaySelect
@@ -26,30 +23,27 @@ export const WeekView: React.FC<WeekViewProps> = ({
   const isMobile = useIsMobile();
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(date.getFullYear(), date.getMonth(), 1));
-  
+
   // Generate all weeks of the month
   const getWeeksOfMonth = (month: Date) => {
     const monthStart = startOfMonth(month);
     const monthEnd = endOfMonth(month);
-    const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
-    
+    const firstWeekStart = startOfWeek(monthStart, {
+      locale: ptBR
+    });
+
     // Calculate how many weeks to display
     const totalDays = differenceInDays(monthEnd, firstWeekStart) + 1;
     const numWeeks = Math.ceil(totalDays / 7);
-    
     const weeks = [];
     let currentWeekStart = firstWeekStart;
-    
     for (let i = 0; i < numWeeks; i++) {
       weeks.push(currentWeekStart);
       currentWeekStart = addWeeks(currentWeekStart, 1);
     }
-    
     return weeks;
   };
-  
   const weeksInMonth = getWeeksOfMonth(currentMonth);
-  
   const getWeekStats = (weekStart: Date) => {
     const weekEnd = endOfWeek(weekStart, {
       locale: ptBR
@@ -86,7 +80,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
       endDate: weekEnd
     };
   };
-  
   const handleWeekClick = (weekStart: Date) => {
     if (isMobile) {
       setSelectedWeekStart(weekStart);
@@ -94,19 +87,18 @@ export const WeekView: React.FC<WeekViewProps> = ({
       onDaySelect(weekStart);
     }
   };
-  
   const navigateToPreviousMonth = () => {
     setCurrentMonth(prevMonth => subMonths(prevMonth, 1));
   };
-  
   const navigateToNextMonth = () => {
     setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
   };
-
   return <div className="space-y-4">
       <div className="flex justify-between items-center mb-3 mx-[15px]">
-        <h2 className="text-lg font-bold md:text-2xl">
-          {format(currentMonth, 'MMM yyyy', { locale: ptBR })}
+        <h2 className="text-lg font-bold my-[15px] py-0 mx-0 md:text-2xl">
+          {format(currentMonth, 'MMM yyyy', {
+          locale: ptBR
+        })}
         </h2>
         
         <div className="flex space-x-2">
@@ -121,41 +113,37 @@ export const WeekView: React.FC<WeekViewProps> = ({
       
       <div className="grid grid-cols-1 gap-3">
         {weeksInMonth.map((weekStart, index) => {
-          const stats = getWeekStats(weekStart);
-          const weekEnd = stats.endDate;
-          const weekNumber = getWeekOfMonth(weekStart, { locale: ptBR });
-          const isCurrentMonthWeek = isSameMonth(weekStart, currentMonth) || isSameMonth(weekEnd, currentMonth);
-          
-          // Skip weeks that don't belong to the current month at all
-          if (!isCurrentMonthWeek) return null;
-          
-          return (
-            <Card 
-              key={weekStart.toISOString()} 
-              className="cursor-pointer hover:border-primary transition-colors"
-              onClick={() => handleWeekClick(weekStart)}
-            >
+        const stats = getWeekStats(weekStart);
+        const weekEnd = stats.endDate;
+        const weekNumber = getWeekOfMonth(weekStart, {
+          locale: ptBR
+        });
+        const isCurrentMonthWeek = isSameMonth(weekStart, currentMonth) || isSameMonth(weekEnd, currentMonth);
+
+        // Skip weeks that don't belong to the current month at all
+        if (!isCurrentMonthWeek) return null;
+        return <Card key={weekStart.toISOString()} className="cursor-pointer hover:border-primary transition-colors" onClick={() => handleWeekClick(weekStart)}>
               <CardHeader className="pb-2 p-3 md:p-6">
                 <CardTitle className="flex items-center justify-between text-base md:text-lg">
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1 text-primary" />
                     {isMobile ? <span className="text-lg">
                         S{weekNumber} ({format(weekStart, 'dd', {
-                      locale: ptBR
-                    })}–{format(weekEnd, 'dd/MM', {
-                      locale: ptBR
-                    })})
+                    locale: ptBR
+                  })}–{format(weekEnd, 'dd/MM', {
+                    locale: ptBR
+                  })})
                       </span> : <span>Semana {weekNumber} ({format(weekStart, 'dd', {
-                      locale: ptBR
-                    })} a {format(weekEnd, 'dd/MM', {
-                      locale: ptBR
-                    })})</span>}
+                    locale: ptBR
+                  })} a {format(weekEnd, 'dd/MM', {
+                    locale: ptBR
+                  })})</span>}
                   </div>
                   
                   {!isMobile && <Button variant="ghost" size="sm" className="h-7 px-2 text-primary" onClick={e => {
-                  e.stopPropagation();
-                  onDaySelect(weekStart);
-                }}>
+                e.stopPropagation();
+                onDaySelect(weekStart);
+              }}>
                       <span className="text-xs mr-1">Detalhar</span>
                       <ChevronRight className="h-3 w-3" />
                     </Button>}
@@ -165,9 +153,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
               <CardContent className={isMobile ? "p-3 pt-0" : ""}>
                 {isMobile ? <p className="text-base">
                     {stats.totalAppointments} Agendados • {stats.totalRevenue.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                })}
+                style: 'currency',
+                currency: 'BRL'
+              })}
                   </p> : <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center text-sm">
@@ -187,22 +175,21 @@ export const WeekView: React.FC<WeekViewProps> = ({
                       <p className="text-sm font-medium">Total agendamentos: {stats.totalAppointments}</p>
                       <p className="text-sm text-green-600 font-medium mt-1">
                         Receita confirmada: {stats.totalRevenue.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
                         Previsto: {stats.expectedRevenue.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
                       </p>
                     </div>
                   </div>}
               </CardContent>
-            </Card>
-          );
-        })}
+            </Card>;
+      })}
       </div>
 
       {/* Week Details Modal */}
