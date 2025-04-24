@@ -1,7 +1,8 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Client } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   fetchClientsFromApi, 
   createClientInApi, 
@@ -36,6 +37,32 @@ export function useClients() {
       setLoading(false);
     }
   }, [toast]);
+
+  // Subscribe to real-time changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:clientes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'clientes'
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          fetchClients(); // Refresh the client list when changes occur
+        }
+      )
+      .subscribe();
+
+    // Initial fetch
+    fetchClients();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchClients]);
 
   const createClient = async (clientData: Partial<Client>) => {
     try {

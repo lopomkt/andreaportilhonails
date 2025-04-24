@@ -46,6 +46,7 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
     .single();
     
   if (error) {
+    console.error('Error creating client:', error);
     return { error: error.message };
   }
   
