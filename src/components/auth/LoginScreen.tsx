@@ -98,7 +98,7 @@ export const LoginScreen = () => {
             <Button 
               type="submit" 
               className="w-full bg-nail-500 hover:bg-nail-600"
-              disabled={isLoading}
+              disabled={!password || isLoading}
             >
               {isLoading ? (
                 <>
