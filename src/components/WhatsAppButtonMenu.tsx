@@ -50,7 +50,7 @@ export function WhatsAppButtonMenu() {
             id: item.id,
             type: item.tipo,
             message: item.mensagem,
-            active: true // Default to true since we don't have this in the DB
+            active: true // Adicionando propriedade active com valor padrão true
           }));
           
           setTemplates(mappedTemplates);
@@ -61,7 +61,7 @@ export function WhatsAppButtonMenu() {
     };
 
     fetchTemplates();
-  }, []);
+  }, [open]);
   
   const resetButton = useCallback(() => {
     if (!open) {
@@ -131,6 +131,10 @@ export function WhatsAppButtonMenu() {
     setOpen(true);
   };
 
+  const handleClientSelect = (client: Client | null) => {
+    setSelectedClient(client);
+  };
+
   return (
     <>
       <Button
@@ -159,7 +163,7 @@ export function WhatsAppButtonMenu() {
             <div className="space-y-2">
               <Label>Cliente</Label>
               <ClientAutocomplete 
-                onClientSelect={setSelectedClient}
+                onClientSelect={handleClientSelect}
                 selectedClient={selectedClient}
                 autofocus={true}
                 placeholder="Digite o nome do cliente..."

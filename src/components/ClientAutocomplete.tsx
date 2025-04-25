@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,8 @@ export function ClientAutocomplete({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!searchQuery) {
+    // Inicializar a busca quando o componente montar
+    if (!selectedClient) {
       fetchClients();
     }
   }, []);
@@ -87,18 +89,29 @@ export function ClientAutocomplete({
     
     if (query.length === 0) {
       fetchClients();
+      setIsOpen(true);
       return;
     }
     
     if (query.length < 2) return;
     
     fetchClients(query);
+    setIsOpen(true);
   };
 
   const handleSelectClient = (client: Client) => {
     onClientSelect(client);
     setSearchQuery('');
     setIsOpen(false);
+  };
+
+  const handleClearSelection = () => {
+    onClientSelect(null);
+    setSearchQuery('');
+    setIsOpen(true);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
   
   const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -144,6 +157,9 @@ export function ClientAutocomplete({
     setShowNewClientDialog(false);
   };
 
+  // Determinar o texto a ser mostrado no input
+  const displayText = selectedClient ? selectedClient.name : searchQuery;
+
   return (
     <div className="w-full relative">
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
@@ -152,11 +168,21 @@ export function ClientAutocomplete({
             type="text"
             className="w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder={placeholder}
-            value={selectedClient ? selectedClient.name : searchQuery}
+            value={displayText}
             onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              if (!selectedClient) {
+                setIsOpen(true);
+              }
+            }}
             autoFocus={autofocus}
             ref={inputRef}
+            onClick={() => {
+              // Ao clicar no input, se tiver cliente selecionado, limpa para permitir nova busca
+              if (selectedClient) {
+                handleClearSelection();
+              }
+            }}
           />
         </div>
         <div className="flex items-center pr-2">
@@ -239,7 +265,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={() => handleNewClientSuccess(null)}
+            onSuccess={handleNewClientSuccess}
             onCancel={handleCloseDialog}
           />
         </DialogContent>
