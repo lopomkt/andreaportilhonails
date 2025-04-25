@@ -10,7 +10,6 @@ import Dashboard from "@/pages/Dashboard";
 import CalendarPage from "@/pages/CalendarPage";
 import ClientsPage from "@/pages/ClientsPage";
 import ServicesPage from "@/pages/ServicesPage";
-import FinancePage from "@/pages/FinancePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FunctionalitiesPage from "@/pages/FunctionalitiesPage";
 import CancellationReasonsPage from "@/pages/funcionalidades/CancellationReasonsPage";
@@ -58,7 +57,6 @@ export const CRMContent = () => {
           <Route path="/calendario" element={<CalendarPage />} />
           <Route path="/clientes" element={<ClientsPage />} />
           <Route path="/servicos" element={<ServicesPage />} />
-          <Route path="/financeiro" element={<FinancePage />} />
           <Route path="/relatorios" element={<ReportsPage />} />
           <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
           <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
