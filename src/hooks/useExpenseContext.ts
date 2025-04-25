@@ -21,13 +21,21 @@ export const useExpenseContext = (
   }, []);
 
   const updateExpense = useCallback(async (expense: Expense) => {
-    // Mock implementation
+    // Implementation of updateExpense
     if (!expense || !expense.id) {
       return { success: false, error: "Invalid expense data" };
     }
     
+    // If we have setExpenses, update the local state
+    if (setExpenses) {
+      setExpenses(prev => 
+        prev.map(item => item.id === expense.id ? expense : item)
+      );
+      return { success: true };
+    }
+    
     return { success: false, error: "UpdateExpense function not available" };
-  }, []);
+  }, [setExpenses]);
 
   const deleteExpense = useCallback(async (id: string) => {
     // Implementação existente ou mock
@@ -42,7 +50,7 @@ export const useExpenseContext = (
     expenses,
     fetchExpenses,
     addExpense,
-    updateExpense, // Add the new method
+    updateExpense,
     deleteExpense
   };
 };

@@ -147,6 +147,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     error: expensesError,
     fetchExpenses,
     addExpense,
+    updateExpense, // Add this line to destructure updateExpense
     deleteExpense,
   } = useExpenses();
 
@@ -239,6 +240,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addAppointment,
         updateAppointment,
         addExpense,
+        updateExpense, // Add this to the provider's value
         deleteExpense,
         addService,
         updateService,

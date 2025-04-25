@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +49,7 @@ interface DataContextType {
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
   addExpense: (expense: Omit<Expense, "id">) => Promise<any>;
-  updateExpense: (expense: Expense) => Promise<any>; // Add this method
+  updateExpense: (expense: Expense) => Promise<any>;
   deleteExpense: (id: string) => Promise<any>;
   addService: (service: Omit<Service, "id">) => Promise<any>;
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
@@ -90,6 +89,7 @@ export const DataContext = createContext<DataContextType>({
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
   addExpense: async () => ({}),
+  updateExpense: async () => ({}),
   deleteExpense: async () => ({}),
   addService: async () => ({}),
   updateService: async () => ({}),
@@ -97,7 +97,6 @@ export const DataContext = createContext<DataContextType>({
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  // Estado compartilhado
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -115,7 +114,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   });
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
-  // Initializing all context providers
   const appointmentContext = useAppointmentContext(setAppointments, appointments);
   
   const clientContext = useClientContext(
@@ -126,7 +124,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   
   const serviceContext = useServiceContext(setServices, services);
   
-  const expenseContext = useExpenseContext(expenses, setExpenses); // Added setExpenses param
+  const expenseContext = useExpenseContext(expenses, setExpenses);
   
   const blockedDateContext = useBlockedDateContext(setBlockedDates, blockedDates);
   
@@ -137,7 +135,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     dashboardStats
   );
 
-  // Load data on mount
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -159,7 +156,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     loadData();
   }, []);
 
-  // Public refetch methods with void return type
   const refetchAppointments = async (): Promise<void> => {
     console.log("DataContext: refetchAppointments called");
     await appointmentContext.fetchAppointments();
@@ -198,6 +194,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addAppointment: appointmentContext.addAppointment,
         updateAppointment: appointmentContext.updateAppointment,
         addExpense: expenseContext.addExpense,
+        updateExpense: expenseContext.updateExpense,
         deleteExpense: expenseContext.deleteExpense,
         addService: serviceContext.addService,
         updateService: serviceContext.updateService,
