@@ -17,7 +17,11 @@ export const VisuallyHidden = ({
         "absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0",
         className
       )}
-      style={{ clip: "rect(0 0 0 0)" }}
+      style={{ 
+        clip: "rect(0 0 0 0)",
+        clipPath: "inset(50%)", 
+        whiteSpace: "nowrap" 
+      }}
       {...props}
     >
       {children}
