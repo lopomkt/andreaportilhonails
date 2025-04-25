@@ -1,4 +1,3 @@
-
 import { useData } from "@/context/DataContext";
 import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, isAfter, isBefore, format } from "date-fns";
@@ -28,36 +27,28 @@ export default function Dashboard() {
   const todayAppointments = getAppointmentsForDate(new Date());
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
   
-  // Função para abrir o modal de agendamento rápido
   const openQuickAppointment = (defaultDate?: Date) => {
-    // Encontrar o botão de agendamento rápido
     const quickAppointmentButton = document.getElementById('quick-appointment-button');
     
+    if (defaultDate) {
+      localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
+    } else {
+      localStorage.removeItem('defaultAppointmentDate');
+    }
+    
     if (quickAppointmentButton) {
-      // Se uma data específica foi fornecida, armazená-la no localStorage
-      if (defaultDate) {
-        localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
-      } else {
-        // Caso contrário, limpar qualquer data armazenada anteriormente
-        localStorage.removeItem('defaultAppointmentDate');
-      }
-      
-      // Simular o clique no botão para abrir o modal
       quickAppointmentButton.click();
     }
   };
   
-  // Navegação para o calendário no modo dia
   const navigateToCalendarDay = () => {
     navigate(`/calendario?date=${format(new Date(), 'yyyy-MM-dd')}&view=day`);
   };
   
-  // Navegação para o calendário no modo semana
   const navigateToCalendarWeek = () => {
     navigate(`/calendario?date=${format(new Date(), 'yyyy-MM-dd')}&view=week`);
   };
 
-  // Cálculo do valor médio por cliente
   const calculateAverageClientValue = () => {
     const now = new Date();
     const firstDayOfMonth = startOfMonth(now);
@@ -71,7 +62,6 @@ export default function Dashboard() {
     return uniqueClientIds.size > 0 ? totalRevenue / uniqueClientIds.size : 0;
   };
 
-  // Cálculo da receita projetada
   const calculateProjectedRevenue = () => {
     const now = new Date();
     const lastDayOfMonth = endOfMonth(now);
@@ -82,7 +72,6 @@ export default function Dashboard() {
     return pendingAppointments.reduce((sum, appt) => sum + appt.price, 0);
   };
 
-  // Cálculo da média de clientes por dia
   const calculateAverageClientsPerDay = () => {
     const now = new Date();
     const firstDayOfMonth = startOfMonth(now);
@@ -99,10 +88,8 @@ export default function Dashboard() {
     return daysWithAppointments > 0 ? Math.round(confirmedAppointments.length / daysWithAppointments) : 0;
   };
 
-  // Recupera os horários sugeridos usando o hook
   const { suggestedSlots } = useTimeSlotsCalculation(getAppointmentsForDate);
 
-  // Cálculo de estatísticas
   const avgClientsPerDay = calculateAverageClientsPerDay();
   const averageClientValue = calculateAverageClientValue();
   const projectedRevenue = calculateProjectedRevenue();
@@ -120,7 +107,7 @@ export default function Dashboard() {
         todayRevenue={todayRevenue}
         openQuickAppointment={openQuickAppointment}
       />
-
+      
       <MotivationalMessage />
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
