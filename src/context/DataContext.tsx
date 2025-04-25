@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +54,7 @@ interface DataContextType {
   addService: (service: Omit<Service, "id">) => Promise<any>;
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
-  fetchServices: () => Promise<Service[]>; // Add this line to fix the error
+  fetchServices: () => Promise<Service[]>;
 }
 
 export const DataContext = createContext<DataContextType>({
@@ -96,6 +95,7 @@ export const DataContext = createContext<DataContextType>({
   addService: async () => ({}),
   updateService: async () => ({}),
   deleteService: async () => ({}),
+  fetchServices: async () => [],
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
@@ -201,7 +201,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addService: serviceContext.addService,
         updateService: serviceContext.updateService,
         deleteService: serviceContext.deleteService,
-        fetchServices: serviceContext.fetchServices, // Add this line to expose the fetchServices method
+        fetchServices: serviceContext.fetchServices,
       }}
     >
       {children}
