@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Client, MessageTemplate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/context/DataContext";
@@ -33,6 +33,11 @@ export function useWhatsAppMessage() {
         }));
         
         setTemplates(mappedTemplates);
+        
+        // Set default message type if available
+        if (mappedTemplates.length > 0 && !messageType) {
+          setMessageType(mappedTemplates[0].type);
+        }
       }
     } catch (error) {
       console.error("Erro ao buscar templates de mensagens:", error);
@@ -50,7 +55,12 @@ export function useWhatsAppMessage() {
     }
     
     try {
-      const selectedTemplate = templates.find(template => template.id === messageType);
+      // Get all templates for the selected message type
+      const typeTemplates = templates.filter(template => template.type === messageType);
+      
+      // Use the first template of the selected type
+      const selectedTemplate = typeTemplates.length > 0 ? typeTemplates[0] : null;
+      
       if (!selectedTemplate) {
         throw new Error("Modelo de mensagem não encontrado");
       }

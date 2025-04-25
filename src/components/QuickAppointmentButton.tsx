@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { AppointmentForm } from "./AppointmentForm";
 import { AppointmentFormWrapper } from "./AppointmentFormWrapper";
+
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
+  
   useEffect(() => {
     // Quando o modal é aberto, verificamos se há uma data armazenada no localStorage
     if (open) {
@@ -42,16 +45,24 @@ export function QuickAppointmentButton() {
     };
     return () => {
       // Clean up when component unmounts
-      window.openQuickAppointmentModal = undefined;
+      delete window.openQuickAppointmentModal;
     };
   }, []);
-  return <>
-      
+  
+  return (
+    <>
+      <Button 
+        onClick={() => setOpen(true)}
+        className="fixed bottom-4 right-4 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-10"
+        size="icon"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
       
       <Dialog open={open} onOpenChange={setOpen} modal={true}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
           <DialogHeader>
-            <DialogTitle className="text-xl text-rose-700 flex items-center">
+            <DialogTitle className="text-xl flex items-center">
               <span className="mr-2">💅</span>
               Novo Agendamento
             </DialogTitle>
@@ -61,7 +72,8 @@ export function QuickAppointmentButton() {
           </AppointmentFormWrapper>
         </DialogContent>
       </Dialog>
-    </>;
+    </>
+  );
 }
 
 // Adicionar a declaração global do tipo para TypeScript

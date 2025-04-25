@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Send } from "lucide-react";
@@ -25,6 +26,14 @@ export function MessageForm({
   templates,
   onSend
 }: MessageFormProps) {
+  const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
+  
+  // When messageType changes, find corresponding template
+  useEffect(() => {
+    const template = templates.find(t => t.type === messageType);
+    setSelectedTemplate(template || null);
+  }, [messageType, templates]);
+
   return (
     <div className="space-y-4 py-4">
       <div className="space-y-2">
@@ -43,11 +52,13 @@ export function MessageForm({
         templates={templates}
       />
       
-      <MessagePreview 
-        messageType={messageType} 
-        templates={templates}
-        clientName={selectedClient?.name}
-      />
+      {selectedTemplate && (
+        <MessagePreview 
+          messageType={selectedTemplate.id} 
+          templates={templates}
+          clientName={selectedClient?.name}
+        />
+      )}
       
       <Button 
         onClick={onSend} 
