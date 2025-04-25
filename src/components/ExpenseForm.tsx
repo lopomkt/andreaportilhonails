@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,20 +12,34 @@ import { CalendarIcon } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/sonner";
+import { Expense } from "@/types";
 
 interface ExpenseFormProps {
   onCancel: () => void;
   onSuccess: () => void;
+  expense?: Expense | null; // Make expense optional
 }
 
-export function ExpenseForm({ onCancel, onSuccess }: ExpenseFormProps) {
-  const { addExpense } = useData();
+export function ExpenseForm({ onCancel, onSuccess, expense }: ExpenseFormProps) {
+  const { addExpense, updateExpense } = useData();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
   const [category, setCategory] = useState("");
+  
+  // Initialize form with expense data if editing
+  useEffect(() => {
+    if (expense) {
+      setName(expense.name);
+      setAmount(expense.amount.toString());
+      setDate(new Date(expense.date));
+      setNotes(expense.notes || "");
+      setIsRecurring(expense.isRecurring);
+      setCategory(expense.category || "");
+    }
+  }, [expense]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,16 +49,28 @@ export function ExpenseForm({ onCancel, onSuccess }: ExpenseFormProps) {
       return;
     }
 
-    await addExpense({
+    const expenseData = {
       name,
       amount: Number(amount),
       date: date.toISOString(),
       isRecurring,
       category: category || undefined,
       notes: notes || undefined,
-    });
+    };
 
-    toast.success("Despesa registrada com sucesso!");
+    if (expense) {
+      // Update existing expense
+      await updateExpense({
+        id: expense.id,
+        ...expenseData
+      });
+      toast.success("Despesa atualizada com sucesso!");
+    } else {
+      // Add new expense
+      await addExpense(expenseData);
+      toast.success("Despesa registrada com sucesso!");
+    }
+
     onSuccess();
   };
 

@@ -121,7 +121,7 @@ const ReportsPage: React.FC = () => {
       locale: ptBR
     });
     
-    const appointments = appointments.filter(appt => {
+    const appointmentCount = appointments.filter(appt => {
       const date = new Date(appt.date);
       return isSameMonth(date, monthDate) && appt.status !== "canceled";
     }).length;
@@ -133,7 +133,7 @@ const ReportsPage: React.FC = () => {
     
     return {
       name: monthName,
-      appointments,
+      appointments: appointmentCount,
       cancellations
     };
   });
@@ -334,7 +334,7 @@ const ReportsPage: React.FC = () => {
                 <CardContent className="mx-0 px-0">
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={last3MonthsData} margin={{
+                      <RechartsBarChart data={last3MonthsData} margin={{
                       top: 20,
                       right: 30,
                       left: 20,
@@ -352,7 +352,7 @@ const ReportsPage: React.FC = () => {
                         <Bar dataKey="revenue" name="Receita" fill="#9b87f5" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="expenses" name="Despesas" fill="#ea384c" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="profit" name="Lucro" fill="#65a30d" radius={[4, 4, 0, 0]} />
-                      </BarChart>
+                      </RechartsBarChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
@@ -489,7 +489,11 @@ const ReportsPage: React.FC = () => {
               <DialogHeader>
                 <DialogTitle>{activeExpense ? "Editar Despesa" : "Nova Despesa"}</DialogTitle>
               </DialogHeader>
-              <ExpenseForm onCancel={handleCloseForm} onSuccess={handleCloseForm} expense={activeExpense} />
+              <ExpenseForm 
+                onCancel={handleCloseForm} 
+                onSuccess={handleCloseForm} 
+                expense={activeExpense}
+              />
             </DialogContent>
           </Dialog>
         </TabsContent>
