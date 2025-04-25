@@ -113,6 +113,7 @@ export default function ClientsPage() {
     }
   };
 
+  // This is the function causing the type error - let's fix its return type
   const handleNewClientSuccess = async () => {
     console.log("ClientsPage: New client created successfully");
     setShowNewClientModal(false);
@@ -121,6 +122,7 @@ export default function ClientsPage() {
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
     });
+    // Don't return anything to match the Promise<void> type
   };
 
   if (isLoading) {
@@ -158,7 +160,7 @@ export default function ClientsPage() {
       <Card className="p-4">
         <ClientsList 
           clients={filteredClients} 
-          onClientUpdated={fetchClients} 
+          onClientUpdated={handleNewClientSuccess} 
         />
       </Card>
 
