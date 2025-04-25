@@ -156,7 +156,7 @@ export default function ClientsPage() {
           <Input placeholder="Buscar cliente..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowImportModal(true)} className="gap-1 whitespace-nowrap bg-rose-400 hover:bg-rose-300 text-slate-950 text-base">
+          <Button onClick={() => setShowImportModal(true)} className="gap-1 whitespace-nowrap bg-rose-400 hover:bg-rose-300 text-slate-950 text-sm">
             <Upload className="h-4 w-4" />
             Importar
           </Button>
