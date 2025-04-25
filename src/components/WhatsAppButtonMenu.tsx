@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -13,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Client } from "@/types";
+import { Client, MessageTemplate } from "@/types";
 import { 
   Select,
   SelectContent,
@@ -24,13 +23,6 @@ import {
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { supabase } from "@/integrations/supabase/client";
 
-// Definindo tipos para as mensagens template
-interface MessageTemplate {
-  id: string;
-  type: string;
-  message: string;
-}
-
 export function WhatsAppButtonMenu() {
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -40,66 +32,29 @@ export function WhatsAppButtonMenu() {
   const { toast } = useToast();
   const { clients = [], generateWhatsAppLink } = useData();
   
-  // Buscar templates de mensagem
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        // Simulando busca de templates - Em uma implementação real, isso viria do banco de dados
-        // Para este exemplo, usaremos templates padrão
-        const defaultTemplates = [
-          {
-            id: "confirmation",
-            type: "confirmação",
-            message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕"
-          },
-          {
-            id: "reminder",
-            type: "lembrete",
-            message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes."
-          },
-          {
-            id: "reengagement",
-            type: "reengajamento",
-            message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!"
-          }
-        ];
-
-        // Verificando se existe uma tabela de templates no banco de dados
         const { data, error } = await supabase
           .from('mensagens_templates')
           .select('*');
-
-        if (!error && data && data.length > 0) {
-          // Usar templates do banco de dados se existirem
-          setTemplates(data.map(item => ({
+        
+        if (error) {
+          console.error("Erro ao buscar templates:", error);
+          return;
+        }
+        
+        if (data) {
+          const mappedTemplates: MessageTemplate[] = data.map(item => ({
             id: item.id,
             type: item.tipo,
             message: item.mensagem
-          })));
-        } else {
-          // Usar templates padrão
-          setTemplates(defaultTemplates);
+          }));
+          
+          setTemplates(mappedTemplates);
         }
       } catch (error) {
         console.error("Erro ao buscar templates de mensagens:", error);
-        // Fallback para templates padrão em caso de erro
-        setTemplates([
-          {
-            id: "confirmation",
-            type: "confirmação",
-            message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕"
-          },
-          {
-            id: "reminder",
-            type: "lembrete",
-            message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes."
-          },
-          {
-            id: "reengagement",
-            type: "reengajamento",
-            message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!"
-          }
-        ]);
       }
     };
 
@@ -133,13 +88,11 @@ export function WhatsAppButtonMenu() {
     }
     
     try {
-      // Encontrar o template selecionado
       const selectedTemplate = templates.find(template => template.id === messageType);
       if (!selectedTemplate) {
         throw new Error("Modelo de mensagem não encontrado");
       }
       
-      // Substituir variáveis no template
       let messageContent = selectedTemplate.message.replace(/{{nome}}/g, selectedClient.name || '');
       
       const messageData = {
@@ -176,10 +129,6 @@ export function WhatsAppButtonMenu() {
     setOpen(true);
   };
 
-  const handleClientSelect = (client: Client | null) => {
-    setSelectedClient(client);
-  };
-
   return (
     <>
       <Button
@@ -208,7 +157,7 @@ export function WhatsAppButtonMenu() {
             <div className="space-y-2">
               <Label>Cliente</Label>
               <ClientAutocomplete 
-                onClientSelect={handleClientSelect}
+                onClientSelect={setSelectedClient}
                 selectedClient={selectedClient}
                 autofocus={true}
                 placeholder="Digite o nome do cliente..."

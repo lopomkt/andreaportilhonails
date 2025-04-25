@@ -165,6 +165,27 @@ export type Database = {
         }
         Relationships: []
       }
+      mensagens_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          mensagem: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mensagem: string
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mensagem?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       motivos_cancelamento: {
         Row: {
           id: string
