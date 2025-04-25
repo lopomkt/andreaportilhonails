@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MobileNavbar";
 import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
@@ -68,7 +67,6 @@ export const CRMContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <WhatsAppButtonMenu />
-        <QuickAppointmentButton />
       </MainLayout>
     </div>
   );

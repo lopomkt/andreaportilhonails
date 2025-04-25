@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Client } from "@/types";
 import { Card } from "@/components/ui/card";
@@ -183,22 +182,22 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
         <Button 
           variant={activeTab === 'active' ? "default" : "outline"}
           onClick={() => setActiveTab('active')}
-          className={activeTab === 'active' ? "bg-nail-500 hover:bg-nail-600" : ""}
+          className={`${activeTab === 'active' ? "bg-nail-500 hover:bg-nail-600" : ""} w-[calc(50%-0.25rem)] sm:w-auto`}
         >
           <UserRound className="h-4 w-4 mr-1" />
-          Clientes Ativos
+          Ativos
         </Button>
         <Button 
           variant={activeTab === 'inactive' ? "default" : "outline"}
           onClick={() => setActiveTab('inactive')}
-          className={activeTab === 'inactive' ? "bg-nail-500 hover:bg-nail-600" : ""}
+          className={`${activeTab === 'inactive' ? "bg-nail-500 hover:bg-nail-600" : ""} w-[calc(50%-0.25rem)] sm:w-auto`}
         >
           <UserRound className="h-4 w-4 mr-1" />
-          Clientes Inativos
+          Inativos
         </Button>
       </div>
 

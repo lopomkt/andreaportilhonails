@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,11 +7,10 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "@/components/ui/popover";
+import { MessageSquare } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useData } from "@/context/DataContext";
+import { cn } from "@/lib/utils";
 import { 
   Select,
   SelectContent,
@@ -21,13 +19,11 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { MessageSquare } from "lucide-react";
-import { useData } from "@/context/DataContext";
 import { Client } from "@/types";
 
 export function WhatsAppButtonMenu() {
   const [open, setOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messageType, setMessageType] = useState<string>("");
   const [selectedClient, setSelectedClient] = useState<string>("");
   const { toast } = useToast();
@@ -75,11 +71,22 @@ export function WhatsAppButtonMenu() {
     }
   };
 
+  const handleButtonClick = () => {
+    if (!isExpanded) {
+      setIsExpanded(true);
+      return;
+    }
+    setOpen(true);
+  };
+
   return (
     <>
       <Button
-        className="fixed bottom-24 right-6 rounded-full w-14 h-14 shadow-premium p-0 bg-green-500 hover:bg-green-600 transition-all duration-300 z-50"
-        onClick={() => setOpen(true)}
+        className={cn(
+          "fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full w-14 shadow-premium p-0 bg-green-500 hover:bg-green-600 transition-all duration-300",
+          isExpanded ? "h-14" : "h-7 translate-y-7"
+        )}
+        onClick={handleButtonClick}
         style={{ zIndex: 100 }}
       >
         <MessageSquare className="h-6 w-6" />
