@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -7,25 +8,20 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { Send } from "lucide-react";
+import { Send, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Client } from "@/types";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 
 export function WhatsAppButtonMenu() {
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messageType, setMessageType] = useState<string>("");
-  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
   const { clients, generateWhatsAppLink } = useData();
   
@@ -55,34 +51,32 @@ export function WhatsAppButtonMenu() {
       return;
     }
     
-    const client = clients.find(c => c.id === selectedClient);
-    if (!client) return;
-    
     let messageData = {
-      client,
+      client: selectedClient,
       message: ""
     };
     
     switch (messageType) {
       case "confirmation":
-        messageData.message = `Olá ${client.name}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕`;
+        messageData.message = `Olá ${selectedClient.name}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕`;
         break;
       case "reminder":
-        messageData.message = `Oi ${client.name} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.`;
+        messageData.message = `Oi ${selectedClient.name} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.`;
         break;
       case "reengagement":
-        messageData.message = `Oi ${client.name}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!`;
+        messageData.message = `Oi ${selectedClient.name}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!`;
         break;
       default:
-        messageData.message = `Olá ${client.name}! 😊`;
+        messageData.message = `Olá ${selectedClient.name}! 😊`;
     }
     
     const whatsappLink = await generateWhatsAppLink(messageData);
     if (whatsappLink) {
       window.open(whatsappLink, '_blank');
       setOpen(false);
-      setSelectedClient("");
+      setSelectedClient(null);
       setMessageType("");
+      setSearchTerm("");
     }
   };
 
@@ -120,33 +114,61 @@ export function WhatsAppButtonMenu() {
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="client">Cliente</Label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
-                <SelectTrigger id="client">
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Cliente</Label>
+              <Command className="rounded-lg border shadow-md">
+                <CommandInput 
+                  placeholder="Digite o nome do cliente..."
+                  value={searchTerm}
+                  onValueChange={setSearchTerm}
+                />
+                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                <CommandGroup className="max-h-48 overflow-auto">
+                  {clients
+                    .filter(client => 
+                      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      client.phone.includes(searchTerm)
+                    )
+                    .map((client) => (
+                      <CommandItem
+                        key={client.id}
+                        value={client.id}
+                        onSelect={() => {
+                          setSelectedClient(client);
+                          setSearchTerm(client.name);
+                        }}
+                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{client.name}</p>
+                          <p className="text-sm text-muted-foreground">{client.phone}</p>
+                        </div>
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
+              </Command>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="message-type">Tipo de Mensagem</Label>
-              <Select value={messageType} onValueChange={setMessageType}>
-                <SelectTrigger id="message-type">
-                  <SelectValue placeholder="Selecione um tipo de mensagem" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="confirmation">Confirmação</SelectItem>
-                  <SelectItem value="reminder">Lembrete</SelectItem>
-                  <SelectItem value="reengagement">Reengajamento</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Tipo de Mensagem</Label>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { id: "confirmation", label: "Confirmação" },
+                  { id: "reminder", label: "Lembrete" },
+                  { id: "reengagement", label: "Reengajamento" }
+                ].map((type) => (
+                  <Button
+                    key={type.id}
+                    variant={messageType === type.id ? "default" : "outline"}
+                    onClick={() => setMessageType(type.id)}
+                    className={cn(
+                      "justify-start",
+                      messageType === type.id && "bg-green-500 hover:bg-green-600 text-white"
+                    )}
+                  >
+                    {type.label}
+                  </Button>
+                ))}
+              </div>
             </div>
             
             <Button 
