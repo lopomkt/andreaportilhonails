@@ -15,19 +15,19 @@ export function BirthdaysCard({ clients }: BirthdaysCardProps) {
   const currentMonth = today.getMonth()
   
   const birthdays = clients.filter(client => {
-    if (!client.data_nascimento) return false
-    const birthDate = new Date(client.data_nascimento)
+    if (!client.birthdate) return false
+    const birthDate = new Date(client.birthdate)
     return birthDate.getMonth() === currentMonth
   }).sort((a, b) => {
-    const dateA = new Date(a.data_nascimento!)
-    const dateB = new Date(b.data_nascimento!)
+    const dateA = new Date(a.birthdate!)
+    const dateB = new Date(b.birthdate!)
     return dateA.getDate() - dateB.getDate()
   })
 
   const createWhatsAppMessage = (client: Client) => {
-    const message = `Olá ${client.nome}! 🎉 Feliz Aniversário! 🎂 Desejo a você um dia muito especial, cheio de alegria e realizações. Agradeço por fazer parte da minha história! 💝 Andrea Portilho - Nail Design`
+    const message = `Olá ${client.name}! 🎉 Feliz Aniversário! 🎂 Desejo a você um dia muito especial, cheio de alegria e realizações. Agradeço por fazer parte da minha história! 💝 Andrea Portilho - Nail Design`
     const encodedMessage = encodeURIComponent(message)
-    const phoneNumber = client.telefone.replace(/\D/g, '')
+    const phoneNumber = client.phone.replace(/\D/g, '')
     return `https://wa.me/55${phoneNumber}?text=${encodedMessage}`
   }
 
@@ -48,9 +48,9 @@ export function BirthdaysCard({ clients }: BirthdaysCardProps) {
           {birthdays.map(client => (
             <div key={client.id} className="flex items-center justify-between p-2 bg-rose-50 rounded-lg">
               <div>
-                <p className="font-medium">{client.nome}</p>
+                <p className="font-medium">{client.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(client.data_nascimento!), "dd 'de' MMMM", { locale: ptBR })}
+                  {format(new Date(client.birthdate!), "dd 'de' MMMM", { locale: ptBR })}
                 </p>
               </div>
               <Button

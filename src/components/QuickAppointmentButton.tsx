@@ -84,7 +84,7 @@ export function QuickAppointmentButton() {
             <AppointmentFormWrapper>
               <AppointmentForm 
                 onSuccess={() => setOpen(false)}
-                defaultDate={localStorage.getItem('defaultAppointmentDate')}
+                // Removing defaultDate prop as it's not defined in AppointmentForm props
               />
             </AppointmentFormWrapper>
           </DialogContent>
