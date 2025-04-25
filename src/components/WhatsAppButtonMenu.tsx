@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -64,7 +63,6 @@ export function WhatsAppButtonMenu() {
       message: ""
     };
     
-    // Use different templates based on message type
     switch (messageType) {
       case "confirmation":
         messageData.message = `Olá ${client.name}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕`;
@@ -100,16 +98,10 @@ export function WhatsAppButtonMenu() {
     <>
       <Button
         className={cn(
-          "fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-premium p-0 bg-green-500 hover:bg-green-600 transition-all duration-300 z-20 md:bottom-24 md:right-6 md:left-auto md:translate-x-0",
+          "fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-premium p-0 bg-green-500 hover:bg-green-600 transition-all duration-300 z-10 md:z-40 md:bottom-6 md:right-6 md:left-auto md:translate-x-0",
           isExpanded ? "w-14 h-14" : "w-14 md:w-14 h-7 md:h-14 translate-y-7 md:translate-y-0"
         )}
         onClick={handleButtonClick}
-        style={{ 
-          zIndex: 40, // Higher z-index for desktop
-          '@media (max-width: 768px)': {
-            zIndex: 10 // Lower z-index for mobile
-          }
-        }}
       >
         <Send className="h-6 w-6" />
       </Button>
@@ -171,4 +163,3 @@ export function WhatsAppButtonMenu() {
     </>
   );
 }
-
