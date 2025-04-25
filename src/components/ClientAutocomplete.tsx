@@ -28,7 +28,6 @@ export function ClientAutocomplete({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
   
@@ -36,7 +35,6 @@ export function ClientAutocomplete({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Inicializar a busca quando o componente montar
     if (!selectedClient) {
       fetchClients();
     }
@@ -85,6 +83,10 @@ export function ClientAutocomplete({
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
+    
+    if (selectedClient) {
+      onClientSelect(null);
+    }
     
     if (query.length === 0) {
       fetchClients();
@@ -156,7 +158,6 @@ export function ClientAutocomplete({
     setShowNewClientDialog(false);
   };
 
-  // Determinar o texto a ser mostrado no input
   const displayText = selectedClient ? selectedClient.name : searchQuery;
 
   return (
@@ -167,21 +168,11 @@ export function ClientAutocomplete({
             type="text"
             className="w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder={placeholder}
-            value={displayText}
+            value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => {
-              if (!selectedClient) {
-                setIsOpen(true);
-              }
-            }}
+            onFocus={() => setIsOpen(true)}
             autoFocus={autofocus}
             ref={inputRef}
-            onClick={() => {
-              // Ao clicar no input, se tiver cliente selecionado, limpa para permitir nova busca
-              if (selectedClient) {
-                handleClearSelection();
-              }
-            }}
           />
         </div>
         <div className="flex items-center pr-2">

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { Send } from "lucide-react";
+import { Send, Check, Bell, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
@@ -31,53 +31,59 @@ export function WhatsAppButtonMenu() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const { toast } = useToast();
-  const { clients = [], generateWhatsAppLink } = useData();
-  
+  const { generateWhatsAppLink } = useData();
+  const isMobile = window.innerWidth <= 768;
+
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         const { data, error } = await supabase
           .from('mensagens_templates')
-          .select('*');
+          .select('*')
+          .order('tipo');
         
-        if (error) {
-          console.error("Erro ao buscar templates:", error);
-          return;
-        }
+        if (error) throw error;
         
         if (data) {
           const mappedTemplates: MessageTemplate[] = data.map(item => ({
             id: item.id,
-            type: item.tipo,
+            type: item.tipo.toLowerCase(),
             message: item.mensagem,
-            active: true // Adicionando propriedade active com valor padrão true
+            active: true
           }));
-          
           setTemplates(mappedTemplates);
         }
       } catch (error) {
-        console.error("Erro ao buscar templates de mensagens:", error);
+        console.error("Erro ao buscar templates:", error);
+        toast({
+          title: "Erro ao carregar mensagens",
+          description: "Não foi possível carregar os templates de mensagem",
+          variant: "destructive",
+        });
       }
     };
 
-    fetchTemplates();
-  }, [open]);
-  
-  const resetButton = useCallback(() => {
-    if (!open) {
-      setIsExpanded(false);
+    if (open) {
+      fetchTemplates();
     }
-  }, [open]);
+  }, [open, toast]);
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    if (isExpanded && !open) {
-      timeoutId = setTimeout(resetButton, 3000);
+  const handleButtonClick = () => {
+    if (!isMobile) {
+      setOpen(true);
+      return;
     }
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isExpanded, open, resetButton]);
+    
+    if (!isExpanded) {
+      setIsExpanded(true);
+      return;
+    }
+    setOpen(true);
+  };
+
+  const handleClientSelect = (client: Client | null) => {
+    setSelectedClient(client);
+  };
 
   const handleSendMessage = async () => {
     if (!selectedClient || !messageType) {
@@ -123,16 +129,17 @@ export function WhatsAppButtonMenu() {
     }
   };
 
-  const handleButtonClick = () => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      return;
+  const getTemplateIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'confirmação':
+        return <Check className="h-4 w-4" />;
+      case 'lembrete':
+        return <Bell className="h-4 w-4" />;
+      case 'reengajamento':
+        return <RefreshCcw className="h-4 w-4" />;
+      default:
+        return null;
     }
-    setOpen(true);
-  };
-
-  const handleClientSelect = (client: Client | null) => {
-    setSelectedClient(client);
   };
 
   return (
@@ -178,8 +185,15 @@ export function WhatsAppButtonMenu() {
                 </SelectTrigger>
                 <SelectContent>
                   {templates.map(template => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.type.charAt(0).toUpperCase() + template.type.slice(1)}
+                    <SelectItem 
+                      key={template.id} 
+                      value={template.id}
+                      className="flex items-center"
+                    >
+                      <div className="flex items-center">
+                        {getTemplateIcon(template.type)}
+                        <span className="ml-2 capitalize">{template.type}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
