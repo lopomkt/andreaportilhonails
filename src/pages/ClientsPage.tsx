@@ -9,8 +9,8 @@ import { Search, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/clients/ClientForm";
-import { ClientsTable } from "@/components/clients/ClientsTable";
 import { supabase } from '@/integrations/supabase/client';
+import { ClientsList } from "@/components/clients/ClientsList";
 
 export default function ClientsPage() {
   const {
@@ -127,7 +127,10 @@ export default function ClientsPage() {
       </div>
 
       <Card className="p-4">
-        <ClientsTable clients={filteredClients} />
+        <ClientsList 
+          clients={filteredClients} 
+          onClientAdded={refetchClients} 
+        />
       </Card>
 
       <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
