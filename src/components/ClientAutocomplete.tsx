@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, Loader2, Phone } from 'lucide-react';
@@ -142,8 +141,7 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  // Fix the issue here - specify the parameter type in the function
-  const handleNewClientSuccess = (newClient: Client | null) => {
+  const handleNewClientSuccess = (newClient?: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
       handleSelectClient(newClient);
