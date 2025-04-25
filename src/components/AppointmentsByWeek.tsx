@@ -7,11 +7,15 @@ import { startOfWeek, endOfWeek, addDays, format, isSameDay, subWeeks, addWeeks,
 import { Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+
 interface AppointmentsByWeekProps {
   appointments: Appointment[];
+  onClick?: () => void;
 }
+
 export function AppointmentsByWeek({
-  appointments
+  appointments,
+  onClick
 }: AppointmentsByWeekProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), {
     weekStartsOn: 0
@@ -27,6 +31,7 @@ export function AppointmentsByWeek({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const currentWeekEnd = endOfWeek(currentWeekStart, {
     weekStartsOn: 0
   });
@@ -72,7 +77,21 @@ export function AppointmentsByWeek({
   const navigateToDate = (date: Date) => {
     navigate(`/calendario?date=${format(date, 'yyyy-MM-dd')}&view=day`);
   };
-  return <Card className="card-premium">
+
+  // Handle card click
+  const handleCardClick = (event: React.MouseEvent) => {
+    // Only trigger if clicking on the card itself, not the buttons
+    if (
+      event.target instanceof Element && 
+      !event.target.closest('button') && 
+      onClick
+    ) {
+      onClick();
+    }
+  };
+
+  return (
+    <Card className="card-premium cursor-pointer" onClick={handleCardClick}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="flex items-center text-rose-700 text-base font-bold">
           <Calendar className="mr-2 h-5 w-5 text-rose-600" />
@@ -114,5 +133,6 @@ export function AppointmentsByWeek({
           ))}
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 }

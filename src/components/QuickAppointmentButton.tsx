@@ -12,18 +12,21 @@ export function QuickAppointmentButton() {
   
   useEffect(() => {
     // Verificar a data padrão no localStorage quando o modal é aberto
-    const storedDate = localStorage.getItem('defaultAppointmentDate');
-    if (storedDate) {
-      try {
-        setInitialDate(new Date(storedDate));
-        // Remover do localStorage após recuperar
-        localStorage.removeItem('defaultAppointmentDate');
-      } catch (error) {
-        console.error("Erro ao analisar a data armazenada:", error);
+    if (open) {
+      const storedDate = localStorage.getItem('defaultAppointmentDate');
+      if (storedDate) {
+        try {
+          setInitialDate(new Date(storedDate));
+          // Remover do localStorage após recuperar
+          localStorage.removeItem('defaultAppointmentDate');
+        } catch (error) {
+          console.error("Erro ao analisar a data armazenada:", error);
+          setInitialDate(undefined);
+        }
+      } else {
+        // Resetar se não houver data armazenada
+        setInitialDate(undefined);
       }
-    } else {
-      // Resetar se não houver data armazenada
-      setInitialDate(undefined);
     }
   }, [open]); // Dependência em 'open' para que seja executado quando o modal for aberto
 

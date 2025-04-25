@@ -54,7 +54,7 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
               <CalendarDays className="mr-2 h-4 w-4" />
               Ver Calendário
             </Button>
-            <Button className="bg-rose-600 text-white hover:bg-rose-700 shadow-soft w-full md:w-auto" onClick={openQuickAppointment}>
+            <Button className="bg-rose-600 text-white hover:bg-rose-700 shadow-soft w-full md:w-auto" onClick={() => openQuickAppointment()}>
               <CalendarClock className="mr-2 h-4 w-4" />
               Novo Agendamento
             </Button>
