@@ -64,4 +64,3 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
     </Card>
   );
 };
-
