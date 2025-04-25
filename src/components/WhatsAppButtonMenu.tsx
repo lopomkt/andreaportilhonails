@@ -70,13 +70,22 @@ export function WhatsAppButtonMenu() {
         messageData.message = `Olá ${selectedClient.name}! 😊`;
     }
     
-    const whatsappLink = await generateWhatsAppLink(messageData);
-    if (whatsappLink) {
-      window.open(whatsappLink, '_blank');
-      setOpen(false);
-      setSelectedClient(null);
-      setMessageType("");
-      setSearchTerm("");
+    try {
+      const whatsappLink = await generateWhatsAppLink(messageData);
+      if (whatsappLink) {
+        window.open(whatsappLink, '_blank');
+        setOpen(false);
+        setSelectedClient(null);
+        setMessageType("");
+        setSearchTerm("");
+      }
+    } catch (error) {
+      console.error("Error generating WhatsApp link:", error);
+      toast({
+        title: "Erro ao gerar link",
+        description: "Não foi possível gerar o link para o WhatsApp",
+        variant: "destructive",
+      });
     }
   };
 
@@ -88,13 +97,15 @@ export function WhatsAppButtonMenu() {
     setOpen(true);
   };
 
-  // Filter clients safely
-  const filteredClients = Array.isArray(clients) 
-    ? clients.filter(client => 
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.phone.includes(searchTerm)
-      )
-    : [];
+  // Ensure clients is an array and safely filter it
+  const safeClients = Array.isArray(clients) ? clients : [];
+  const filteredClients = safeClients.filter(client => 
+    client && typeof client === 'object' && 
+    (
+      (client.name && client.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (client.phone && client.phone.includes(searchTerm))
+    )
+  );
 
   return (
     <>
@@ -123,6 +134,7 @@ export function WhatsAppButtonMenu() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Cliente</Label>
+              {/* Make sure the Command component has an empty view if needed */}
               <Command className="rounded-lg border shadow-md">
                 <CommandInput 
                   placeholder="Digite o nome do cliente..."
@@ -137,7 +149,7 @@ export function WhatsAppButtonMenu() {
                       value={client.id}
                       onSelect={() => {
                         setSelectedClient(client);
-                        setSearchTerm(client.name);
+                        setSearchTerm(client.name || '');
                       }}
                       className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
                     >
