@@ -21,10 +21,10 @@ export function MessageTypeSelect({
   onMessageTypeChange,
   templates
 }: MessageTypeSelectProps) {
-  // Get unique message types from templates
+  // Obter tipos de mensagem únicos a partir dos templates
   const messageTypes = [...new Set(templates.map(t => t.type))];
   
-  // Group templates by type for easier rendering
+  // Agrupar templates por tipo para facilitar a renderização
   const groupedTemplates = messageTypes.reduce((acc, type) => {
     acc[type] = templates.filter(t => t.type === type);
     return acc;
@@ -35,6 +35,8 @@ export function MessageTypeSelect({
       case "confirmação": return "Confirmação";
       case "lembrete": return "Lembrete";
       case "reengajamento": return "Reengajamento";
+      case "aniversario": return "Aniversário";
+      case "promocao": return "Promoção";
       default: return type;
     }
   };

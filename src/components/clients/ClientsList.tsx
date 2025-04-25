@@ -217,21 +217,26 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
       
       const result = await addAppointment({
         clientId: selectedClient.id,
-        serviceId: selectedService.id,
+        serviceId: formData.serviceId,
         date: dateTime.toISOString(),
         price: selectedService.price,
         status: 'pending'
       });
       
-      if (result) {
+      if (result && result.success) {
         toast({
           title: "Agendamento criado",
           description: "O agendamento foi criado com sucesso!"
         });
         setIsScheduling(false);
         refetchAppointments();
+        setFormData({
+          serviceId: "",
+          date: "",
+          time: ""
+        });
       } else {
-        throw new Error("Falha ao criar agendamento");
+        throw new Error(result?.error?.message || "Falha ao criar agendamento");
       }
     } catch (error: any) {
       toast({

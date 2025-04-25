@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Client, MessageTemplate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useData } from "@/context/DataContext";
+import { useDataContext } from "./useDataContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useWhatsAppMessage() {
@@ -10,14 +10,14 @@ export function useWhatsAppMessage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const { toast } = useToast();
-  const { generateWhatsAppLink } = useData();
+  const { generateWhatsAppLink } = useDataContext();
 
   const fetchTemplates = async () => {
     try {
       const { data, error } = await supabase
         .from('mensagens_templates')
         .select('*')
-        .in('tipo', ['confirmação', 'lembrete', 'reengajamento']);
+        .order('tipo', { ascending: true });
       
       if (error) {
         console.error("Erro ao buscar templates:", error);
@@ -34,7 +34,7 @@ export function useWhatsAppMessage() {
         
         setTemplates(mappedTemplates);
         
-        // Set default message type if available
+        // Define um tipo de mensagem padrão se disponível
         if (mappedTemplates.length > 0 && !messageType) {
           setMessageType(mappedTemplates[0].type);
         }
@@ -55,10 +55,10 @@ export function useWhatsAppMessage() {
     }
     
     try {
-      // Get all templates for the selected message type
+      // Obter todos os templates para o tipo de mensagem selecionado
       const typeTemplates = templates.filter(template => template.type === messageType);
       
-      // Use the first template of the selected type
+      // Utilizar o primeiro template do tipo selecionado
       const selectedTemplate = typeTemplates.length > 0 ? typeTemplates[0] : null;
       
       if (!selectedTemplate) {
