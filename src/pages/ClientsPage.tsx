@@ -22,14 +22,14 @@ export default function ClientsPage() {
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const { toast } = useToast();
 
-  const fetchClients = async () => {
+  const fetchClients = async (): Promise<void> => {
     setIsLoading(true);
     try {
       console.log("ClientsPage: Fetching clients...");
       const fetchedClients = await fetchClientsFromApi();
       console.log("ClientsPage: Clients fetched successfully", fetchedClients);
       setClients(fetchedClients);
-      return fetchedClients;
+      return;
     } catch (error) {
       console.error("Error fetching clients:", error);
       toast({
@@ -37,7 +37,7 @@ export default function ClientsPage() {
         description: "Ocorreu um erro ao buscar a lista de clientes.",
         variant: "destructive",
       });
-      return [];
+      return;
     } finally {
       setIsLoading(false);
     }
