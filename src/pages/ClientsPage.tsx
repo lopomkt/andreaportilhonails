@@ -1,11 +1,11 @@
 
+import { useEffect, useState } from "react";
 import { useData } from "@/context/DataContext";
+import { Client } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Client } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/clients/ClientForm";
