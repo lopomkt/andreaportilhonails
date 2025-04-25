@@ -135,7 +135,8 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  // Fix the type error by making sure this function accepts a Client | null parameter
+  // This function accepts a Client | null parameter but we need to adapt it
+  // to match the onSuccess prop which expects a function with no parameters
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
@@ -242,7 +243,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={handleNewClientSuccess}
+            onSuccess={() => handleNewClientSuccess(null)}
             onCancel={() => setShowNewClientDialog(false)}
           />
         </DialogContent>
