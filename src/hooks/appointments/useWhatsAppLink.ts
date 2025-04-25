@@ -10,15 +10,17 @@ export function useWhatsAppLink() {
     appointment 
   }: WhatsAppMessageData): Promise<string> => {
     if (!client || !client.phone) {
-      return "";
+      throw new Error("Cliente ou número de telefone não fornecido");
     }
     
     let messageText = message || "";
     
     // Replace template variables with actual values
     const replaceVariables = (text: string) => {
+      if (!client || !text) return "";
+      
       return text
-        .replace(/{{nome}}/g, client.name)
+        .replace(/{{nome}}/g, client.name || "")
         .replace(/{{serviço}}/g, appointment?.service?.name || "")
         .replace(/{{data}}/g, appointment ? format(new Date(appointment.date), 'dd/MM/yyyy') : "")
         .replace(/{{horário}}/g, appointment ? format(new Date(appointment.date), 'HH:mm') : "")
@@ -31,7 +33,12 @@ export function useWhatsAppLink() {
       const appointmentDate = new Date(appointment.date);
       const serviceType = appointment.service?.name || "serviço";
       
-      messageText = `Olá ${client.name}, confirmando seu agendamento de ${serviceType} para o dia ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}.`;
+      messageText = `Olá ${client.name || "Cliente"}, confirmando seu agendamento de ${serviceType} para o dia ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}.`;
+    }
+    
+    // Make sure we have a message to send
+    if (!messageText) {
+      messageText = `Olá ${client.name || "Cliente"}!`;
     }
     
     // Format phone number by removing any non-numeric characters

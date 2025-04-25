@@ -71,6 +71,10 @@ export function WhatsAppButtonMenu() {
     }
     
     try {
+      if (!generateWhatsAppLink) {
+        throw new Error("Função de geração de link não disponível");
+      }
+      
       const whatsappLink = await generateWhatsAppLink(messageData);
       if (whatsappLink) {
         window.open(whatsappLink, '_blank');
@@ -134,33 +138,34 @@ export function WhatsAppButtonMenu() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Cliente</Label>
-              {/* Make sure the Command component has an empty view if needed */}
-              <Command className="rounded-lg border shadow-md">
-                <CommandInput 
-                  placeholder="Digite o nome do cliente..."
-                  value={searchTerm}
-                  onValueChange={setSearchTerm}
-                />
-                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                <CommandGroup className="max-h-48 overflow-auto">
-                  {filteredClients.map((client) => (
-                    <CommandItem
-                      key={client.id}
-                      value={client.id}
-                      onSelect={() => {
-                        setSelectedClient(client);
-                        setSearchTerm(client.name || '');
-                      }}
-                      className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium">{client.name}</p>
-                        <p className="text-sm text-muted-foreground">{client.phone}</p>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </Command>
+              {filteredClients && (
+                <Command className="rounded-lg border shadow-md">
+                  <CommandInput 
+                    placeholder="Digite o nome do cliente..."
+                    value={searchTerm}
+                    onValueChange={setSearchTerm}
+                  />
+                  <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                  <CommandGroup className="max-h-48 overflow-auto">
+                    {filteredClients.map((client) => (
+                      <CommandItem
+                        key={client.id}
+                        value={client.id}
+                        onSelect={() => {
+                          setSelectedClient(client);
+                          setSearchTerm(client.name || '');
+                        }}
+                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{client.name}</p>
+                          <p className="text-sm text-muted-foreground">{client.phone}</p>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              )}
             </div>
             
             <div className="space-y-2">
