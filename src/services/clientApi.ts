@@ -37,9 +37,9 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
     id: '',
     name: clientData.name,
     phone: clientData.phone,
-    email: clientData.email,
-    notes: clientData.notes,
-    birthdate: clientData.birthdate,
+    email: clientData.email || '',
+    notes: clientData.notes || '',
+    birthdate: clientData.birthdate || null,
     totalSpent: 0,
     lastAppointment: null,
     createdAt: new Date().toISOString()
@@ -78,7 +78,13 @@ export async function updateClientInApi(clientId: string, clientData: Partial<Cl
   
   const updateData = mapAppClientToDb({
     id: clientId,
-    ...clientData,
+    name: clientData.name || '',  // Ensure required fields have default values
+    phone: clientData.phone || '', // Ensure required fields have default values
+    email: clientData.email || '',
+    notes: clientData.notes || '',
+    birthdate: clientData.birthdate || null,
+    totalSpent: clientData.totalSpent || 0,
+    lastAppointment: clientData.lastAppointment || null,
     createdAt: new Date().toISOString()
   });
   
