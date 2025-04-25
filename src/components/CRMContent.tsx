@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MobileNavbar";
 import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
-import { WhatsAppButtonMenu } from "@/components/WhatsAppButtonMenu";
+import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Pages
@@ -66,7 +65,7 @@ export const CRMContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <QuickAppointmentButton />
-        <WhatsAppButtonMenu />
+        <WhatsAppButton />
       </MainLayout>
     </div>
   );

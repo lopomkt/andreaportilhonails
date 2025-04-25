@@ -1,18 +1,12 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Send } from "lucide-react";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { Client, MessageTemplate } from "@/types";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MessagePreview } from "./MessagePreview";
+import { MessageTypeSelect } from "./MessageTypeSelect";
+import { whatsappButtonStyles } from "./styles";
 
 interface MessageFormProps {
   selectedClient: Client | null;
@@ -43,23 +37,11 @@ export function MessageForm({
         />
       </div>
       
-      <div className="space-y-2">
-        <Label>Tipo de Mensagem</Label>
-        <Select value={messageType} onValueChange={onMessageTypeChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Selecione o tipo de mensagem" />
-          </SelectTrigger>
-          <SelectContent>
-            {templates.map(template => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.type === "confirmação" && "Confirmação"}
-                {template.type === "lembrete" && "Lembrete"}
-                {template.type === "reengajamento" && "Reengajamento"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <MessageTypeSelect 
+        messageType={messageType}
+        onMessageTypeChange={onMessageTypeChange}
+        templates={templates}
+      />
       
       <MessagePreview 
         messageType={messageType} 
@@ -69,7 +51,7 @@ export function MessageForm({
       
       <Button 
         onClick={onSend} 
-        className="w-full bg-green-500 hover:bg-green-600 mt-4"
+        className={whatsappButtonStyles.send}
         disabled={!selectedClient || !messageType}
       >
         <Send className="mr-2 h-4 w-4" />
