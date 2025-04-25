@@ -1,20 +1,52 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Service } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { Clock, Pencil, Trash } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useServices } from "@/hooks/useServices";
+import { Animation } from "@/components/ui/animation";
 
-export function ServiceList() {
-  const { services, deleteService } = useData();
+interface ServiceListProps {
+  refreshTrigger?: number;
+}
+
+export function ServiceList({ refreshTrigger = 0 }: ServiceListProps) {
+  const { toast } = useToast();
+  const { services, fetchServices, deleteService, loading } = useServices();
   const [selectedService, setSelectedService] = useState<Service | undefined>(undefined);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Buscar serviços quando o componente montar ou refreshTrigger mudar
+  useEffect(() => {
+    const loadServices = async () => {
+      console.log('ServiceList: Carregando serviços...');
+      setIsRefreshing(true);
+      try {
+        await fetchServices();
+        console.log('ServiceList: Serviços carregados com sucesso:', services.length);
+      } catch (error) {
+        console.error('ServiceList: Erro ao carregar serviços:', error);
+        toast({
+          title: "Erro ao carregar serviços",
+          description: "Não foi possível carregar a lista de serviços.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+    
+    loadServices();
+  }, [fetchServices, refreshTrigger, toast]);
 
   const handleEdit = (service: Service) => {
     setSelectedService(service);
@@ -22,23 +54,48 @@ export function ServiceList() {
 
   const handleDelete = async (serviceId: string) => {
     try {
-      await deleteService(serviceId);
+      setIsDeleting(true);
+      console.log('ServiceList: Excluindo serviço:', serviceId);
+      const response = await deleteService(serviceId);
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
       setServiceToDelete(null);
       toast({
         title: "Serviço excluído",
         description: "O serviço foi excluído com sucesso."
       });
-    } catch (error) {
-      console.error("Error deleting service:", error);
+      
+    } catch (error: any) {
+      console.error("Erro ao excluir serviço:", error);
       toast({
         title: "Erro ao excluir",
-        description: "Ocorreu um erro ao excluir o serviço.",
+        description: error.message || "Ocorreu um erro ao excluir o serviço.",
         variant: "destructive"
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const handleEditSuccess = () => {
+    setSelectedService(undefined);
+    // Atualizar lista de serviços
+    fetchServices();
+  };
+
+  // Ordenar serviços por nome
   const sortedServices = [...services].sort((a, b) => a.name.localeCompare(b.name));
+
+  if (loading || isRefreshing) {
+    return (
+      <div className="flex justify-center p-8">
+        <Animation className="h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -62,11 +119,10 @@ export function ServiceList() {
                       <Dialog open={selectedService?.id === service.id} onOpenChange={open => {
                         if (!open) setSelectedService(undefined);
                       }}>
-                        <DialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(service)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(service)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Editar Serviço</DialogTitle>
@@ -74,11 +130,23 @@ export function ServiceList() {
                               Atualize os dados do serviço.
                             </DialogDescription>
                           </DialogHeader>
-                          {selectedService && <ServiceForm service={selectedService} onSuccess={() => setSelectedService(undefined)} />}
+                          {selectedService && (
+                            <ServiceForm 
+                              service={selectedService} 
+                              onSuccess={handleEditSuccess}
+                              onCancel={() => setSelectedService(undefined)} 
+                            />
+                          )}
                         </DialogContent>
                       </Dialog>
                       
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setServiceToDelete(service)}>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8 text-destructive" 
+                        onClick={() => setServiceToDelete(service)}
+                        disabled={isDeleting}
+                      >
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
@@ -108,8 +176,13 @@ export function ServiceList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => serviceToDelete?.id && handleDelete(serviceToDelete.id)}>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive hover:bg-destructive/90" 
+              onClick={() => serviceToDelete?.id && handleDelete(serviceToDelete.id)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Animation className="h-4 w-4 mr-2" /> : null}
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
