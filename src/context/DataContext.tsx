@@ -50,6 +50,7 @@ interface DataContextType {
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
   addExpense: (expense: Omit<Expense, "id">) => Promise<any>;
+  updateExpense: (expense: Expense) => Promise<any>; // Add this method
   deleteExpense: (id: string) => Promise<any>;
   addService: (service: Omit<Service, "id">) => Promise<any>;
   updateService: (id: string, data: Partial<Service>) => Promise<any>;

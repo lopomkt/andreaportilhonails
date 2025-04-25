@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -47,6 +48,7 @@ interface DataContextType {
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
   addExpense: (expense: Omit<Expense, "id">) => Promise<any>;
+  updateExpense: (expense: Expense) => Promise<any>; // Add this method
   deleteExpense: (id: string) => Promise<any>;
   addService: (service: Omit<Service, "id">) => Promise<any>;
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
@@ -86,6 +88,7 @@ export const DataContext = createContext<DataContextType>({
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
   addExpense: async () => ({}),
+  updateExpense: async () => ({}), // Add default implementation
   deleteExpense: async () => ({}),
   addService: async () => ({}),
   updateService: async () => ({}),

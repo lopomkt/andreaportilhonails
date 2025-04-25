@@ -20,6 +20,15 @@ export const useExpenseContext = (
     return { success: false, error: "AddExpense function not available" };
   }, []);
 
+  const updateExpense = useCallback(async (expense: Expense) => {
+    // Mock implementation
+    if (!expense || !expense.id) {
+      return { success: false, error: "Invalid expense data" };
+    }
+    
+    return { success: false, error: "UpdateExpense function not available" };
+  }, []);
+
   const deleteExpense = useCallback(async (id: string) => {
     // Implementação existente ou mock
     if (!id) {
@@ -33,6 +42,7 @@ export const useExpenseContext = (
     expenses,
     fetchExpenses,
     addExpense,
+    updateExpense, // Add the new method
     deleteExpense
   };
 };

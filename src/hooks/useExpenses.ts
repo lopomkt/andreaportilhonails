@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Expense, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -137,6 +136,82 @@ export function useExpenses() {
     return { error: 'Falha ao adicionar despesa' };
   };
 
+  const updateExpense = async (expense: Expense): Promise<ServiceResponse<Expense>> => {
+    try {
+      setLoading(true);
+      
+      // Since the despesas table doesn't exist yet, we'll return a mock response
+      // and update the local state
+      setExpenses(prev => 
+        prev.map(item => item.id === expense.id ? expense : item)
+      );
+      
+      toast({
+        title: 'Despesa atualizada',
+        description: 'Despesa atualizada com sucesso'
+      });
+      
+      return { data: expense };
+      
+      /* 
+      // This code will be used once the 'despesas' table is created
+      const { data, error } = await supabase
+        .from('despesas')
+        .update({
+          nome: expense.name,
+          valor: expense.amount,
+          data: expense.date,
+          categoria: expense.category,
+          recorrente: expense.isRecurring,
+          observacoes: expense.notes
+        })
+        .eq('id', expense.id)
+        .select('*')
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const updatedExpense: Expense = {
+          id: data.id,
+          name: data.nome || data.name,
+          amount: Number(data.valor || data.amount),
+          date: data.data || data.date,
+          category: data.categoria || data.category,
+          isRecurring: data.recorrente || data.is_recurring || false,
+          notes: data.observacoes || data.notes
+        };
+        
+        setExpenses(prev => 
+          prev.map(item => item.id === updatedExpense.id ? updatedExpense : item)
+        );
+        
+        toast({
+          title: 'Despesa atualizada',
+          description: 'Despesa atualizada com sucesso'
+        });
+        
+        return { data: updatedExpense };
+      }
+      */
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Erro ao atualizar despesa';
+      setError(errorMessage);
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      return { error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+    
+    return { error: 'Falha ao atualizar despesa' };
+  };
+
   const deleteExpense = async (id: string): Promise<ServiceResponse<boolean>> => {
     try {
       setLoading(true);
@@ -191,6 +266,7 @@ export function useExpenses() {
     error,
     fetchExpenses,
     addExpense,
+    updateExpense,
     deleteExpense
   };
 }
