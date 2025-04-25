@@ -12,6 +12,7 @@ import { RevenueStats } from "@/components/dashboard/RevenueStats";
 import { DashboardFooter } from "@/components/dashboard/DashboardFooter";
 import { useTimeSlotsCalculation } from "@/hooks/dashboard/useTimeSlotsCalculation";
 import { CalendarRange } from "lucide-react";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function Dashboard() {
   const {
@@ -128,3 +129,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
