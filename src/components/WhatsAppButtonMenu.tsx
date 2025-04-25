@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { Send, Search } from "lucide-react";
+import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export function WhatsAppButtonMenu() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
-  const { clients, generateWhatsAppLink } = useData();
+  const { clients = [], generateWhatsAppLink } = useData();
   
   const resetButton = useCallback(() => {
     if (!open) {
@@ -88,6 +88,14 @@ export function WhatsAppButtonMenu() {
     setOpen(true);
   };
 
+  // Filter clients safely
+  const filteredClients = Array.isArray(clients) 
+    ? clients.filter(client => 
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.phone.includes(searchTerm)
+      )
+    : [];
+
   return (
     <>
       <Button
@@ -123,27 +131,22 @@ export function WhatsAppButtonMenu() {
                 />
                 <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
                 <CommandGroup className="max-h-48 overflow-auto">
-                  {clients
-                    .filter(client => 
-                      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      client.phone.includes(searchTerm)
-                    )
-                    .map((client) => (
-                      <CommandItem
-                        key={client.id}
-                        value={client.id}
-                        onSelect={() => {
-                          setSelectedClient(client);
-                          setSearchTerm(client.name);
-                        }}
-                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">{client.phone}</p>
-                        </div>
-                      </CommandItem>
-                    ))}
+                  {filteredClients.map((client) => (
+                    <CommandItem
+                      key={client.id}
+                      value={client.id}
+                      onSelect={() => {
+                        setSelectedClient(client);
+                        setSearchTerm(client.name);
+                      }}
+                      className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium">{client.name}</p>
+                        <p className="text-sm text-muted-foreground">{client.phone}</p>
+                      </div>
+                    </CommandItem>
+                  ))}
                 </CommandGroup>
               </Command>
             </div>
