@@ -11,6 +11,7 @@ export function QuickAppointmentButton() {
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
   
   useEffect(() => {
+    // Quando o modal é aberto, verificamos se há uma data armazenada no localStorage
     if (open) {
       try {
         const storedDate = localStorage.getItem('defaultAppointmentDate');
@@ -19,6 +20,7 @@ export function QuickAppointmentButton() {
           if (!isNaN(parsedDate.getTime())) {
             setInitialDate(parsedDate);
           }
+          // Limpar após uso
           localStorage.removeItem('defaultAppointmentDate');
         } else {
           setInitialDate(undefined);
@@ -29,24 +31,23 @@ export function QuickAppointmentButton() {
       }
     }
   }, [open]);
-  
-  // Ensure the button remains visible
+
+  // Expose method to open the dialog through window object
   useEffect(() => {
-    const button = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
-    if (!button) return;
+    // Create a global function that can be called from anywhere
+    window.openQuickAppointmentModal = (defaultDate?: Date) => {
+      if (defaultDate) {
+        localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
+      } else {
+        localStorage.removeItem('defaultAppointmentDate');
+      }
+      setOpen(true);
+    };
     
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
-          button.style.visibility = 'visible';
-          button.style.opacity = '1';
-        }
-      });
-    });
-    
-    observer.observe(document.body, { attributes: true });
-    
-    return () => observer.disconnect();
+    return () => {
+      // Clean up when component unmounts
+      window.openQuickAppointmentModal = undefined;
+    };
   }, []);
 
   return (
@@ -78,4 +79,11 @@ export function QuickAppointmentButton() {
       </Dialog>
     </>
   );
+}
+
+// Adicionar a declaração global do tipo para TypeScript
+declare global {
+  interface Window {
+    openQuickAppointmentModal?: (defaultDate?: Date) => void;
+  }
 }

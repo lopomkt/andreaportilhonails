@@ -65,6 +65,7 @@ export const CRMContent = () => {
           <Route path="/funcionalidades/ranking-clientes" element={<ClientRankingPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <QuickAppointmentButton />
         <WhatsAppButtonMenu />
       </MainLayout>
     </div>

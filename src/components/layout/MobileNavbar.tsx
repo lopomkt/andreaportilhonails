@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Calendar, LayoutDashboard, Users, Scissors, Receipt, BarChart2, Settings, ChevronLeft } from "lucide-react";
+import { Calendar, LayoutDashboard, Users, Scissors, BarChart2, Settings, ChevronLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 interface NavItem {
   label: string;
   icon: React.ElementType;
   href: string;
 }
+
 const navItems: NavItem[] = [{
   label: "Dashboard",
   icon: LayoutDashboard,
@@ -26,10 +28,6 @@ const navItems: NavItem[] = [{
   icon: Scissors,
   href: "/servicos"
 }, {
-  label: "Financeiro",
-  icon: Receipt,
-  href: "/financeiro"
-}, {
   label: "Relatórios",
   icon: BarChart2,
   href: "/relatorios"
@@ -38,14 +36,17 @@ const navItems: NavItem[] = [{
   icon: Settings,
   href: "/funcionalidades"
 }];
+
 export function MobileNavbar() {
   // The mobile navbar is no longer needed as requested
   return null;
 }
+
 export function DesktopSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  
   return <div className="hidden lg:flex h-screen w-64 flex-col border-r bg-white sticky top-0 left-0">
       <div className="p-6">
         <h1 className="text-xl font-heading font-bold text-primary">
@@ -68,6 +69,7 @@ export function DesktopSidebar() {
       </div>
     </div>;
 }
+
 export function BackButton() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,9 +84,11 @@ export function BackButton() {
       <span className="sr-only">Voltar</span>
     </Button>;
 }
+
 export function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
+  
   const getPageTitle = () => {
     switch (location.pathname) {
       case "/":
@@ -95,8 +99,6 @@ export function TopBar() {
         return "Clientes";
       case "/servicos":
         return "Serviços";
-      case "/financeiro":
-        return "Financeiro";
       case "/relatorios":
         return "Relatórios";
       case "/funcionalidades":
@@ -113,6 +115,7 @@ export function TopBar() {
         return "Nail CRM";
     }
   };
+  
   return <div className="border-b bg-background sticky top-0 z-10">
       <div className="flex h-16 items-center px-4 lg:px-6">
         <Sheet>
@@ -157,6 +160,7 @@ export function TopBar() {
       </div>
     </div>;
 }
+
 export function MainLayout({
   children
 }: {

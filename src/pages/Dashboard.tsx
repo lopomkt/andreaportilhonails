@@ -28,16 +28,24 @@ export default function Dashboard() {
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
   
   const openQuickAppointment = (defaultDate?: Date) => {
-    const quickAppointmentButton = document.getElementById('quick-appointment-button');
-    
-    if (defaultDate) {
-      localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
+    if (window.openQuickAppointmentModal) {
+      window.openQuickAppointmentModal(defaultDate);
     } else {
-      localStorage.removeItem('defaultAppointmentDate');
-    }
-    
-    if (quickAppointmentButton) {
-      quickAppointmentButton.click();
+      console.error("Modal de agendamento rápido não disponível");
+      if (defaultDate) {
+        localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
+      } else {
+        localStorage.removeItem('defaultAppointmentDate');
+      }
+      
+      setTimeout(() => {
+        const quickAppointmentButton = document.getElementById('quick-appointment-button');
+        if (quickAppointmentButton) {
+          quickAppointmentButton.click();
+        } else {
+          console.error("Botão de agendamento rápido não encontrado");
+        }
+      }, 100);
     }
   };
   
