@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
@@ -13,7 +12,7 @@ interface TimeSlot {
 
 interface SuggestedTimeSlotsProps {
   slots: TimeSlot[];
-  onSlotClick: () => void;
+  onSlotClick: (time: Date) => void;
 }
 
 export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsProps) => {
@@ -32,8 +31,7 @@ export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsPro
           {slots.map((slot, idx) => (
             <div 
               key={idx} 
-              className="p-2 bg-rose-50 rounded-md border border-rose-100 flex justify-between items-center cursor-pointer hover:bg-rose-100 transition-colors" 
-              onClick={onSlotClick}
+              className="p-2 bg-rose-50 rounded-md border border-rose-100 flex justify-between items-center hover:bg-rose-100 transition-colors" 
             >
               <div>
                 <p className="font-medium flex items-center">
@@ -46,7 +44,12 @@ export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsPro
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-rose-600">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-rose-600"
+                      onClick={() => onSlotClick(slot.time)}
+                    >
                       <Clock className="h-4 w-4 mr-1" /> Agendar
                     </Button>
                   </TooltipTrigger>
@@ -62,4 +65,3 @@ export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsPro
     </Card>
   );
 };
-

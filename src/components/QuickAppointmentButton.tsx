@@ -9,9 +9,8 @@ import { AppointmentFormWrapper } from "./AppointmentFormWrapper";
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
   
-  // Hide button when a modal is open
   useEffect(() => {
-    // Update button visibility when dialog state changes
+    // Hide button when a modal is open
     const updateButtonVisibility = () => {
       const button = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
       if (button) {
@@ -22,7 +21,7 @@ export function QuickAppointmentButton() {
           setTimeout(() => {
             button.style.opacity = '1';
             button.style.visibility = 'visible';
-          }, 300); // Delay to match dialog close animation
+          }, 300);
         }
       }
     };
@@ -73,7 +72,6 @@ export function QuickAppointmentButton() {
         <Plus className="h-6 w-6" />
       </Button>
       
-      {/* Only render the Dialog when open is true to avoid the context issues */}
       {open && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
@@ -84,7 +82,10 @@ export function QuickAppointmentButton() {
               </DialogTitle>
             </DialogHeader>
             <AppointmentFormWrapper>
-              <AppointmentForm onSuccess={() => setOpen(false)} />
+              <AppointmentForm 
+                onSuccess={() => setOpen(false)}
+                defaultDate={localStorage.getItem('defaultAppointmentDate')}
+              />
             </AppointmentFormWrapper>
           </DialogContent>
         </Dialog>

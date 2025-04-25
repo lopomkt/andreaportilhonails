@@ -1,13 +1,14 @@
 import { useData } from "@/context/DataContext";
 import { formatCurrency } from "@/lib/formatters";
-import { DollarSign, BadgeDollarSign, Wallet, Users } from "lucide-react";
-import { addDays, startOfMonth, endOfMonth, isAfter, isBefore, isToday } from "date-fns";
+import { DollarSign, BadgeDollarSign, Wallet, Users, CalendarRange, Gift } from "lucide-react";
+import { addDays, startOfMonth, endOfMonth, isAfter, isBefore, isToday, format } from "date-fns";
 import { useState, useEffect } from "react";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { MotivationalMessage } from "@/components/dashboard/MotivationalMessage";
 import { SuggestedTimeSlots } from "@/components/dashboard/SuggestedTimeSlots";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { AppointmentsByWeek } from "@/components/AppointmentsByWeek";
+import { BirthdaysCard } from "@/components/dashboard/BirthdaysCard";
 
 export default function Dashboard() {
   const {
@@ -15,7 +16,8 @@ export default function Dashboard() {
     getAppointmentsForDate,
     calculateDailyRevenue,
     appointments,
-    services
+    services,
+    clients
   } = useData();
   
   const todayAppointments = getAppointmentsForDate(new Date());
@@ -26,9 +28,14 @@ export default function Dashboard() {
     duration: number;
   }[]>([]);
 
-  const openQuickAppointment = () => {
+  const openQuickAppointment = (defaultDate?: Date) => {
     const quickAppointmentButton = document.getElementById('quick-appointment-button');
     if (quickAppointmentButton) {
+      if (defaultDate) {
+        localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
+      } else {
+        localStorage.removeItem('defaultAppointmentDate');
+      }
       quickAppointmentButton.click();
     }
   };
@@ -155,8 +162,31 @@ export default function Dashboard() {
     return pendingAppointments.reduce((sum, appt) => sum + appt.price, 0);
   };
 
+  const calculateAverageClientsPerDay = () => {
+    const now = new Date();
+    const firstDayOfMonth = startOfMonth(now);
+    const lastDayOfMonth = endOfMonth(now);
+    const confirmedAppointments = appointments.filter(appt => {
+      const apptDate = new Date(appt.date);
+      return appt.status === "confirmed" && isAfter(apptDate, firstDayOfMonth) && isBefore(apptDate, lastDayOfMonth);
+    });
+
+    const daysWithAppointments = new Set(
+      confirmedAppointments.map(appt => format(new Date(appt.date), 'yyyy-MM-dd'))
+    ).size;
+
+    return daysWithAppointments > 0 ? Math.round(confirmedAppointments.length / daysWithAppointments) : 0;
+  };
+
+  const avgClientsPerDay = calculateAverageClientsPerDay();
   const averageClientValue = calculateAverageClientValue();
   const projectedRevenue = calculateProjectedRevenue();
+  const monthlyAppointmentsCount = appointments.filter(appt => {
+    const apptDate = new Date(appt.date);
+    return appt.status === "confirmed" && 
+           isAfter(apptDate, startOfMonth(new Date())) && 
+           isBefore(apptDate, endOfMonth(new Date()));
+  }).length;
 
   return (
     <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0 min-h-dvh flex flex-col">
@@ -170,10 +200,10 @@ export default function Dashboard() {
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <StatsCard 
-          title="Total do Mês" 
-          value={formatCurrency(dashboardStats.monthRevenue)}
-          icon={DollarSign}
-          description="faturamento até o momento"
+          title="Agendamentos Hoje" 
+          value={`${todayAppointments.length} agendamentos`}
+          description={`Faturamento: ${formatCurrency(todayRevenue)}`}
+          icon={CalendarRange}
           className="bg-white border-rose-100 shadow-soft"
           iconClassName="text-rose-500"
         />
@@ -185,12 +215,14 @@ export default function Dashboard() {
         <SuggestedTimeSlots slots={suggestedSlots} onSlotClick={openQuickAppointment} />
       )}
 
+      <BirthdaysCard clients={clients} />
+
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <StatsCard
-          title="Média por Cliente"
-          value={formatCurrency(averageClientValue)}
-          icon={Wallet}
-          description="ticket médio"
+          title="Total do Mês"
+          value={`${monthlyAppointmentsCount} agendamentos`}
+          icon={DollarSign}
+          description={`Faturamento: ${formatCurrency(dashboardStats.monthRevenue)}`}
           className="bg-white border-rose-100 shadow-soft"
           iconClassName="text-rose-500"
         />
@@ -198,14 +230,33 @@ export default function Dashboard() {
         <StatsCard
           title="Receita Prevista"
           value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"}
-          icon={Users}
+          icon={BadgeDollarSign}
           description="agendamentos pendentes até o fim do mês"
           className="bg-white border-rose-100 shadow-soft"
           iconClassName="text-rose-500"
         />
       </div>
 
-      {/* Footer */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <StatsCard
+          title="Ticket Médio"
+          value={formatCurrency(averageClientValue)}
+          icon={Wallet}
+          description="valor médio por cliente"
+          className="bg-white border-rose-100 shadow-soft"
+          iconClassName="text-rose-500"
+        />
+        
+        <StatsCard
+          title="Média de Clientes por Dia"
+          value={`${avgClientsPerDay} clientes`}
+          icon={Users}
+          description="média diária de atendimentos"
+          className="bg-white border-rose-100 shadow-soft"
+          iconClassName="text-rose-500"
+        />
+      </div>
+
       <footer className="bg-[#E7A1B0] text-white py-3 w-full text-center mt-8 text-sm font-medium rounded-t-lg bottom-0">
         CRM criado para Andrea Portilho – Nails Designer
       </footer>
