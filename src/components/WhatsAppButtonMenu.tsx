@@ -111,6 +111,43 @@ export function WhatsAppButtonMenu() {
     )
   );
 
+  // Render client selection UI only when dialog is open
+  const renderClientSelection = () => {
+    if (!open) return null;
+
+    return (
+      <div className="space-y-2">
+        <Label>Cliente</Label>
+        <Command className="rounded-lg border shadow-md">
+          <CommandInput 
+            placeholder="Digite o nome do cliente..."
+            value={searchTerm}
+            onValueChange={setSearchTerm}
+          />
+          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+          <CommandGroup className="max-h-48 overflow-auto">
+            {filteredClients && filteredClients.length > 0 ? filteredClients.map((client) => (
+              <CommandItem
+                key={client.id}
+                value={client.id}
+                onSelect={() => {
+                  setSelectedClient(client);
+                  setSearchTerm(client.name || '');
+                }}
+                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
+              >
+                <div className="flex-1">
+                  <p className="font-medium">{client.name}</p>
+                  <p className="text-sm text-muted-foreground">{client.phone}</p>
+                </div>
+              </CommandItem>
+            )) : null}
+          </CommandGroup>
+        </Command>
+      </div>
+    );
+  };
+
   return (
     <>
       <Button
@@ -123,85 +160,57 @@ export function WhatsAppButtonMenu() {
         <Send className="h-6 w-6" />
       </Button>
       
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-50">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center">
-              <span className="mr-2">📲</span>
-              Enviar Mensagem para Cliente
-            </DialogTitle>
-            <DialogDescription>
-              Escolha um cliente e um tipo de mensagem para enviar
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Cliente</Label>
-              {filteredClients && (
-                <Command className="rounded-lg border shadow-md">
-                  <CommandInput 
-                    placeholder="Digite o nome do cliente..."
-                    value={searchTerm}
-                    onValueChange={setSearchTerm}
-                  />
-                  <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                  <CommandGroup className="max-h-48 overflow-auto">
-                    {filteredClients.map((client) => (
-                      <CommandItem
-                        key={client.id}
-                        value={client.id}
-                        onSelect={() => {
-                          setSelectedClient(client);
-                          setSearchTerm(client.name || '');
-                        }}
-                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">{client.phone}</p>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              )}
-            </div>
+      {open && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-50">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center">
+                <span className="mr-2">📲</span>
+                Enviar Mensagem para Cliente
+              </DialogTitle>
+              <DialogDescription>
+                Escolha um cliente e um tipo de mensagem para enviar
+              </DialogDescription>
+            </DialogHeader>
             
-            <div className="space-y-2">
-              <Label>Tipo de Mensagem</Label>
-              <div className="grid grid-cols-1 gap-2">
-                {[
-                  { id: "confirmation", label: "Confirmação" },
-                  { id: "reminder", label: "Lembrete" },
-                  { id: "reengagement", label: "Reengajamento" }
-                ].map((type) => (
-                  <Button
-                    key={type.id}
-                    variant={messageType === type.id ? "default" : "outline"}
-                    onClick={() => setMessageType(type.id)}
-                    className={cn(
-                      "justify-start",
-                      messageType === type.id && "bg-green-500 hover:bg-green-600 text-white"
-                    )}
-                  >
-                    {type.label}
-                  </Button>
-                ))}
+            <div className="space-y-4 py-4">
+              {renderClientSelection()}
+              
+              <div className="space-y-2">
+                <Label>Tipo de Mensagem</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { id: "confirmation", label: "Confirmação" },
+                    { id: "reminder", label: "Lembrete" },
+                    { id: "reengagement", label: "Reengajamento" }
+                  ].map((type) => (
+                    <Button
+                      key={type.id}
+                      variant={messageType === type.id ? "default" : "outline"}
+                      onClick={() => setMessageType(type.id)}
+                      className={cn(
+                        "justify-start",
+                        messageType === type.id && "bg-green-500 hover:bg-green-600 text-white"
+                      )}
+                    >
+                      {type.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              
+              <Button 
+                onClick={handleSendMessage} 
+                className="w-full bg-green-500 hover:bg-green-600 mt-4"
+                disabled={!selectedClient || !messageType}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Enviar pelo WhatsApp
+              </Button>
             </div>
-            
-            <Button 
-              onClick={handleSendMessage} 
-              className="w-full bg-green-500 hover:bg-green-600 mt-4"
-              disabled={!selectedClient || !messageType}
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Enviar pelo WhatsApp
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
