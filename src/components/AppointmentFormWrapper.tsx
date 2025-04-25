@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ClientAutocomplete } from './ClientAutocomplete';
 import ClientForm from './ClientForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -84,7 +84,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
     <>
       {modifiedChildren}
       
-      <Dialog open={showNewClientDialog} onOpenChange={() => setShowNewClientDialog(false)}>
+      <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Cadastrar novo cliente</DialogTitle>

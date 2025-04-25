@@ -5,69 +5,62 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus } from "lucide-react";
 import { AppointmentForm } from "./AppointmentForm";
 import { AppointmentFormWrapper } from "./AppointmentFormWrapper";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
   
+  // Effect to handle default appointment date from localStorage
   useEffect(() => {
-    // Verificar a data padrão no localStorage quando o modal é aberto
     if (open) {
-      const storedDate = localStorage.getItem('defaultAppointmentDate');
-      if (storedDate) {
-        try {
-          setInitialDate(new Date(storedDate));
-          // Remover do localStorage após recuperar
+      try {
+        const storedDate = localStorage.getItem('defaultAppointmentDate');
+        if (storedDate) {
+          const parsedDate = new Date(storedDate);
+          // Check if date is valid
+          if (!isNaN(parsedDate.getTime())) {
+            setInitialDate(parsedDate);
+          }
+          // Clean up localStorage after retrieving
           localStorage.removeItem('defaultAppointmentDate');
-        } catch (error) {
-          console.error("Erro ao analisar a data armazenada:", error);
+        } else {
           setInitialDate(undefined);
         }
-      } else {
-        // Resetar se não houver data armazenada
+      } catch (error) {
+        console.error("Erro ao analisar a data armazenada:", error);
         setInitialDate(undefined);
       }
     }
-  }, [open]); // Dependência em 'open' para que seja executado quando o modal for aberto
+  }, [open]); // Dependency on 'open' to execute when modal is opened
 
+  // Effect to handle button visibility
   useEffect(() => {
-    // Ocultar botão quando um modal estiver aberto
-    const updateButtonVisibility = () => {
-      const button = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
-      if (button) {
-        if (open) {
-          button.style.opacity = '0';
-          button.style.visibility = 'hidden';
-        } else {
-          setTimeout(() => {
-            button.style.opacity = '1';
-            button.style.visibility = 'visible';
-          }, 300);
-        }
+    const button = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
+    if (!button) return;
+    
+    const updateButtonVisibility = (isHidden: boolean) => {
+      if (isHidden) {
+        button.style.opacity = '0';
+        button.style.visibility = 'hidden';
+      } else {
+        setTimeout(() => {
+          button.style.opacity = '1';
+          button.style.visibility = 'visible';
+        }, 300);
       }
     };
     
-    updateButtonVisibility();
+    // Update based on current open state
+    updateButtonVisibility(open);
     
-    // Também escutar outros modais que possam abrir
+    // Observer for other modals
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
           const body = document.body;
           const isModalOpen = body.getAttribute('aria-hidden') === 'true';
-          const button = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
-          
-          if (button) {
-            if (isModalOpen) {
-              button.style.opacity = '0';
-              button.style.visibility = 'hidden';
-            } else {
-              setTimeout(() => {
-                button.style.opacity = '1';
-                button.style.visibility = 'visible';
-              }, 300);
-            }
-          }
+          updateButtonVisibility(isModalOpen);
         }
       });
     });
@@ -89,28 +82,27 @@ export function QuickAppointmentButton() {
           zIndex: 100,
           transition: 'opacity 0.3s ease, visibility 0.3s ease'
         }}
+        aria-label="Novo agendamento rápido"
       >
         <Plus className="h-6 w-6" />
       </Button>
       
-      {open && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
-            <DialogHeader>
-              <DialogTitle className="text-xl text-rose-700 flex items-center">
-                <span className="mr-2">💅</span>
-                Novo Agendamento
-              </DialogTitle>
-            </DialogHeader>
-            <AppointmentFormWrapper>
-              <AppointmentForm 
-                onSuccess={() => setOpen(false)}
-                initialDate={initialDate}
-              />
-            </AppointmentFormWrapper>
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-rose-700 flex items-center">
+              <span className="mr-2">💅</span>
+              Novo Agendamento
+            </DialogTitle>
+          </DialogHeader>
+          <AppointmentFormWrapper>
+            <AppointmentForm 
+              onSuccess={() => setOpen(false)}
+              initialDate={initialDate}
+            />
+          </AppointmentFormWrapper>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

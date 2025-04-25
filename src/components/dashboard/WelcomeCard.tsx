@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarClock, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
-import { isToday } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Appointment } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
@@ -24,6 +23,14 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
+  };
+
+  const handleOpenQuickAppointment = () => {
+    openQuickAppointment();
+  };
+
+  const handleViewCalendar = () => {
+    navigate("/calendario");
   };
 
   return (
@@ -50,11 +57,17 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
             )}
           </div>
           <div className="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 w-full md:w-auto">
-            <Button className="bg-white text-rose-600 hover:bg-rose-50 shadow-soft w-full md:w-auto" onClick={() => navigate("/calendario")}>
+            <Button 
+              className="bg-white text-rose-600 hover:bg-rose-50 shadow-soft w-full md:w-auto" 
+              onClick={handleViewCalendar}
+            >
               <CalendarDays className="mr-2 h-4 w-4" />
               Ver Calendário
             </Button>
-            <Button className="bg-rose-600 text-white hover:bg-rose-700 shadow-soft w-full md:w-auto" onClick={() => openQuickAppointment()}>
+            <Button 
+              className="bg-rose-600 text-white hover:bg-rose-700 shadow-soft w-full md:w-auto" 
+              onClick={handleOpenQuickAppointment}
+            >
               <CalendarClock className="mr-2 h-4 w-4" />
               Novo Agendamento
             </Button>
