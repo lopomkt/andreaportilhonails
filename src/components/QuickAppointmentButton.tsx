@@ -84,7 +84,6 @@ export function QuickAppointmentButton() {
             <AppointmentFormWrapper>
               <AppointmentForm 
                 onSuccess={() => setOpen(false)}
-                // Removing defaultDate prop as it's not defined in AppointmentForm props
               />
             </AppointmentFormWrapper>
           </DialogContent>
