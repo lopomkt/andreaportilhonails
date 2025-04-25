@@ -21,6 +21,13 @@ export function MessageTypeSelect({
   onMessageTypeChange,
   templates
 }: MessageTypeSelectProps) {
+  // Group templates by type for easier rendering
+  const groupedTemplates: { [key: string]: MessageTemplate[] } = {
+    confirmação: templates.filter(t => t.type === "confirmação"),
+    lembrete: templates.filter(t => t.type === "lembrete"),
+    reengajamento: templates.filter(t => t.type === "reengajamento")
+  };
+
   return (
     <div className="space-y-2">
       <Label>Tipo de Mensagem</Label>
@@ -29,12 +36,14 @@ export function MessageTypeSelect({
           <SelectValue placeholder="Selecione o tipo de mensagem" />
         </SelectTrigger>
         <SelectContent>
-          {templates.map(template => (
-            <SelectItem key={template.id} value={template.id}>
-              {template.type === "confirmação" && "Confirmação"}
-              {template.type === "lembrete" && "Lembrete"}
-              {template.type === "reengajamento" && "Reengajamento"}
-            </SelectItem>
+          {Object.entries(groupedTemplates).map(([type, templateList]) => (
+            templateList.map(template => (
+              <SelectItem key={template.id} value={template.id}>
+                {type === "confirmação" && "Confirmação"}
+                {type === "lembrete" && "Lembrete"}
+                {type === "reengajamento" && "Reengajamento"}
+              </SelectItem>
+            ))
           ))}
         </SelectContent>
       </Select>
