@@ -135,6 +135,7 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
+  // Fix the type error by making sure this function accepts a Client | null parameter
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
