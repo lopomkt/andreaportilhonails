@@ -12,9 +12,10 @@ import { formatDuration } from "@/lib/formatters";
 interface ServiceFormProps {
   service?: Service;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
+export function ServiceForm({ service, onSuccess, onCancel }: ServiceFormProps) {
   const { addService, updateService } = useData();
   
   const [name, setName] = useState(service?.name || "");
@@ -26,31 +27,33 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
     service ? (service.durationMinutes % 60).toString() : "30"
   );
   const [description, setDescription] = useState(service?.description || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim() || !price.trim() || (!hours.trim() && !minutes.trim())) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const durationMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
-    
-    if (durationMinutes <= 0) {
-      toast({
-        title: "Duração inválida",
-        description: "A duração do serviço deve ser maior que zero.",
-        variant: "destructive",
-      });
-      return;
-    }
+    setIsSubmitting(true);
     
     try {
+      if (!name.trim() || !price.trim() || (!hours.trim() && !minutes.trim())) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha todos os campos obrigatórios.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const durationMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
+      
+      if (durationMinutes <= 0) {
+        toast({
+          title: "Duração inválida",
+          description: "A duração do serviço deve ser maior que zero.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const serviceData = {
         name: name.trim(),
         price: parseFloat(price),
@@ -60,16 +63,8 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       
       if (service) {
         await updateService(service.id, serviceData);
-        toast({
-          title: "Serviço atualizado",
-          description: "O serviço foi atualizado com sucesso."
-        });
       } else {
         await addService(serviceData);
-        toast({
-          title: "Serviço criado",
-          description: "O serviço foi criado com sucesso."
-        });
       }
       
       if (onSuccess) onSuccess();
@@ -80,6 +75,8 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
         description: "Ocorreu um erro ao salvar o serviço.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -154,12 +151,18 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       </div>
       
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onSuccess}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
           Cancelar
         </Button>
         <Button 
           type="submit" 
-          className="bg-primary hover:bg-primary/90"
+          className="bg-nail-500 hover:bg-nail-600"
+          disabled={isSubmitting}
         >
           {service ? "Atualizar Serviço" : "Adicionar Serviço"}
         </Button>
