@@ -1,40 +1,31 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, CalendarX, Settings, Trophy } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-
 const FunctionalitiesPage: React.FC = () => {
   const navigate = useNavigate();
-  
-  const functionalitiesCategories = [
-    {
-      title: "Motivos de Cancelamento",
-      description: "Gerencie os motivos padrão para cancelamentos",
-      icon: CalendarX,
-      path: "/funcionalidades/motivos-cancelamento"
-    }, 
-    {
-      title: "Regras de Ausência",
-      description: "Configure bloqueios de horários e dias de folga",
-      icon: Settings,
-      path: "/funcionalidades/ausencias"
-    }, 
-    {
-      title: "Mensagens para WhatsApp",
-      description: "Configure templates de mensagens para clientes",
-      icon: MessageSquare,
-      path: "/funcionalidades/mensagens"
-    }, 
-    {
-      title: "Ranking de Clientes",
-      description: "Visualize seus melhores clientes por diferentes métricas",
-      icon: Trophy,
-      path: "/funcionalidades/ranking-clientes"
-    }
-  ];
-
+  const functionalitiesCategories = [{
+    title: "Motivos de Cancelamento",
+    description: "Gerencie os motivos padrão para cancelamentos",
+    icon: CalendarX,
+    path: "/funcionalidades/motivos-cancelamento"
+  }, {
+    title: "Regras de Ausência",
+    description: "Configure bloqueios de horários e dias de folga",
+    icon: Settings,
+    path: "/funcionalidades/ausencias"
+  }, {
+    title: "Mensagens para WhatsApp",
+    description: "Configure templates de mensagens para clientes",
+    icon: MessageSquare,
+    path: "/funcionalidades/mensagens"
+  }, {
+    title: "Ranking de Clientes",
+    description: "Visualize seus melhores clientes por diferentes métricas",
+    icon: Trophy,
+    path: "/funcionalidades/ranking-clientes"
+  }];
   return <div className="container mx-auto p-4">
       <div className="flex items-center mb-6">
         <Settings className="h-6 w-6 mr-2" />
@@ -56,5 +47,4 @@ const FunctionalitiesPage: React.FC = () => {
       </div>
     </div>;
 };
-
 export default FunctionalitiesPage;

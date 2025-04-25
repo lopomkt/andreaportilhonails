@@ -116,9 +116,3 @@ export interface ServiceResponse<T> {
   data?: T;
   error?: any;
 }
-
-export interface ExpenseFormProps {
-  onCancel: () => void;
-  onSuccess: () => void;
-  expense?: Expense | null;
-}
