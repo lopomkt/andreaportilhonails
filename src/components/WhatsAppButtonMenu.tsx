@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -48,7 +49,8 @@ export function WhatsAppButtonMenu() {
           const mappedTemplates: MessageTemplate[] = data.map(item => ({
             id: item.id,
             type: item.tipo,
-            message: item.mensagem
+            message: item.mensagem,
+            active: true // Default to true since we don't have this in the DB
           }));
           
           setTemplates(mappedTemplates);

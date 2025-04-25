@@ -54,7 +54,7 @@ export interface MessageTemplate {
   id: string;
   type: string;
   message: string;
-  active: boolean;
+  active?: boolean; // Make active optional since it doesn't exist in our database
 }
 
 export interface AbsenceRule {

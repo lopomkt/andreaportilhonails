@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,7 +41,8 @@ const MessagesTemplatePage: React.FC = () => {
           setTemplates(data.map(item => ({
             id: item.id,
             type: item.tipo,
-            message: item.mensagem
+            message: item.mensagem,
+            active: true // Adding active property with default true
           })));
         } else {
           // Usar templates padrão se não houver dados
@@ -48,17 +50,20 @@ const MessagesTemplatePage: React.FC = () => {
             {
               id: "confirmation",
               type: "confirmação",
-              message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕"
+              message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕",
+              active: true
             },
             {
               id: "reminder",
               type: "lembrete",
-              message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes."
+              message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.",
+              active: true
             },
             {
               id: "reengagement",
               type: "reengajamento",
-              message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!"
+              message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!",
+              active: true
             }
           ];
           
@@ -86,17 +91,20 @@ const MessagesTemplatePage: React.FC = () => {
           {
             id: "confirmation",
             type: "confirmação",
-            message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕"
+            message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕",
+            active: true
           },
           {
             id: "reminder",
             type: "lembrete",
-            message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes."
+            message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.",
+            active: true
           },
           {
             id: "reengagement",
             type: "reengajamento",
-            message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!"
+            message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!",
+            active: true
           }
         ]);
       } finally {
@@ -166,10 +174,11 @@ const MessagesTemplatePage: React.FC = () => {
             mensagem: formMessage
           });
           
-        const newTemplate = {
+        const newTemplate: MessageTemplate = {
           id: newId,
           type: formType,
-          message: formMessage
+          message: formMessage,
+          active: true // Adding active property with default true
         };
         
         updatedTemplates = [...templates, newTemplate];
