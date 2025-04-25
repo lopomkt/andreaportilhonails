@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,12 +24,10 @@ export function ClientAutocomplete({
   autofocus = false,
   placeholder = 'Buscar cliente por nome ou telefone...'
 }: ClientAutocompleteProps) {
-  
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
   
@@ -36,11 +35,10 @@ export function ClientAutocomplete({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Inicializar a busca quando o componente montar
-    if (!selectedClient) {
-      fetchClients();
+    if (selectedClient) {
+      setSearchQuery(selectedClient.name);
     }
-  }, []);
+  }, [selectedClient]);
   
   const fetchClients = async (query: string = '') => {
     setIsLoading(true);
@@ -86,6 +84,11 @@ export function ClientAutocomplete({
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     
+    // Clear selected client when user starts typing
+    if (selectedClient) {
+      onClientSelect(null);
+    }
+    
     if (query.length === 0) {
       fetchClients();
       setIsOpen(true);
@@ -100,17 +103,8 @@ export function ClientAutocomplete({
 
   const handleSelectClient = (client: Client) => {
     onClientSelect(client);
-    setSearchQuery('');
+    setSearchQuery(client.name);
     setIsOpen(false);
-  };
-
-  const handleClearSelection = () => {
-    onClientSelect(null);
-    setSearchQuery('');
-    setIsOpen(true);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
   };
   
   const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -141,7 +135,7 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  const handleNewClientSuccess = (newClient?: Client | null) => {
+  const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
       handleSelectClient(newClient);
@@ -152,13 +146,6 @@ export function ClientAutocomplete({
     }
   };
 
-  const handleCloseDialog = () => {
-    setShowNewClientDialog(false);
-  };
-
-  // Determinar o texto a ser mostrado no input
-  const displayText = selectedClient ? selectedClient.name : searchQuery;
-
   return (
     <div className="w-full relative">
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
@@ -167,21 +154,11 @@ export function ClientAutocomplete({
             type="text"
             className="w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder={placeholder}
-            value={displayText}
+            value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => {
-              if (!selectedClient) {
-                setIsOpen(true);
-              }
-            }}
+            onFocus={() => setIsOpen(true)}
             autoFocus={autofocus}
             ref={inputRef}
-            onClick={() => {
-              // Ao clicar no input, se tiver cliente selecionado, limpa para permitir nova busca
-              if (selectedClient) {
-                handleClearSelection();
-              }
-            }}
           />
         </div>
         <div className="flex items-center pr-2">
@@ -265,7 +242,7 @@ export function ClientAutocomplete({
           </DialogHeader>
           <ClientForm 
             onSuccess={handleNewClientSuccess}
-            onCancel={handleCloseDialog}
+            onCancel={() => setShowNewClientDialog(false)}
           />
         </DialogContent>
       </Dialog>

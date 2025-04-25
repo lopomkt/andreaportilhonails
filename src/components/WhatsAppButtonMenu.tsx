@@ -38,7 +38,8 @@ export function WhatsAppButtonMenu() {
       try {
         const { data, error } = await supabase
           .from('mensagens_templates')
-          .select('*');
+          .select('*')
+          .in('tipo', ['confirmação', 'lembrete', 'reengajamento']);
         
         if (error) {
           console.error("Erro ao buscar templates:", error);
@@ -50,7 +51,7 @@ export function WhatsAppButtonMenu() {
             id: item.id,
             type: item.tipo,
             message: item.mensagem,
-            active: true // Adicionando propriedade active com valor padrão true
+            active: true
           }));
           
           setTemplates(mappedTemplates);
@@ -124,10 +125,6 @@ export function WhatsAppButtonMenu() {
   };
 
   const handleButtonClick = () => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      return;
-    }
     setOpen(true);
   };
 
@@ -179,7 +176,9 @@ export function WhatsAppButtonMenu() {
                 <SelectContent>
                   {templates.map(template => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.type.charAt(0).toUpperCase() + template.type.slice(1)}
+                      {template.type === "confirmação" && "Confirmação"}
+                      {template.type === "lembrete" && "Lembrete"}
+                      {template.type === "reengajamento" && "Reengajamento"}
                     </SelectItem>
                   ))}
                 </SelectContent>
