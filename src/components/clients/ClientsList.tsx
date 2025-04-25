@@ -3,33 +3,35 @@ import { Client } from '@/types';
 import { ClientCard } from './ClientCard';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import ClientForm from './ClientForm';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import ClientForm from './ClientForm';
 
 interface ClientsListProps {
   clients: Client[];
-  onClientAdded: () => Promise<void>;
+  onClientUpdated: () => Promise<void>;
 }
 
-export function ClientsList({ clients, onClientAdded }: ClientsListProps) {
+export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   const handleViewDetails = (client: Client) => {
+    console.log("Viewing details for client:", client);
     setSelectedClient(client);
     setIsViewingDetails(true);
   };
 
   const handleEditClick = (client: Client) => {
+    console.log("Editing client:", client);
     setSelectedClient(client);
     setIsEditing(true);
     setIsViewingDetails(false);
   };
 
   const handleScheduleClick = (client: Client) => {
-    // Este é um placeholder para a funcionalidade de agendamento
     toast({
       title: "Função não implementada",
       description: "O agendamento será implementado em breve."
@@ -37,7 +39,8 @@ export function ClientsList({ clients, onClientAdded }: ClientsListProps) {
   };
 
   const handleSuccess = async () => {
-    await onClientAdded();
+    console.log("Client saved successfully");
+    await onClientUpdated();
     setIsEditing(false);
     setIsViewingDetails(false);
     toast({
@@ -95,7 +98,7 @@ export function ClientsList({ clients, onClientAdded }: ClientsListProps) {
               </div>
             )}
             <div className="flex justify-end gap-2 pt-4">
-              <button
+              <Button
                 className="px-4 py-2 border rounded bg-nail-500 hover:bg-nail-600 text-white"
                 onClick={() => {
                   setIsViewingDetails(false);
@@ -103,7 +106,7 @@ export function ClientsList({ clients, onClientAdded }: ClientsListProps) {
                 }}
               >
                 Editar
-              </button>
+              </Button>
             </div>
           </div>
         </DialogContent>

@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { useData } from "@/context/DataContext";
 import { Client } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,39 +10,39 @@ import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/clients/ClientForm";
 import { supabase } from '@/integrations/supabase/client';
 import { ClientsList } from "@/components/clients/ClientsList";
+import { fetchClientsFromApi, createClientInApi } from "@/services/clientApi";
 
 export default function ClientsPage() {
-  const {
-    clients,
-    refetchClients,
-  } = useData();
-  
+  const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        console.log("ClientsPage: Fetching clients...");
-        await refetchClients();
-        console.log("ClientsPage: Clients fetched successfully");
-      } catch (error) {
-        console.error("Error fetching clients:", error);
-        toast({
-          title: "Erro ao carregar clientes",
-          description: "Ocorreu um erro ao buscar a lista de clientes.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchClients = async () => {
+    setIsLoading(true);
+    try {
+      console.log("ClientsPage: Fetching clients...");
+      const fetchedClients = await fetchClientsFromApi();
+      console.log("ClientsPage: Clients fetched successfully", fetchedClients);
+      setClients(fetchedClients);
+      return fetchedClients;
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      toast({
+        title: "Erro ao carregar clientes",
+        description: "Ocorreu um erro ao buscar a lista de clientes.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchClients();
 
     // Subscribe to realtime changes
     const channel = supabase
@@ -57,7 +56,7 @@ export default function ClientsPage() {
         },
         (payload) => {
           console.log('ClientsPage: Change received!', payload);
-          refetchClients();
+          fetchClients();
         }
       )
       .subscribe();
@@ -65,7 +64,7 @@ export default function ClientsPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchClients, toast]);
+  }, []);
 
   useEffect(() => {
     if (!clients) {
@@ -84,10 +83,40 @@ export default function ClientsPage() {
     setFilteredClients(filtered);
   }, [clients, searchTerm]);
 
+  const handleNewClientSubmit = async (clientData: Partial<Client>) => {
+    console.log("Creating new client with data:", clientData);
+    try {
+      const result = await createClientInApi(clientData);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      console.log("Client created successfully:", result.data);
+      setShowNewClientModal(false);
+      await fetchClients();
+      
+      toast({
+        title: "Cliente cadastrado",
+        description: "Cliente cadastrado com sucesso!"
+      });
+      
+      return result;
+    } catch (error: any) {
+      console.error('Error creating client:', error);
+      toast({
+        title: "Erro ao criar cliente",
+        description: error.message || "Ocorreu um erro ao cadastrar o cliente.",
+        variant: "destructive"
+      });
+      return { error: error.message };
+    }
+  };
+
   const handleNewClientSuccess = async () => {
     console.log("ClientsPage: New client created successfully");
     setShowNewClientModal(false);
-    await refetchClients();
+    await fetchClients();
     toast({
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
@@ -129,7 +158,7 @@ export default function ClientsPage() {
       <Card className="p-4">
         <ClientsList 
           clients={filteredClients} 
-          onClientAdded={refetchClients} 
+          onClientUpdated={fetchClients} 
         />
       </Card>
 

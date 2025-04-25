@@ -1,9 +1,8 @@
 
 import { Client } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatPhone } from '@/lib/formatters';
 import { format } from 'date-fns';
-import { UserRound, Calendar, MessageCircle, Pencil } from 'lucide-react';
+import { UserRound, Calendar, Pencil, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ClientCardProps {
@@ -62,7 +61,7 @@ export function ClientCard({
               onScheduleClick();
             }}
           >
-            <Calendar className="h-4 w-4 mr-1" />
+            <CalendarIcon className="h-4 w-4 mr-1" />
             Agendar
           </Button>
         </div>

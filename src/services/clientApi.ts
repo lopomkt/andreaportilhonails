@@ -76,6 +76,7 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
 export async function updateClientInApi(clientId: string, clientData: Partial<Client>): Promise<ServiceResponse<Client>> {
   console.log("Updating client:", clientId, "with data:", clientData);
   
+  // Ensure required fields are present to avoid TypeScript errors
   const updateData = mapAppClientToDb({
     id: clientId,
     name: clientData.name || '',  // Ensure required fields have default values
