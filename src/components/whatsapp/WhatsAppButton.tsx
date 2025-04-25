@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
@@ -12,6 +13,7 @@ import {
 import { MessageForm } from "./MessageForm";
 import { useWhatsAppMessage } from "@/hooks/useWhatsAppMessage";
 import { whatsappButtonStyles } from "./styles";
+import { Loader2 } from "lucide-react";
 
 export function WhatsAppButton() {
   const [open, setOpen] = useState(false);
@@ -22,15 +24,22 @@ export function WhatsAppButton() {
     selectedClient,
     setSelectedClient,
     templates,
+    loading,
     fetchTemplates,
     handleSendMessage
   } = useWhatsAppMessage();
 
+  // Carregar templates quando o componente é montado
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  // Recarregar templates quando o modal é aberto
   useEffect(() => {
     if (open) {
       fetchTemplates();
     }
-  }, [open]);
+  }, [open, fetchTemplates]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -53,7 +62,10 @@ export function WhatsAppButton() {
           whatsappButtonStyles.fixed,
           isExpanded ? whatsappButtonStyles.expanded : whatsappButtonStyles.collapsed
         )}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          fetchTemplates(); // Garantir que os templates sejam carregados ao abrir o modal
+        }}
       >
         <Send className="h-6 w-6" />
       </Button>
@@ -70,14 +82,20 @@ export function WhatsAppButton() {
             </DialogDescription>
           </DialogHeader>
           
-          <MessageForm 
-            selectedClient={selectedClient}
-            onClientSelect={setSelectedClient}
-            messageType={messageType}
-            onMessageTypeChange={setMessageType}
-            templates={templates}
-            onSend={handleSendMessage}
-          />
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <MessageForm 
+              selectedClient={selectedClient}
+              onClientSelect={setSelectedClient}
+              messageType={messageType}
+              onMessageTypeChange={setMessageType}
+              templates={templates}
+              onSend={handleSendMessage}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

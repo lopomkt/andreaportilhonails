@@ -38,6 +38,10 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
+
+  useEffect(() => {
     const fetchLastServices = async () => {
       const servicesMap: Record<string, string> = {};
       
@@ -98,6 +102,12 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
     console.log("Scheduling for client:", client);
     setSelectedClient(client);
     setIsScheduling(true);
+    setFormData({
+      serviceId: "",
+      date: "",
+      time: ""
+    });
+    fetchServices();
   };
 
   const handleSuccess = async () => {
@@ -214,16 +224,23 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
       }
       
       const dateTime = new Date(`${formData.date}T${formData.time}`);
+      const endDateTime = new Date(dateTime);
+      endDateTime.setMinutes(dateTime.getMinutes() + selectedService.durationMinutes);
       
-      const result = await addAppointment({
+      const appointmentData = {
         clientId: selectedClient.id,
         serviceId: formData.serviceId,
         date: dateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         price: selectedService.price,
-        status: 'pending'
-      });
+        status: 'pending' as const
+      };
       
-      if (result && result.success) {
+      console.log("Criando agendamento:", appointmentData);
+      
+      const result = await addAppointment(appointmentData);
+      
+      if (result) {
         toast({
           title: "Agendamento criado",
           description: "O agendamento foi criado com sucesso!"
@@ -236,7 +253,7 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
           time: ""
         });
       } else {
-        throw new Error(result?.error?.message || "Falha ao criar agendamento");
+        throw new Error("Falha ao criar agendamento");
       }
     } catch (error: any) {
       toast({
@@ -256,6 +273,10 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
       [id]: value
     }));
   };
+
+  useEffect(() => {
+    console.log("Serviços carregados na ClientsList:", services);
+  }, [services]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

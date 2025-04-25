@@ -6,11 +6,17 @@ import { Plus } from "lucide-react";
 import { AppointmentForm } from "./AppointmentForm";
 import { AppointmentFormWrapper } from "./AppointmentFormWrapper";
 import { useServices } from "@/context/ServiceContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
-  const { fetchServices } = useServices();
+  const { fetchServices, services } = useServices();
+  
+  // Precarregar os serviços quando o componente montar
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
   
   useEffect(() => {
     // Quando o modal é aberto, verificamos se há uma data armazenada no localStorage

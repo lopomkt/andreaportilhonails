@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Client, MessageTemplate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useDataContext } from "./useDataContext";
@@ -9,11 +9,13 @@ export function useWhatsAppMessage() {
   const [messageType, setMessageType] = useState<string>("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const { generateWhatsAppLink } = useDataContext();
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('mensagens_templates')
         .select('*')
@@ -21,6 +23,11 @@ export function useWhatsAppMessage() {
       
       if (error) {
         console.error("Erro ao buscar templates:", error);
+        toast({
+          title: "Erro ao carregar templates",
+          description: "Não foi possível carregar os modelos de mensagens. Por favor, tente novamente.",
+          variant: "destructive",
+        });
         return;
       }
       
@@ -33,6 +40,7 @@ export function useWhatsAppMessage() {
         }));
         
         setTemplates(mappedTemplates);
+        console.log("Templates carregados:", mappedTemplates);
         
         // Define um tipo de mensagem padrão se disponível
         if (mappedTemplates.length > 0 && !messageType) {
@@ -41,8 +49,20 @@ export function useWhatsAppMessage() {
       }
     } catch (error) {
       console.error("Erro ao buscar templates de mensagens:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao buscar os modelos de mensagens",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast, messageType]);
+
+  // Carregar templates quando o hook for inicializado
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   const handleSendMessage = async () => {
     if (!selectedClient || !messageType) {
@@ -51,7 +71,7 @@ export function useWhatsAppMessage() {
         description: "Selecione um cliente e um tipo de mensagem",
         variant: "destructive",
       });
-      return;
+      return false;
     }
     
     try {
@@ -99,6 +119,7 @@ export function useWhatsAppMessage() {
     selectedClient,
     setSelectedClient,
     templates,
+    loading,
     fetchTemplates,
     handleSendMessage
   };
