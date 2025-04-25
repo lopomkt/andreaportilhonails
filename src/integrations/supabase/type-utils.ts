@@ -1,3 +1,4 @@
+
 // Type utilities for Supabase
 import { Database } from './types';
 

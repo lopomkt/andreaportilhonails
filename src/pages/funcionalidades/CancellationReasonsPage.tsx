@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { CancellationReason } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { tableNames } from "@/integrations/supabase/type-utils";
+import { DbCancellationReason } from "@/integrations/supabase/database-types";
 
 const CancellationReasonsPage: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -26,13 +29,19 @@ const CancellationReasonsPage: React.FC = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('motivos_cancelamento')
+        .from(tableNames.motivos_cancelamento)
         .select('*')
         .order('reason', { ascending: true });
         
       if (error) throw error;
       
-      setReasons(data || []);
+      // Map the database objects to the application's CancellationReason type
+      const mappedReasons: CancellationReason[] = (data || []).map((item: DbCancellationReason) => ({
+        id: item.id,
+        reason: item.reason
+      }));
+      
+      setReasons(mappedReasons);
     } catch (error: any) {
       console.error("Error fetching cancellation reasons:", error.message);
       toast({
@@ -72,7 +81,7 @@ const CancellationReasonsPage: React.FC = () => {
       if (editingReason) {
         // Update existing reason
         const { data, error } = await supabase
-          .from('motivos_cancelamento')
+          .from(tableNames.motivos_cancelamento)
           .update({ reason: reasonInput })
           .eq('id', editingReason.id)
           .select();
@@ -91,7 +100,7 @@ const CancellationReasonsPage: React.FC = () => {
       } else {
         // Add new reason
         const { data, error } = await supabase
-          .from('motivos_cancelamento')
+          .from(tableNames.motivos_cancelamento)
           .insert({ reason: reasonInput })
           .select();
           
@@ -104,7 +113,11 @@ const CancellationReasonsPage: React.FC = () => {
         
         // Add to local state if we got data back
         if (data && data.length > 0) {
-          setReasons([...reasons, data[0]]);
+          const newReasons = data.map((item: DbCancellationReason) => ({
+            id: item.id,
+            reason: item.reason
+          }));
+          setReasons([...reasons, ...newReasons]);
         } else {
           // If we didn't get data back, refresh the list
           fetchCancellationReasons();
@@ -132,7 +145,7 @@ const CancellationReasonsPage: React.FC = () => {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('motivos_cancelamento')
+        .from(tableNames.motivos_cancelamento)
         .delete()
         .eq('id', id);
         

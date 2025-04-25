@@ -34,3 +34,8 @@ export type DbMotivationalMessageUpdate = TablesUpdate<'mensagens_motivacionais'
 // Last viewed message types
 export type DbLastViewedMessageInsert = TablesInsert<'ultima_mensagem_vista'>;
 export type DbLastViewedMessageUpdate = TablesUpdate<'ultima_mensagem_vista'>;
+
+// Cancellation reason types
+export type DbCancellationReason = TablesRow<'motivos_cancelamento'>;
+export type DbCancellationReasonInsert = TablesInsert<'motivos_cancelamento'>;
+export type DbCancellationReasonUpdate = TablesUpdate<'motivos_cancelamento'>;
