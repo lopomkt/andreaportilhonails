@@ -2,6 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { format, parseISO } from "date-fns";
 
 export const MotivationalMessage = () => {
   const [message, setMessage] = useState<string>("");
@@ -25,17 +26,17 @@ export const MotivationalMessage = () => {
         }
         
         const now = new Date();
-        const lastViewedTime = new Date(lastViewed.data_visualizacao);
-        const hoursSinceLastView = (now.getTime() - lastViewedTime.getTime()) / (1000 * 60 * 60);
-
-        if (hoursSinceLastView >= 24) {
+        const nextUpdateTime = parseISO(lastViewed.proxima_atualizacao);
+        
+        if (now >= nextUpdateTime) {
           const { data: newMessage, error: messageError } = 
             await supabase.from('mensagens_motivacionais').select('*').order('random()').limit(1).single();
           if (messageError) throw messageError;
           
           await supabase.from('ultima_mensagem_vista').update({
             mensagem_id: newMessage.id,
-            data_visualizacao: now.toISOString()
+            data_visualizacao: now.toISOString(),
+            proxima_atualizacao: new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString()
           }).eq('id', 'andrea');
           
           setMessage(newMessage.mensagem);
@@ -76,4 +77,3 @@ export const MotivationalMessage = () => {
     </Card>
   );
 };
-

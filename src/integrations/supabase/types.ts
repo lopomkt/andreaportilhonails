@@ -194,16 +194,19 @@ export type Database = {
           data_visualizacao: string
           id: string
           mensagem_id: string
+          proxima_atualizacao: string | null
         }
         Insert: {
           data_visualizacao?: string
           id: string
           mensagem_id: string
+          proxima_atualizacao?: string | null
         }
         Update: {
           data_visualizacao?: string
           id?: string
           mensagem_id?: string
+          proxima_atualizacao?: string | null
         }
         Relationships: [
           {
