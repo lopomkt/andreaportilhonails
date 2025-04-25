@@ -1,4 +1,3 @@
-
 // Type utilities for Supabase
 import { Database } from './types';
 
@@ -17,7 +16,8 @@ export const tableNames = {
   configuracoes: 'configuracoes',
   datas_bloqueadas: 'datas_bloqueadas',
   mensagens_motivacionais: 'mensagens_motivacionais',
-  ultima_mensagem_vista: 'ultima_mensagem_vista'
+  ultima_mensagem_vista: 'ultima_mensagem_vista',
+  motivos_cancelamento: 'motivos_cancelamento'
 } as const;
 
 export type TableName = keyof typeof tableNames;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,10 +71,11 @@ const CancellationReasonsPage: React.FC = () => {
     try {
       if (editingReason) {
         // Update existing reason
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('motivos_cancelamento')
           .update({ reason: reasonInput })
-          .eq('id', editingReason.id);
+          .eq('id', editingReason.id)
+          .select();
           
         if (error) throw error;
         

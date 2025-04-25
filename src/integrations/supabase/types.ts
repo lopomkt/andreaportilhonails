@@ -165,6 +165,21 @@ export type Database = {
         }
         Relationships: []
       }
+      motivos_cancelamento: {
+        Row: {
+          id: string
+          reason: string
+        }
+        Insert: {
+          id?: string
+          reason: string
+        }
+        Update: {
+          id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       servicos: {
         Row: {
           descricao: string | null
