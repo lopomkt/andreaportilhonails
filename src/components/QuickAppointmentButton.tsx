@@ -11,21 +11,24 @@ export function QuickAppointmentButton() {
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
   
   useEffect(() => {
-    // Check for default appointment date in localStorage
+    // Verificar a data padrão no localStorage quando o modal é aberto
     const storedDate = localStorage.getItem('defaultAppointmentDate');
     if (storedDate) {
       try {
         setInitialDate(new Date(storedDate));
-        // Remove from localStorage after retrieval
+        // Remover do localStorage após recuperar
         localStorage.removeItem('defaultAppointmentDate');
       } catch (error) {
-        console.error("Error parsing stored date:", error);
+        console.error("Erro ao analisar a data armazenada:", error);
       }
+    } else {
+      // Resetar se não houver data armazenada
+      setInitialDate(undefined);
     }
-  }, [open]);
+  }, [open]); // Dependência em 'open' para que seja executado quando o modal for aberto
 
   useEffect(() => {
-    // Hide button when a modal is open
+    // Ocultar botão quando um modal estiver aberto
     const updateButtonVisibility = () => {
       const button = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
       if (button) {
@@ -43,7 +46,7 @@ export function QuickAppointmentButton() {
     
     updateButtonVisibility();
     
-    // Also listen for other modals that might open
+    // Também escutar outros modais que possam abrir
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {

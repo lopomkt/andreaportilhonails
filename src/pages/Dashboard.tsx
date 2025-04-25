@@ -25,14 +25,19 @@ export default function Dashboard() {
   const todayAppointments = getAppointmentsForDate(new Date());
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
   
+  // Função corrigida para abrir corretamente o modal de agendamento rápido
   const openQuickAppointment = (defaultDate?: Date) => {
+    // Encontrar o botão de agendamento rápido e simular um clique
     const quickAppointmentButton = document.getElementById('quick-appointment-button');
     if (quickAppointmentButton) {
+      // Se uma data foi fornecida, armazená-la no localStorage para ser recuperada pelo modal
       if (defaultDate) {
         localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
       } else {
+        // Se nenhuma data foi fornecida, remover qualquer data armazenada anteriormente
         localStorage.removeItem('defaultAppointmentDate');
       }
+      // Simular o clique no botão para abrir o modal
       quickAppointmentButton.click();
     }
   };
@@ -129,4 +134,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
