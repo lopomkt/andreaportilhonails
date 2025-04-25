@@ -3,20 +3,22 @@ import { Client } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, UserRound } from "lucide-react";
+import { Search, Plus, UserRound, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/clients/ClientForm";
 import { supabase } from '@/integrations/supabase/client';
 import { ClientsList } from "@/components/clients/ClientsList";
 import { fetchClientsFromApi, createClientInApi } from "@/services/clientApi";
-import { addDays, differenceInDays } from "date-fns";
+import { addDays } from "date-fns";
+import { ClientImportDialog } from "@/components/clients/ClientImportDialog";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const { toast } = useToast();
@@ -150,6 +152,16 @@ export default function ClientsPage() {
     });
   };
 
+  const handleImportSuccess = async () => {
+    console.log("ClientsPage: Import completed successfully");
+    setShowImportModal(false);
+    await fetchClients();
+    toast({
+      title: "Importação concluída",
+      description: "Clientes importados com sucesso!"
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -173,13 +185,22 @@ export default function ClientsPage() {
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
-        <Button 
-          onClick={() => setShowNewClientModal(true)} 
-          className="gap-1 bg-nail-500 hover:bg-nail-600 whitespace-nowrap"
-        >
-          <Plus className="h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowImportModal(true)} 
+            className="gap-1 bg-secondary hover:bg-secondary/80 whitespace-nowrap"
+          >
+            <Upload className="h-4 w-4" />
+            Importar
+          </Button>
+          <Button 
+            onClick={() => setShowNewClientModal(true)} 
+            className="gap-1 bg-nail-500 hover:bg-nail-600 whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
@@ -223,6 +244,12 @@ export default function ClientsPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <ClientImportDialog
+        open={showImportModal}
+        onOpenChange={setShowImportModal}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 }
