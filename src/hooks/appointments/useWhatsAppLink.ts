@@ -17,35 +17,51 @@ export function useWhatsAppLink() {
     
     // Replace template variables with actual values
     const replaceVariables = (text: string) => {
-      if (!client || !text) return "";
+      if (!text) return "";
       
-      return text
-        .replace(/{{nome}}/g, client.name || "")
-        .replace(/{{serviço}}/g, appointment?.service?.name || "")
-        .replace(/{{data}}/g, appointment ? format(new Date(appointment.date), 'dd/MM/yyyy') : "")
-        .replace(/{{horário}}/g, appointment ? format(new Date(appointment.date), 'HH:mm') : "")
-        .replace(/{{valor}}/g, appointment ? `R$ ${appointment.price}` : "");
+      let result = text;
+      
+      // Substituir variáveis relacionadas ao cliente
+      if (client) {
+        result = result.replace(/{{nome}}/g, client.name || "");
+      }
+      
+      // Substituir variáveis relacionadas ao agendamento
+      if (appointment) {
+        result = result
+          .replace(/{{serviço}}/g, appointment.service?.name || "")
+          .replace(/{{data}}/g, appointment.date ? format(new Date(appointment.date), 'dd/MM/yyyy') : "")
+          .replace(/{{horário}}/g, appointment.date ? format(new Date(appointment.date), 'HH:mm') : "")
+          .replace(/{{valor}}/g, appointment.price ? `R$ ${appointment.price}` : "");
+      }
+      
+      return result;
     };
 
     messageText = replaceVariables(messageText);
     
-    if (!messageText && appointment) {
-      const appointmentDate = new Date(appointment.date);
-      const serviceType = appointment.service?.name || "serviço";
-      
-      messageText = `Olá ${client.name || "Cliente"}, confirmando seu agendamento de ${serviceType} para o dia ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}.`;
-    }
-    
-    // Make sure we have a message to send
+    // Mensagem padrão caso nenhuma seja fornecida
     if (!messageText) {
-      messageText = `Olá ${client.name || "Cliente"}!`;
+      if (appointment) {
+        const appointmentDate = new Date(appointment.date);
+        const serviceType = appointment.service?.name || "serviço";
+        
+        messageText = `Olá ${client.name || "Cliente"}, confirmando seu agendamento de ${serviceType} para o dia ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}.`;
+      } else {
+        messageText = `Olá ${client.name || "Cliente"}!`;
+      }
     }
     
     // Format phone number by removing any non-numeric characters
     const formattedPhone = client.phone.replace(/\D/g, '');
     
+    // Ensure the phone starts with country code
+    const phoneWithCountryCode = formattedPhone.startsWith('55') 
+      ? formattedPhone 
+      : `55${formattedPhone}`;
+    
     const encodedMessage = encodeURIComponent(messageText);
-    return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+    return `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
   }, []);
 
   return {

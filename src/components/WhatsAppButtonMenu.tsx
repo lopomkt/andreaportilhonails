@@ -14,16 +14,97 @@ import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Client } from "@/types";
-import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ClientAutocomplete } from "@/components/ClientAutocomplete";
+import { supabase } from "@/integrations/supabase/client";
+
+// Definindo tipos para as mensagens template
+interface MessageTemplate {
+  id: string;
+  type: string;
+  message: string;
+}
 
 export function WhatsAppButtonMenu() {
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messageType, setMessageType] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const { toast } = useToast();
   const { clients = [], generateWhatsAppLink } = useData();
+  
+  // Buscar templates de mensagem
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        // Simulando busca de templates - Em uma implementação real, isso viria do banco de dados
+        // Para este exemplo, usaremos templates padrão
+        const defaultTemplates = [
+          {
+            id: "confirmation",
+            type: "confirmação",
+            message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕"
+          },
+          {
+            id: "reminder",
+            type: "lembrete",
+            message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes."
+          },
+          {
+            id: "reengagement",
+            type: "reengajamento",
+            message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!"
+          }
+        ];
+
+        // Verificando se existe uma tabela de templates no banco de dados
+        const { data, error } = await supabase
+          .from('mensagens_templates')
+          .select('*');
+
+        if (!error && data && data.length > 0) {
+          // Usar templates do banco de dados se existirem
+          setTemplates(data.map(item => ({
+            id: item.id,
+            type: item.tipo,
+            message: item.mensagem
+          })));
+        } else {
+          // Usar templates padrão
+          setTemplates(defaultTemplates);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar templates de mensagens:", error);
+        // Fallback para templates padrão em caso de erro
+        setTemplates([
+          {
+            id: "confirmation",
+            type: "confirmação",
+            message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕"
+          },
+          {
+            id: "reminder",
+            type: "lembrete",
+            message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes."
+          },
+          {
+            id: "reengagement",
+            type: "reengajamento",
+            message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!"
+          }
+        ]);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
   
   const resetButton = useCallback(() => {
     if (!open) {
@@ -51,26 +132,21 @@ export function WhatsAppButtonMenu() {
       return;
     }
     
-    let messageData = {
-      client: selectedClient,
-      message: ""
-    };
-    
-    switch (messageType) {
-      case "confirmation":
-        messageData.message = `Olá ${selectedClient.name}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕`;
-        break;
-      case "reminder":
-        messageData.message = `Oi ${selectedClient.name} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.`;
-        break;
-      case "reengagement":
-        messageData.message = `Oi ${selectedClient.name}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!`;
-        break;
-      default:
-        messageData.message = `Olá ${selectedClient.name}! 😊`;
-    }
-    
     try {
+      // Encontrar o template selecionado
+      const selectedTemplate = templates.find(template => template.id === messageType);
+      if (!selectedTemplate) {
+        throw new Error("Modelo de mensagem não encontrado");
+      }
+      
+      // Substituir variáveis no template
+      let messageContent = selectedTemplate.message.replace(/{{nome}}/g, selectedClient.name || '');
+      
+      const messageData = {
+        client: selectedClient,
+        message: messageContent
+      };
+      
       if (!generateWhatsAppLink) {
         throw new Error("Função de geração de link não disponível");
       }
@@ -81,7 +157,6 @@ export function WhatsAppButtonMenu() {
         setOpen(false);
         setSelectedClient(null);
         setMessageType("");
-        setSearchTerm("");
       }
     } catch (error) {
       console.error("Error generating WhatsApp link:", error);
@@ -101,51 +176,8 @@ export function WhatsAppButtonMenu() {
     setOpen(true);
   };
 
-  // Ensure clients is an array and safely filter it
-  const safeClients = Array.isArray(clients) ? clients : [];
-  const filteredClients = safeClients.filter(client => 
-    client && typeof client === 'object' && 
-    (
-      (client.name && client.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (client.phone && client.phone.includes(searchTerm))
-    )
-  );
-
-  // Render client selection UI only when dialog is open
-  const renderClientSelection = () => {
-    if (!open) return null;
-
-    return (
-      <div className="space-y-2">
-        <Label>Cliente</Label>
-        <Command className="rounded-lg border shadow-md">
-          <CommandInput 
-            placeholder="Digite o nome do cliente..."
-            value={searchTerm}
-            onValueChange={setSearchTerm}
-          />
-          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-          <CommandGroup className="max-h-48 overflow-auto">
-            {filteredClients && filteredClients.length > 0 ? filteredClients.map((client) => (
-              <CommandItem
-                key={client.id}
-                value={client.id}
-                onSelect={() => {
-                  setSelectedClient(client);
-                  setSearchTerm(client.name || '');
-                }}
-                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent"
-              >
-                <div className="flex-1">
-                  <p className="font-medium">{client.name}</p>
-                  <p className="text-sm text-muted-foreground">{client.phone}</p>
-                </div>
-              </CommandItem>
-            )) : null}
-          </CommandGroup>
-        </Command>
-      </div>
-    );
+  const handleClientSelect = (client: Client | null) => {
+    setSelectedClient(client);
   };
 
   return (
@@ -160,57 +192,68 @@ export function WhatsAppButtonMenu() {
         <Send className="h-6 w-6" />
       </Button>
       
-      {open && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-50">
-            <DialogHeader>
-              <DialogTitle className="text-xl flex items-center">
-                <span className="mr-2">📲</span>
-                Enviar Mensagem para Cliente
-              </DialogTitle>
-              <DialogDescription>
-                Escolha um cliente e um tipo de mensagem para enviar
-              </DialogDescription>
-            </DialogHeader>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-50">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center">
+              <span className="mr-2">📲</span>
+              Enviar Mensagem para Cliente
+            </DialogTitle>
+            <DialogDescription>
+              Escolha um cliente e um tipo de mensagem para enviar
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <ClientAutocomplete 
+                onClientSelect={handleClientSelect}
+                selectedClient={selectedClient}
+                autofocus={true}
+                placeholder="Digite o nome do cliente..."
+              />
+            </div>
             
-            <div className="space-y-4 py-4">
-              {renderClientSelection()}
-              
-              <div className="space-y-2">
-                <Label>Tipo de Mensagem</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    { id: "confirmation", label: "Confirmação" },
-                    { id: "reminder", label: "Lembrete" },
-                    { id: "reengagement", label: "Reengajamento" }
-                  ].map((type) => (
-                    <Button
-                      key={type.id}
-                      variant={messageType === type.id ? "default" : "outline"}
-                      onClick={() => setMessageType(type.id)}
-                      className={cn(
-                        "justify-start",
-                        messageType === type.id && "bg-green-500 hover:bg-green-600 text-white"
-                      )}
-                    >
-                      {type.label}
-                    </Button>
+            <div className="space-y-2">
+              <Label>Tipo de Mensagem</Label>
+              <Select value={messageType} onValueChange={setMessageType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o tipo de mensagem" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.type.charAt(0).toUpperCase() + template.type.slice(1)}
+                    </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {messageType && (
+              <div className="space-y-2 pt-2">
+                <Label>Prévia da mensagem:</Label>
+                <div className="p-3 rounded-lg bg-muted">
+                  <p className="text-sm whitespace-pre-wrap">
+                    {templates.find(t => t.id === messageType)?.message
+                      .replace(/{{nome}}/g, selectedClient?.name || '[nome do cliente]')}
+                  </p>
                 </div>
               </div>
-              
-              <Button 
-                onClick={handleSendMessage} 
-                className="w-full bg-green-500 hover:bg-green-600 mt-4"
-                disabled={!selectedClient || !messageType}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                Enviar pelo WhatsApp
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+            )}
+            
+            <Button 
+              onClick={handleSendMessage} 
+              className="w-full bg-green-500 hover:bg-green-600 mt-4"
+              disabled={!selectedClient || !messageType}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              Enviar pelo WhatsApp
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
