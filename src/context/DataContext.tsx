@@ -4,6 +4,8 @@ import { DashboardStats, RevenueData } from "@/types";
 import { ClientProvider, useClients } from "./ClientContext";
 import { AppointmentProvider, useAppointments } from "./AppointmentContext";
 import { ServiceProvider, useServices } from "./ServiceContext";
+import { ExpenseProvider, useExpenses } from "./ExpenseContext";
+import { BlockedDateProvider, useBlockedDates } from "./BlockedDateContext";
 
 interface DataContextType {
   dashboardStats: DashboardStats;
@@ -20,9 +22,12 @@ interface DataContextType {
 type CombinedContextType = DataContextType & 
   ReturnType<typeof useClients> & 
   ReturnType<typeof useAppointments> & 
-  ReturnType<typeof useServices>;
+  ReturnType<typeof useServices> &
+  ReturnType<typeof useExpenses> &
+  ReturnType<typeof useBlockedDates>;
 
 export const DataContext = createContext<CombinedContextType>({
+  // Dashboard stats
   dashboardStats: {
     monthRevenue: 0,
     newClients: 0,
@@ -37,6 +42,42 @@ export const DataContext = createContext<CombinedContextType>({
   calculateNetProfit: () => 0,
   calculatedMonthlyRevenue: () => 0,
   getRevenueData: () => [],
+  
+  // Client context properties
+  clients: [],
+  getTopClients: () => [],
+  refetchClients: async () => {},
+  createClient: async () => ({}),
+  updateClient: async () => ({}),
+  deleteClient: async () => ({}),
+  
+  // Appointment context properties
+  appointments: [],
+  getAppointmentsForDate: () => [],
+  calculateDailyRevenue: () => 0,
+  generateWhatsAppLink: async () => "",
+  refetchAppointments: async () => {},
+  addAppointment: async () => ({}),
+  updateAppointment: async () => ({}),
+  
+  // Service context properties
+  services: [],
+  calculateServiceRevenue: () => [],
+  addService: async () => ({}),
+  updateService: async () => ({}),
+  deleteService: async () => ({}),
+  fetchServices: async () => [],
+  
+  // Expense context properties
+  expenses: [],
+  addExpense: async () => ({}),
+  updateExpense: async () => ({}),
+  deleteExpense: async () => ({}),
+  fetchExpenses: async () => {},
+  
+  // Blocked dates context properties
+  blockedDates: [],
+  fetchBlockedDates: async () => {},
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
@@ -44,7 +85,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     <ClientProvider>
       <AppointmentProvider>
         <ServiceProvider>
-          {children}
+          <ExpenseProvider>
+            <BlockedDateProvider>
+              {children}
+            </BlockedDateProvider>
+          </ExpenseProvider>
         </ServiceProvider>
       </AppointmentProvider>
     </ClientProvider>

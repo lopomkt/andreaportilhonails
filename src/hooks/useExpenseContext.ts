@@ -12,21 +12,27 @@ export const useExpenseContext = (
   };
 
   const addExpense = useCallback(async (expense: Omit<Expense, "id">) => {
-    // Implementação existente ou mock
     if (!expense) {
       return { success: false, error: "Invalid expense data" };
     }
     
+    if (setExpenses) {
+      const newExpense = {
+        ...expense,
+        id: `exp-${Date.now()}`, // Mock ID generation for now
+      };
+      setExpenses(prev => [...prev, newExpense]);
+      return { success: true, data: newExpense };
+    }
+    
     return { success: false, error: "AddExpense function not available" };
-  }, []);
+  }, [setExpenses]);
 
   const updateExpense = useCallback(async (expense: Expense) => {
-    // Implementation of updateExpense
     if (!expense || !expense.id) {
       return { success: false, error: "Invalid expense data" };
     }
     
-    // If we have setExpenses, update the local state
     if (setExpenses) {
       setExpenses(prev => 
         prev.map(item => item.id === expense.id ? expense : item)
@@ -38,13 +44,17 @@ export const useExpenseContext = (
   }, [setExpenses]);
 
   const deleteExpense = useCallback(async (id: string) => {
-    // Implementação existente ou mock
     if (!id) {
-      return false;
+      return { success: false, error: "Invalid expense ID" };
     }
     
-    return false;
-  }, []);
+    if (setExpenses) {
+      setExpenses(prev => prev.filter(item => item.id !== id));
+      return { success: true };
+    }
+    
+    return { success: false, error: "DeleteExpense function not available" };
+  }, [setExpenses]);
 
   return {
     expenses,

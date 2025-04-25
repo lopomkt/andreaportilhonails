@@ -28,7 +28,7 @@ const ClientContext = createContext<ClientContextType>({
 
 export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const { fetchAppointments } = useAppointmentContext(setClients, clients);
+  const { fetchAppointments } = useAppointmentContext([], () => {});
   const clientContext = useClientHook(setClients, fetchAppointments, clients);
 
   return (
