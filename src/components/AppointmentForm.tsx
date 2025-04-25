@@ -27,7 +27,7 @@ interface AppointmentFormProps {
   notes?: string;
   status?: AppointmentStatus;
   initialDate?: Date;
-  initialTime?: string; // Added initialTime prop
+  initialTime?: string; 
 }
 
 export function AppointmentForm({ 
@@ -35,11 +35,12 @@ export function AppointmentForm({
   appointment, 
   serviceId: initialServiceId, 
   clientId: initialClientId,
-  date: initialDate,
+  date: propDate,
   notes: initialNotes,
   price: initialPrice,
   status: initialStatus,
-  initialTime // Use the initialTime prop
+  initialDate,
+  initialTime 
 }: AppointmentFormProps) {
   const { 
     clients, 
@@ -53,10 +54,16 @@ export function AppointmentForm({
   const [clientId, setClientId] = useState(initialClientId || appointment?.clientId || "");
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
   const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
-  const [date, setDate] = useState<Date>(initialDate || (appointment ? new Date(appointment.date) : new Date()));
-  const [time, setTime] = useState(
-    initialTime || (appointment ? format(new Date(appointment.date), "HH:mm") : "09:00")
-  );
+  const [date, setDate] = useState<Date>(propDate || initialDate || (appointment ? new Date(appointment.date) : new Date()));
+  
+  const defaultTime = () => {
+    if (initialTime) return initialTime;
+    if (appointment) return format(new Date(appointment.date), "HH:mm");
+    if (initialDate) return format(initialDate, "HH:mm");
+    return "09:00";
+  };
+  
+  const [time, setTime] = useState(defaultTime());
   const [notes, setNotes] = useState(initialNotes || appointment?.notes || "");
   const [price, setPrice] = useState(initialPrice || appointment?.price || 0);
   const [hasConflict, setHasConflict] = useState(false);

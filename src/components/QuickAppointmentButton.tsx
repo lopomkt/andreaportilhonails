@@ -8,7 +8,22 @@ import { AppointmentFormWrapper } from "./AppointmentFormWrapper";
 
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
+  const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
   
+  useEffect(() => {
+    // Check for default appointment date in localStorage
+    const storedDate = localStorage.getItem('defaultAppointmentDate');
+    if (storedDate) {
+      try {
+        setInitialDate(new Date(storedDate));
+        // Remove from localStorage after retrieval
+        localStorage.removeItem('defaultAppointmentDate');
+      } catch (error) {
+        console.error("Error parsing stored date:", error);
+      }
+    }
+  }, [open]);
+
   useEffect(() => {
     // Hide button when a modal is open
     const updateButtonVisibility = () => {
@@ -84,6 +99,7 @@ export function QuickAppointmentButton() {
             <AppointmentFormWrapper>
               <AppointmentForm 
                 onSuccess={() => setOpen(false)}
+                initialDate={initialDate}
               />
             </AppointmentFormWrapper>
           </DialogContent>
