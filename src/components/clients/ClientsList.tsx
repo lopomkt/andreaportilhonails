@@ -1,22 +1,74 @@
 
-import { Client } from '@/types';
+import { Client, Appointment, Service } from '@/types';
 import { ClientCard } from './ClientCard';
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import ClientForm from './ClientForm';
+import { TrashIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { useData } from '@/context/DataProvider';
 
 interface ClientsListProps {
   clients: Client[];
   onClientUpdated: () => Promise<void>;
+  activeTab: 'active' | 'inactive';
 }
 
-export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
+export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsListProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
+  const [clientHistory, setClientHistory] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastServices, setLastServices] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const { refetchAppointments, addAppointment, services } = useData();
+  const [isScheduling, setIsScheduling] = useState(false);
+
+  // Buscar último serviço para cada cliente
+  useEffect(() => {
+    const fetchLastServices = async () => {
+      const servicesMap: Record<string, string> = {};
+      
+      // Para cada cliente com um último agendamento, buscar o serviço
+      for (const client of clients) {
+        if (client.lastAppointment) {
+          try {
+            const { data, error } = await supabase
+              .from('agendamentos')
+              .select('servico_id')
+              .eq('cliente_id', client.id)
+              .order('data', { ascending: false })
+              .limit(1)
+              .single();
+
+            if (data && !error) {
+              // Buscar nome do serviço
+              const { data: serviceData } = await supabase
+                .from('servicos')
+                .select('nome')
+                .eq('id', data.servico_id)
+                .single();
+                
+              if (serviceData) {
+                servicesMap[client.id] = serviceData.nome;
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao buscar último serviço', err);
+          }
+        }
+      }
+      
+      setLastServices(servicesMap);
+    };
+    
+    fetchLastServices();
+  }, [clients]);
 
   const handleViewDetails = (client: Client) => {
     console.log("Viewing details for client:", client);
@@ -32,10 +84,9 @@ export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
   };
 
   const handleScheduleClick = (client: Client) => {
-    toast({
-      title: "Função não implementada",
-      description: "O agendamento será implementado em breve."
-    });
+    console.log("Scheduling for client:", client);
+    setSelectedClient(client);
+    setIsScheduling(true);
   };
 
   const handleSuccess = async () => {
@@ -49,11 +100,123 @@ export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
     });
   };
 
+  const handleViewHistory = async () => {
+    if (!selectedClient) return;
+    
+    setIsLoading(true);
+    try {
+      // Buscar histórico de agendamentos do cliente
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select(`
+          id,
+          data,
+          preco,
+          servico_id
+        `)
+        .eq('cliente_id', selectedClient.id)
+        .order('data', { ascending: false });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Buscar informações dos serviços para cada agendamento
+      const historyWithServices = await Promise.all(
+        data.map(async (appointment) => {
+          const { data: serviceData } = await supabase
+            .from('servicos')
+            .select('nome')
+            .eq('id', appointment.servico_id)
+            .single();
+            
+          return {
+            ...appointment,
+            serviceName: serviceData?.nome || 'Serviço não encontrado'
+          };
+        })
+      );
+      
+      setClientHistory(historyWithServices);
+      setIsViewingHistory(true);
+    } catch (error) {
+      console.error("Error fetching client history:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao buscar o histórico do cliente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    if (!selectedClient) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', selectedClient.id);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast({
+        title: "Sucesso",
+        description: "Cliente excluído com sucesso!"
+      });
+      
+      setIsViewingDetails(false);
+      setIsEditing(false);
+      await onClientUpdated();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir o cliente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateAppointment = async (appointment: any) => {
+    try {
+      const result = await addAppointment(appointment);
+      if (result.success) {
+        toast({
+          title: "Agendamento criado",
+          description: "O agendamento foi criado com sucesso!"
+        });
+        setIsScheduling(false);
+        refetchAppointments();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao criar o agendamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {clients.length === 0 ? (
         <div className="col-span-full text-center py-10">
-          <p className="text-muted-foreground">Nenhum cliente encontrado.</p>
+          <p className="text-muted-foreground">
+            {activeTab === 'active' 
+              ? "Nenhum cliente ativo encontrado."
+              : "Nenhum cliente inativo encontrado."
+            }
+          </p>
         </div>
       ) : (
         clients.map((client) => (
@@ -63,6 +226,7 @@ export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
             onViewDetails={() => handleViewDetails(client)}
             onEditClick={() => handleEditClick(client)}
             onScheduleClick={() => handleScheduleClick(client)}
+            lastServiceName={lastServices[client.id]}
           />
         ))
       )}
@@ -99,6 +263,13 @@ export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
             )}
             <div className="flex justify-end gap-2 pt-4">
               <Button
+                variant="outline"
+                onClick={handleViewHistory}
+                disabled={isLoading}
+              >
+                Histórico
+              </Button>
+              <Button
                 className="px-4 py-2 border rounded bg-nail-500 hover:bg-nail-600 text-white"
                 onClick={() => {
                   setIsViewingDetails(false);
@@ -119,12 +290,144 @@ export function ClientsList({ clients, onClientUpdated }: ClientsListProps) {
             <DialogTitle>{selectedClient ? 'Editar cliente' : 'Novo cliente'}</DialogTitle>
           </DialogHeader>
           {selectedClient && (
-            <ClientForm
-              client={selectedClient}
-              onSuccess={handleSuccess}
-              onCancel={() => setIsEditing(false)}
-            />
+            <>
+              <ClientForm
+                client={selectedClient}
+                onSuccess={handleSuccess}
+                onCancel={() => setIsEditing(false)}
+              />
+              <DialogFooter>
+                <Button 
+                  variant="destructive" 
+                  className="mt-2" 
+                  onClick={handleDeleteClient}
+                  disabled={isLoading}
+                >
+                  <TrashIcon className="w-4 h-4 mr-2" />
+                  Excluir cliente
+                </Button>
+              </DialogFooter>
+            </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de histórico do cliente */}
+      <Dialog open={isViewingHistory} onOpenChange={setIsViewingHistory}>
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico de {selectedClient?.name}</DialogTitle>
+            <DialogDescription>Agendamentos anteriores</DialogDescription>
+          </DialogHeader>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-rose-200 border-t-rose-500"></div>
+            </div>
+          ) : clientHistory.length === 0 ? (
+            <p className="text-center py-4 text-muted-foreground">
+              Nenhum agendamento encontrado para este cliente.
+            </p>
+          ) : (
+            <div className="space-y-4 mt-2">
+              {clientHistory.map((appointment) => (
+                <div 
+                  key={appointment.id} 
+                  className="p-3 border rounded-md hover:bg-muted/40 transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{format(new Date(appointment.data), "dd/MM/yyyy")}</p>
+                      <p className="text-sm text-muted-foreground">{appointment.serviceName}</p>
+                    </div>
+                    <p className="font-medium">R$ {appointment.preco.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de agendamento */}
+      <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agendar para {selectedClient?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Formulário básico de agendamento */}
+            <div className="space-y-4">
+              {/* Aqui poderia ser integrado o componente AppointmentForm existente */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Serviço</label>
+                <select 
+                  className="w-full p-2 border rounded-md"
+                  id="service"
+                >
+                  <option value="">Selecione um serviço</option>
+                  {services.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name} - R$ {service.price.toFixed(2)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Data</label>
+                <input 
+                  type="date" 
+                  className="w-full p-2 border rounded-md"
+                  id="date"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Hora</label>
+                <input 
+                  type="time" 
+                  className="w-full p-2 border rounded-md"
+                  id="time"
+                />
+              </div>
+              <Button 
+                className="w-full bg-nail-500 hover:bg-nail-600"
+                onClick={() => {
+                  // Exemplo básico - idealmente use um formulário com validação
+                  const serviceId = (document.getElementById('service') as HTMLSelectElement).value;
+                  const date = (document.getElementById('date') as HTMLInputElement).value;
+                  const time = (document.getElementById('time') as HTMLInputElement).value;
+                  
+                  if (!serviceId || !date || !time) {
+                    toast({
+                      title: "Campos obrigatórios",
+                      description: "Preencha todos os campos para continuar",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
+                  // Buscar preço do serviço
+                  const selectedService = services.find(s => s.id === serviceId);
+                  
+                  if (!selectedService || !selectedClient) {
+                    return;
+                  }
+                  
+                  const dateTime = new Date(`${date}T${time}`);
+                  
+                  handleCreateAppointment({
+                    clientId: selectedClient.id,
+                    serviceId: selectedService.id,
+                    date: dateTime.toISOString(),
+                    price: selectedService.price,
+                    status: 'pending',
+                    // Outros campos conforme necessário
+                  });
+                }}
+              >
+                Agendar
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

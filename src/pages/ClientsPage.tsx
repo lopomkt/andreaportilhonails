@@ -4,13 +4,14 @@ import { Client } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, UserRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/clients/ClientForm";
 import { supabase } from '@/integrations/supabase/client';
 import { ClientsList } from "@/components/clients/ClientsList";
 import { fetchClientsFromApi, createClientInApi } from "@/services/clientApi";
+import { addDays, differenceInDays } from "date-fns";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -18,6 +19,7 @@ export default function ClientsPage() {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const { toast } = useToast();
 
   const fetchClients = async () => {
@@ -73,6 +75,8 @@ export default function ClientsPage() {
     }
     
     let filtered = [...clients];
+    
+    // Filtrar por termo de busca
     if (searchTerm) {
       filtered = filtered.filter(client => 
         client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -80,8 +84,32 @@ export default function ClientsPage() {
       );
     }
     
+    // Filtrar por status (ativo/inativo)
+    if (activeTab === 'inactive') {
+      filtered = filtered.filter(client => {
+        // Cliente tem último agendamento e este foi há mais de 30 dias
+        if (client.lastAppointment) {
+          const lastApptDate = new Date(client.lastAppointment);
+          const thirtyDaysAgo = addDays(new Date(), -30);
+          return lastApptDate < thirtyDaysAgo;
+        }
+        return false; // Não incluir clientes sem agendamento entre os inativos
+      });
+    } else {
+      // Clientes ativos: novos ou com agendamento recente
+      filtered = filtered.filter(client => {
+        if (!client.lastAppointment) {
+          return true; // Cliente novo (sem agendamentos)
+        } else {
+          const lastApptDate = new Date(client.lastAppointment);
+          const thirtyDaysAgo = addDays(new Date(), -30);
+          return lastApptDate >= thirtyDaysAgo; // Agendamento recente (menos de 30 dias)
+        }
+      });
+    }
+    
     setFilteredClients(filtered);
-  }, [clients, searchTerm]);
+  }, [clients, searchTerm, activeTab]);
 
   const handleNewClientSubmit = async (clientData: Partial<Client>) => {
     console.log("Creating new client with data:", clientData);
@@ -113,7 +141,6 @@ export default function ClientsPage() {
     }
   };
 
-  // This is the function causing the type error - let's fix its return type
   const handleNewClientSuccess = async () => {
     console.log("ClientsPage: New client created successfully");
     setShowNewClientModal(false);
@@ -122,7 +149,6 @@ export default function ClientsPage() {
       title: "Cliente cadastrado",
       description: "Cliente cadastrado com sucesso!"
     });
-    // Don't return anything to match the Promise<void> type
   };
 
   if (isLoading) {
@@ -157,10 +183,30 @@ export default function ClientsPage() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Button 
+          variant={activeTab === 'active' ? "default" : "outline"}
+          onClick={() => setActiveTab('active')}
+          className={activeTab === 'active' ? "bg-nail-500 hover:bg-nail-600" : ""}
+        >
+          <UserRound className="h-4 w-4 mr-1" />
+          Clientes Ativos
+        </Button>
+        <Button 
+          variant={activeTab === 'inactive' ? "default" : "outline"}
+          onClick={() => setActiveTab('inactive')}
+          className={activeTab === 'inactive' ? "bg-nail-500 hover:bg-nail-600" : ""}
+        >
+          <UserRound className="h-4 w-4 mr-1" />
+          Clientes Inativos
+        </Button>
+      </div>
+
       <Card className="p-4">
         <ClientsList 
           clients={filteredClients} 
-          onClientUpdated={handleNewClientSuccess} 
+          onClientUpdated={fetchClients} 
+          activeTab={activeTab}
         />
       </Card>
 
