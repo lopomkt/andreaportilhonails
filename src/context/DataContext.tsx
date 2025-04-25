@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from "react";
 import { DashboardStats, RevenueData } from "@/types";
 import { ClientProvider, useClients } from "./ClientContext";
@@ -13,13 +14,15 @@ interface DataContextType {
   calculateNetProfit: () => number;
   calculatedMonthlyRevenue: (month?: number, year?: number) => number;
   getRevenueData: () => RevenueData[];
-
-  ...useClients(),
-  ...useAppointments(),
-  ...useServices(),
 }
 
-export const DataContext = createContext<DataContextType>({
+// Create a type that combines all the context types
+type CombinedContextType = DataContextType & 
+  ReturnType<typeof useClients> & 
+  ReturnType<typeof useAppointments> & 
+  ReturnType<typeof useServices>;
+
+export const DataContext = createContext<CombinedContextType>({
   dashboardStats: {
     monthRevenue: 0,
     newClients: 0,
