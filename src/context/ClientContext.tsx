@@ -28,8 +28,8 @@ const ClientContext = createContext<ClientContextType>({
 
 export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const { fetchAppointments } = useAppointmentContext([], () => {});
-  const clientContext = useClientHook(setClients, fetchAppointments, clients);
+  const { refetchAppointments } = useAppointmentContext();
+  const clientContext = useClientHook(setClients, refetchAppointments, clients);
 
   return (
     <ClientContext.Provider
@@ -38,7 +38,9 @@ export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
         loading: false,
         error: null,
         getTopClients: clientContext.getTopClients,
-        refetchClients: clientContext.fetchClients,
+        refetchClients: async () => {
+          await clientContext.fetchClients();
+        },
         createClient: clientContext.createClient,
         updateClient: clientContext.updateClient,
         deleteClient: clientContext.deleteClient,

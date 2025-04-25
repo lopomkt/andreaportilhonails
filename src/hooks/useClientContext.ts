@@ -178,8 +178,97 @@ export const useClientContext = (
 
   return {
     fetchClients,
-    createClient,
-    updateClient,
+    createClient: useCallback(async (clientData: any) => {
+      try {
+        const response = await supabase
+          .from('clientes')
+          .insert([clientData])
+          .select()
+          .single();
+  
+        if (!isValidResponse(response)) {
+          console.error('Error creating client:', response?.error);
+          toast({
+            title: 'Erro ao criar cliente',
+            description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
+            variant: 'destructive',
+          });
+          return { success: false, error: response?.error };
+        }
+  
+        const newClient: Client = {
+          id: response.data.id,
+          name: response.data.nome,
+          phone: response.data.telefone,
+          email: response.data.email || '',
+          notes: response.data.observacoes || '',
+          totalSpent: response.data.valor_total || 0,
+          birthdate: response.data.data_nascimento || null,
+          lastAppointment: response.data.ultimo_agendamento || null,
+          createdAt: response.data.data_criacao || null
+        };
+  
+        setClients(prev => [...prev, newClient]);
+        
+        if (response && typeof response === 'object') {
+          return { 
+            success: true, 
+            data: response.data
+          };
+        }
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Error creating client:', error);
+        toast({
+          title: 'Erro ao criar cliente',
+          description: 'Ocorreu um erro ao criar o cliente. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return { success: false, error };
+      }
+    }, [setClients]),
+    updateClient: useCallback(async (clientId: string, clientData: any) => {
+      try {
+        const response = await supabase
+          .from('clientes')
+          .update(clientData)
+          .eq('id', clientId)
+          .select()
+          .single();
+  
+        if (!isValidResponse(response)) {
+          console.error('Error updating client:', response?.error);
+          toast({
+            title: 'Erro ao atualizar cliente',
+            description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
+            variant: 'destructive',
+          });
+          return { success: false, error: response?.error };
+        }
+  
+        setClients(prev =>
+          prev.map(client => client.id === clientId ? { ...client, ...response.data } : client)
+        );
+  
+        if (response && typeof response === 'object') {
+          return { 
+            success: true, 
+            data: response.data
+          };
+        }
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Error updating client:', error);
+        toast({
+          title: 'Erro ao atualizar cliente',
+          description: 'Ocorreu um erro ao atualizar o cliente. Por favor, tente novamente.',
+          variant: 'destructive',
+        });
+        return { success: false, error };
+      }
+    }, [setClients]),
     deleteClient,
     getTopClients
   };
