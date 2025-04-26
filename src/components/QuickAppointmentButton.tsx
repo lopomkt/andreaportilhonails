@@ -7,23 +7,44 @@ import { AppointmentForm } from "./AppointmentForm";
 import { AppointmentFormWrapper } from "./AppointmentFormWrapper";
 import { useServices } from "@/context/ServiceContext";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
   const { fetchServices, services } = useServices();
   
-  // Precarregar os serviços quando o componente montar
+  // Carregar os serviços quando o componente montar e quando o modal for aberto
   useEffect(() => {
-    fetchServices();
+    const loadServices = async () => {
+      try {
+        console.log("QuickAppointmentButton: Carregando serviços...");
+        await fetchServices();
+        console.log("QuickAppointmentButton: Serviços carregados:", services.length);
+      } catch (error) {
+        console.error("QuickAppointmentButton: Erro ao carregar serviços:", error);
+        toast({
+          title: "Erro ao carregar serviços",
+          description: "Não foi possível carregar a lista de serviços. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    loadServices();
   }, [fetchServices]);
   
+  // Verificar quando o modal é aberto
   useEffect(() => {
-    // Quando o modal é aberto, verificamos se há uma data armazenada no localStorage
-    // e garantimos que os serviços estejam carregados
     if (open) {
       try {
-        fetchServices();
+        console.log("QuickAppointmentButton: Modal aberto, verificando serviços...");
+        // Garantir que os serviços estejam carregados quando o modal for aberto
+        fetchServices().then(() => {
+          console.log("QuickAppointmentButton: Serviços atualizados no modal:", services.length);
+        });
+        
+        // Verificar data armazenada no localStorage
         const storedDate = localStorage.getItem('defaultAppointmentDate');
         if (storedDate) {
           const parsedDate = new Date(storedDate);
@@ -36,11 +57,11 @@ export function QuickAppointmentButton() {
           setInitialDate(undefined);
         }
       } catch (error) {
-        console.error("Erro ao analisar a data armazenada:", error);
+        console.error("Erro ao analisar a data armazenada ou carregar serviços:", error);
         setInitialDate(undefined);
       }
     }
-  }, [open, fetchServices]);
+  }, [open, fetchServices, services.length]);
 
   // Expose method to open the dialog through window object
   useEffect(() => {

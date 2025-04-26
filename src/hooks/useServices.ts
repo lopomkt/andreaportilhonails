@@ -1,5 +1,4 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Service, Appointment, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbServiceToApp, mapAppServiceToDb } from '@/integrations/supabase/mappers';
@@ -12,6 +11,7 @@ export function useServices() {
   const { toast } = useToast();
 
   const fetchServices = useCallback(async (): Promise<Service[]> => {
+    console.log("useServices: Iniciando busca de serviços");
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -32,13 +32,16 @@ export function useServices() {
           descricao: item.descricao || null
         }));
         
+        console.log(`useServices: ${mappedServices.length} serviços encontrados:`, mappedServices);
         setServices(mappedServices);
         return mappedServices;
       }
       
+      console.log("useServices: Nenhum serviço encontrado");
       return [];
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar serviços';
+      console.error("useServices: Erro na busca de serviços:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -50,6 +53,10 @@ export function useServices() {
       setLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const addService = async (service: Omit<Service, "id">): Promise<ServiceResponse<Service>> => {
     try {

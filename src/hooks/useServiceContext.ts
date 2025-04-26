@@ -2,21 +2,27 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment, Service } from '@/types';
 import { useCallback } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export const useServiceContext = (
   setServices: React.Dispatch<React.SetStateAction<Service[]>>,
   services: Service[]
 ) => {
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
+      console.log('useServiceContext: Iniciando busca de serviços');
       const { data, error } = await supabase
         .from('servicos')
         .select('*')
         .order('nome', { ascending: true });
       
       if (error) {
-        console.error('Error fetching services:', error);
+        console.error('useServiceContext: Erro ao buscar serviços:', error);
+        toast({
+          title: 'Erro ao buscar serviços',
+          description: 'Ocorreu um erro ao buscar os serviços. Tente novamente.',
+          variant: 'destructive',
+        });
         return [];
       }
       
@@ -28,13 +34,19 @@ export const useServiceContext = (
         description: item.descricao
       })) || [];
       
+      console.log(`useServiceContext: ${mappedServices.length} serviços encontrados:`, mappedServices);
       setServices(mappedServices);
       return mappedServices;
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('useServiceContext: Erro ao buscar serviços:', error);
+      toast({
+        title: 'Erro ao buscar serviços',
+        description: 'Ocorreu um erro ao buscar os serviços. Tente novamente.',
+        variant: 'destructive',
+      });
       return [];
     }
-  };
+  }, [setServices]);
 
   const calculateServiceRevenue = useCallback(
     (appointments: Appointment[], services: Service[]) => {

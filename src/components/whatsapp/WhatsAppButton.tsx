@@ -14,32 +14,68 @@ import { MessageForm } from "./MessageForm";
 import { useWhatsAppMessage } from "@/hooks/useWhatsAppMessage";
 import { whatsappButtonStyles } from "./styles";
 import { Loader2 } from "lucide-react";
+import { useServices } from "@/context/ServiceContext";
+import { toast } from "@/hooks/use-toast";
 
 export function WhatsAppButton() {
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { services, fetchServices } = useServices();
   const {
     messageType,
     setMessageType,
     selectedClient,
     setSelectedClient,
     templates,
-    loading,
+    loading: messageLoading,
     fetchTemplates,
     handleSendMessage
   } = useWhatsAppMessage();
+  
+  const [loading, setLoading] = useState(false);
 
-  // Carregar templates quando o componente é montado
+  // Carregar templates e serviços quando o componente é montado
   useEffect(() => {
-    fetchTemplates();
-  }, [fetchTemplates]);
+    const initialize = async () => {
+      try {
+        console.log("WhatsAppButton: Inicializando dados...");
+        setLoading(true);
+        await Promise.all([fetchTemplates(), fetchServices()]);
+        console.log("WhatsAppButton: Dados inicializados com sucesso");
+      } catch (error) {
+        console.error("WhatsAppButton: Erro ao inicializar dados:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar todos os dados necessários",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initialize();
+  }, [fetchTemplates, fetchServices]);
 
-  // Recarregar templates quando o modal é aberto
+  // Recarregar templates e serviços quando o modal é aberto
   useEffect(() => {
     if (open) {
-      fetchTemplates();
+      const refreshData = async () => {
+        try {
+          console.log("WhatsAppButton: Modal aberto, atualizando dados...");
+          setLoading(true);
+          await Promise.all([fetchTemplates(), fetchServices()]);
+          console.log("WhatsAppButton: Dados atualizados no modal");
+        } catch (error) {
+          console.error("WhatsAppButton: Erro ao atualizar dados no modal:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      refreshData();
     }
-  }, [open, fetchTemplates]);
+  }, [open, fetchTemplates, fetchServices]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -64,7 +100,6 @@ export function WhatsAppButton() {
         )}
         onClick={() => {
           setOpen(true);
-          fetchTemplates(); // Garantir que os templates sejam carregados ao abrir o modal
         }}
       >
         <Send className="h-6 w-6" />
@@ -82,7 +117,7 @@ export function WhatsAppButton() {
             </DialogDescription>
           </DialogHeader>
           
-          {loading ? (
+          {loading || messageLoading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
@@ -93,6 +128,7 @@ export function WhatsAppButton() {
               messageType={messageType}
               onMessageTypeChange={setMessageType}
               templates={templates}
+              services={services}
               onSend={handleSendMessage}
             />
           )}

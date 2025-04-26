@@ -1,7 +1,9 @@
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Service, Appointment } from "@/types";
 import { useServiceContext as useServiceHook } from "@/hooks/useServiceContext";
+import { supabase } from "@/integrations/supabase/client";
+import { mapDbServiceToApp } from "@/integrations/supabase/mappers";
 
 interface ServiceContextType {
   services: Service[];
@@ -27,14 +29,69 @@ const ServiceContext = createContext<ServiceContextType>({
 
 export const ServiceProvider = ({ children }: { children: React.ReactNode }) => {
   const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const serviceContext = useServiceHook(setServices, services);
+
+  // Carregar serviços automaticamente quando o provedor for montado
+  useEffect(() => {
+    const loadInitialServices = async () => {
+      console.log("ServiceProvider: Carregando serviços iniciais");
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('servicos')
+          .select('*')
+          .order('nome', { ascending: true });
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          const mappedServices: Service[] = data.map(item => mapDbServiceToApp({
+            id: item.id,
+            nome: item.nome,
+            preco: item.preco,
+            duracao_minutos: item.duracao_minutos,
+            descricao: item.descricao || null
+          }));
+          
+          console.log(`ServiceProvider: ${mappedServices.length} serviços carregados inicialmente`);
+          setServices(mappedServices);
+        }
+      } catch (err: any) {
+        console.error("ServiceProvider: Erro ao carregar serviços iniciais:", err);
+        setError(err?.message || "Erro ao carregar serviços");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadInitialServices();
+    
+    // Configurar listener para atualizações em tempo real dos serviços
+    const channel = supabase
+      .channel('services-changes')
+      .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'servicos' }, 
+          () => {
+            console.log("ServiceProvider: Mudança detectada na tabela de serviços, atualizando...");
+            serviceContext.fetchServices();
+          })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [serviceContext]);
 
   return (
     <ServiceContext.Provider
       value={{
         services,
-        loading: false,
-        error: null,
+        loading,
+        error,
         calculateServiceRevenue: serviceContext.calculateServiceRevenue,
         addService: serviceContext.addService,
         updateService: serviceContext.updateService,
