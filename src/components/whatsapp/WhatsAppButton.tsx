@@ -41,14 +41,37 @@ export function WhatsAppButton() {
         console.log("WhatsAppButton: Inicializando dados...");
         setLoading(true);
         
-        // Load templates and services in parallel
-        const [templatesResult, servicesResult] = await Promise.all([
-          fetchTemplates(), 
-          fetchServices()
+        // Load templates and services in parallel with better error handling
+        await Promise.all([
+          fetchTemplates().then(loadedTemplates => {
+            console.log("WhatsAppButton: Templates carregados inicialmente:", loadedTemplates.length);
+            if (loadedTemplates.length === 0) {
+              console.warn("WhatsAppButton: Nenhum template carregado. Isso pode ser um problema.");
+            }
+          }).catch(error => {
+            console.error("WhatsAppButton: Erro ao carregar templates:", error);
+            toast({
+              title: "Erro",
+              description: "Não foi possível carregar os templates de mensagem",
+              variant: "destructive"
+            });
+          }),
+          
+          fetchServices().then(loadedServices => {
+            console.log("WhatsAppButton: Serviços carregados inicialmente:", loadedServices.length);
+            if (loadedServices.length === 0) {
+              console.warn("WhatsAppButton: Nenhum serviço carregado. Isso pode ser um problema.");
+            }
+          }).catch(error => {
+            console.error("WhatsAppButton: Erro ao carregar serviços:", error);
+            toast({
+              title: "Erro",
+              description: "Não foi possível carregar a lista de serviços",
+              variant: "destructive"
+            });
+          })
         ]);
         
-        console.log("WhatsAppButton: Templates carregados:", templates.length);
-        console.log("WhatsAppButton: Serviços carregados:", services.length);
         console.log("WhatsAppButton: Dados inicializados com sucesso");
       } catch (error) {
         console.error("WhatsAppButton: Erro ao inicializar dados:", error);
@@ -73,13 +96,26 @@ export function WhatsAppButton() {
           console.log("WhatsAppButton: Modal aberto, atualizando dados...");
           setLoading(true);
           
-          // Reload both templates and services
+          // Reload both templates and services with better error handling
           await Promise.all([
-            fetchTemplates().then(() => {
-              console.log("WhatsAppButton: Templates atualizados no modal:", templates.length);
+            fetchTemplates().then(loadedTemplates => {
+              console.log("WhatsAppButton: Templates atualizados no modal:", loadedTemplates.length);
+              if (loadedTemplates.length === 0) {
+                console.warn("WhatsAppButton: Nenhum template carregado no modal. Isso pode ser um problema.");
+                toast({
+                  title: "Atenção",
+                  description: "Nenhum tipo de mensagem disponível. Verifique se há templates cadastrados.",
+                  variant: "warning"
+                });
+              }
+            }).catch(error => {
+              console.error("WhatsAppButton: Erro ao atualizar templates no modal:", error);
             }),
-            fetchServices().then(() => {
-              console.log("WhatsAppButton: Serviços atualizados no modal:", services.length);
+            
+            fetchServices().then(loadedServices => {
+              console.log("WhatsAppButton: Serviços atualizados no modal:", loadedServices.length);
+            }).catch(error => {
+              console.error("WhatsAppButton: Erro ao atualizar serviços no modal:", error);
             })
           ]);
           

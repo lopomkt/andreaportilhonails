@@ -14,13 +14,24 @@ export function QuickAppointmentButton() {
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
   const { services, fetchServices, loading } = useServices();
   
-  // Load services when component mounts
+  // Force fetch services when component mounts
   useEffect(() => {
     const loadServices = async () => {
       try {
         console.log("QuickAppointmentButton: Carregando serviços...");
+        // Force a fresh fetch of services
         await fetchServices();
         console.log("QuickAppointmentButton: Serviços carregados:", services.length);
+        
+        if (services.length === 0) {
+          console.warn("QuickAppointmentButton: Nenhum serviço encontrado. Tentando novamente...");
+          // Retry after a small delay if no services were found
+          setTimeout(() => {
+            fetchServices().catch(error => {
+              console.error("QuickAppointmentButton: Erro ao recarregar serviços:", error);
+            });
+          }, 1000);
+        }
       } catch (error) {
         console.error("QuickAppointmentButton: Erro ao carregar serviços:", error);
         toast({
@@ -34,15 +45,30 @@ export function QuickAppointmentButton() {
     loadServices();
   }, [fetchServices]);
   
-  // Reload services when modal opens
+  // Reload services when modal opens - with improved error handling
   useEffect(() => {
     if (open) {
       console.log("QuickAppointmentButton: Modal aberto, verificando serviços...");
+      
       // Make sure services are loaded when modal is opened
-      fetchServices().then(() => {
-        console.log("QuickAppointmentButton: Serviços atualizados no modal:", services.length);
+      fetchServices().then(fetchedServices => {
+        console.log("QuickAppointmentButton: Serviços atualizados no modal:", fetchedServices.length);
+        
+        if (fetchedServices.length === 0) {
+          console.warn("QuickAppointmentButton: Nenhum serviço carregado no modal. Isso pode ser um problema.");
+          toast({
+            title: "Atenção",
+            description: "Nenhum serviço disponível. Por favor, verifique se há serviços cadastrados.",
+            variant: "warning",
+          });
+        }
       }).catch(error => {
         console.error("QuickAppointmentButton: Erro ao carregar serviços no modal:", error);
+        toast({
+          title: "Erro ao carregar serviços",
+          description: "Ocorreu um erro ao atualizar a lista de serviços.",
+          variant: "destructive",
+        });
       });
       
       // Check for stored date in localStorage

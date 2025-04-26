@@ -90,15 +90,14 @@ export function ClientAutocomplete({
     }
     
     if (query.length === 0) {
-      fetchClients();
-      setIsOpen(true);
+      setIsOpen(false);
       return;
     }
     
-    if (query.length < 2) return;
-    
-    fetchClients(query);
-    setIsOpen(true);
+    if (query.length >= 2) {
+      fetchClients(query);
+      setIsOpen(true);
+    }
   };
 
   const handleSelectClient = (client: Client) => {
@@ -158,7 +157,12 @@ export function ClientAutocomplete({
             placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              // Only open dropdown if search query is long enough
+              if (searchQuery.length >= 2) {
+                setIsOpen(true);
+              }
+            }}
             autoFocus={autofocus}
             ref={inputRef}
           />

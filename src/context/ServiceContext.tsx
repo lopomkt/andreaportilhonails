@@ -1,9 +1,10 @@
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Service, Appointment } from "@/types";
 import { useServiceContext as useServiceHook } from "@/hooks/useServiceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDbServiceToApp } from "@/integrations/supabase/mappers";
+import { toast } from "@/hooks/use-toast";
 
 interface ServiceContextType {
   services: Service[];
@@ -31,41 +32,60 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Direct implementation of fetchServices for immediate use
+  const fetchServices = useCallback(async (): Promise<Service[]> => {
+    console.log("ServiceProvider: Iniciando busca direta de serviços");
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .order('nome', { ascending: true });
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const mappedServices: Service[] = data.map(item => mapDbServiceToApp({
+          id: item.id,
+          nome: item.nome,
+          preco: item.preco,
+          duracao_minutos: item.duracao_minutos,
+          descricao: item.descricao || null
+        }));
+        
+        console.log(`ServiceProvider: ${mappedServices.length} serviços carregados diretamente`);
+        setServices(mappedServices);
+        return mappedServices;
+      }
+      
+      console.log("ServiceProvider: Nenhum serviço encontrado na busca direta");
+      return [];
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Erro ao buscar serviços';
+      console.error("ServiceProvider: Erro na busca direta de serviços:", err);
+      setError(errorMessage);
+      toast({
+        title: 'Erro ao buscar serviços',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  // Complete service context with all needed methods
   const serviceContext = useServiceHook(setServices, services);
 
   // Automatically load services when the provider is mounted
   useEffect(() => {
     const loadInitialServices = async () => {
       console.log("ServiceProvider: Carregando serviços iniciais");
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('servicos')
-          .select('*')
-          .order('nome', { ascending: true });
-          
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          const mappedServices: Service[] = data.map(item => mapDbServiceToApp({
-            id: item.id,
-            nome: item.nome,
-            preco: item.preco,
-            duracao_minutos: item.duracao_minutos,
-            descricao: item.descricao || null
-          }));
-          
-          console.log(`ServiceProvider: ${mappedServices.length} serviços carregados inicialmente`);
-          setServices(mappedServices);
-        }
-      } catch (err: any) {
-        console.error("ServiceProvider: Erro ao carregar serviços iniciais:", err);
-        setError(err?.message || "Erro ao carregar serviços");
-      } finally {
-        setLoading(false);
-      }
+      await fetchServices();
     };
     
     loadInitialServices();
@@ -77,7 +97,7 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
           { event: '*', schema: 'public', table: 'servicos' }, 
           () => {
             console.log("ServiceProvider: Mudança detectada na tabela de serviços, atualizando...");
-            serviceContext.fetchServices().then(updatedServices => {
+            fetchServices().then(updatedServices => {
               console.log(`ServiceProvider: Serviços atualizados via realtime, ${updatedServices.length} serviços carregados`);
             });
           })
@@ -86,7 +106,7 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [serviceContext.fetchServices]);
+  }, [fetchServices]);
 
   return (
     <ServiceContext.Provider
@@ -98,7 +118,7 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
         addService: serviceContext.addService,
         updateService: serviceContext.updateService,
         deleteService: serviceContext.deleteService,
-        fetchServices: serviceContext.fetchServices,
+        fetchServices,
       }}
     >
       {children}

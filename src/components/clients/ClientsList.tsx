@@ -239,6 +239,16 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
       return;
     }
     
+    const timeHour = parseInt(formData.time.split(":")[0], 10);
+    if (timeHour < 7 || timeHour >= 19) {
+      toast({
+        title: "Horário inválido",
+        description: "O horário de atendimento é das 7:00 às 19:00",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -251,6 +261,12 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
       const dateTime = new Date(`${formData.date}T${formData.time}`);
       const endDateTime = new Date(dateTime);
       endDateTime.setMinutes(dateTime.getMinutes() + selectedService.durationMinutes);
+      
+      const endHour = endDateTime.getHours();
+      const endMinute = endDateTime.getMinutes();
+      if (endHour > 19 || (endHour === 19 && endMinute > 0)) {
+        throw new Error("O agendamento ultrapassa o horário de funcionamento que é até às 19:00");
+      }
       
       const appointmentData = {
         clientId: selectedClient.id,
@@ -476,13 +492,24 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Hora</label>
-                <input 
-                  type="time" 
+                <select 
                   className="w-full p-2 border rounded-md"
                   id="time"
                   value={formData.time}
                   onChange={handleInputChange}
-                />
+                >
+                  <option value="">Selecione um horário</option>
+                  {Array.from({ length: 25 }, (_, i) => {
+                    const hour = Math.floor(i / 2) + 7;
+                    const minute = i % 2 === 0 ? '00' : '30';
+                    const timeValue = `${hour.toString().padStart(2, '0')}:${minute}`;
+                    return hour < 19 || (hour === 19 && minute === '00') ? (
+                      <option key={timeValue} value={timeValue}>
+                        {timeValue}
+                      </option>
+                    ) : null;
+                  }).filter(Boolean)}
+                </select>
               </div>
               <Button 
                 className="w-full bg-nail-500 hover:bg-nail-600"

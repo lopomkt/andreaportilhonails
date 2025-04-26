@@ -45,11 +45,11 @@ export function MessageTypeSelect({
       case "reengajamento": return "Reengajamento";
       case "aniversario": return "Aniversário";
       case "promocao": return "Promoção";
-      default: return type;
+      default: return type.charAt(0).toUpperCase() + type.slice(1);
     }
   };
 
-  // Log message types when component renders
+  // Log message types when component renders or when templates/messageType change
   useEffect(() => {
     console.log("MessageTypeSelect: Templates disponíveis:", templates.length);
     console.log("MessageTypeSelect: Tipos de mensagem disponíveis:", messageTypes);

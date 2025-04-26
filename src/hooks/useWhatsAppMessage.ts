@@ -33,7 +33,7 @@ export function useWhatsAppMessage() {
         return [];
       }
       
-      if (data) {
+      if (data && data.length > 0) {
         const mappedTemplates: MessageTemplate[] = data.map(item => ({
           id: item.id,
           type: item.tipo,
@@ -46,13 +46,15 @@ export function useWhatsAppMessage() {
         
         // Define um tipo de mensagem padrão se disponível
         if (mappedTemplates.length > 0 && !messageType) {
+          console.log("Definindo tipo de mensagem padrão:", mappedTemplates[0].type);
           setMessageType(mappedTemplates[0].type);
         }
         
         return mappedTemplates;
+      } else {
+        console.warn("Nenhum template de mensagem encontrado no banco de dados");
+        return [];
       }
-      
-      return [];
     } catch (error) {
       console.error("Erro ao buscar templates de mensagens:", error);
       toast({
@@ -70,6 +72,11 @@ export function useWhatsAppMessage() {
   useEffect(() => {
     fetchTemplates().then(loadedTemplates => {
       console.log(`useWhatsAppMessage: ${loadedTemplates.length} templates carregados inicialmente`);
+      
+      if (loadedTemplates.length > 0 && !messageType) {
+        setMessageType(loadedTemplates[0].type);
+        console.log("useWhatsAppMessage: Definido messageType padrão:", loadedTemplates[0].type);
+      }
     });
     
     // Configurar listener para atualizações em tempo real dos templates
@@ -79,14 +86,19 @@ export function useWhatsAppMessage() {
           { event: '*', schema: 'public', table: 'mensagens_templates' }, 
           () => {
             console.log("useWhatsAppMessage: Mudança detectada na tabela de templates, atualizando...");
-            fetchTemplates();
+            fetchTemplates().then(loadedTemplates => {
+              if (loadedTemplates.length > 0 && !messageType) {
+                setMessageType(loadedTemplates[0].type);
+                console.log("useWhatsAppMessage: MessageType atualizado após mudança:", loadedTemplates[0].type);
+              }
+            });
           })
       .subscribe();
       
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchTemplates]);
+  }, [fetchTemplates, messageType]);
 
   const handleSendMessage = async () => {
     if (!selectedClient || !messageType) {

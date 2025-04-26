@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { format, addMinutes, isAfter, isBefore, isSameDay } from "date-fns";
+import { format, addMinutes, isAfter, isBefore, isSameDay, parse, set } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Client, Service, Appointment, AppointmentStatus } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -56,11 +55,43 @@ export function AppointmentForm({
   const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
   const [date, setDate] = useState<Date>(propDate || initialDate || (appointment ? new Date(appointment.date) : new Date()));
   
+  const getAvailableTimeSlots = () => {
+    const timeSlots = [];
+    const startTime = 7; // 7:00 AM
+    const endTime = 19; // 7:00 PM (19:00)
+    
+    for (let hour = startTime; hour < endTime; hour++) {
+      // Add full hour
+      timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+      // Add half hour
+      timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
+    }
+    
+    return timeSlots;
+  };
+
+  const availableTimeSlots = getAvailableTimeSlots();
+
   const defaultTime = () => {
     if (initialTime) return initialTime;
     if (appointment) return format(new Date(appointment.date), "HH:mm");
     if (initialDate) return format(initialDate, "HH:mm");
-    return "09:00";
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // If current time is outside working hours (7:00-19:00), default to 7:00
+    if (currentHour < 7 || currentHour >= 19) {
+      return "07:00";
+    }
+    
+    // Round to nearest 30 minutes
+    const roundedMinutes = Math.round(currentMinute / 30) * 30;
+    const roundedHour = roundedMinutes === 60 ? currentHour + 1 : currentHour;
+    const minutes = roundedMinutes === 60 ? "00" : roundedMinutes.toString().padStart(2, "0");
+    
+    return `${roundedHour.toString().padStart(2, "0")}:${minutes}`;
   };
   
   const [time, setTime] = useState(defaultTime());
@@ -306,12 +337,19 @@ export function AppointmentForm({
         
         <div className="space-y-2">
           <Label htmlFor="time">Horário <span className="text-red-500">*</span></Label>
-          <Input 
-            id="time" 
-            type="time" 
+          <Select 
             value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
+            onValueChange={setTime}
+          >
+            <SelectTrigger id="time" className="w-full">
+              <SelectValue placeholder="Selecione um horário" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTimeSlots.map((slot) => (
+                <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
