@@ -4,21 +4,25 @@ import { CardHeader } from "@/components/ui/card";
 import { ChevronDown, Plus, Settings, CalendarX, CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
 export interface CalendarHeaderProps {
   isLoading: boolean;
   isMobile: boolean;
   onOpenBlockedDateDialog: () => void;
-  onOpenAppointmentDialog: () => void;
 }
 
 export function CalendarHeader({
   isLoading,
   isMobile,
-  onOpenBlockedDateDialog,
-  onOpenAppointmentDialog
+  onOpenBlockedDateDialog
 }: CalendarHeaderProps) {
   const today = new Date();
+  const { openModal } = useAppointmentsModal();
+  
+  const handleOpenAppointmentDialog = () => {
+    openModal(null, new Date());
+  };
   
   return (
     <CardHeader className="pb-3 border-b">
@@ -49,7 +53,7 @@ export function CalendarHeader({
                 variant="default" 
                 size="sm"
                 className="flex-1 sm:flex-none"
-                onClick={onOpenAppointmentDialog}
+                onClick={handleOpenAppointmentDialog}
               >
                 <CalendarPlus className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Novo Agendamento</span>
@@ -68,7 +72,7 @@ export function CalendarHeader({
               <Button
                 variant="default"
                 size="icon"
-                onClick={onOpenAppointmentDialog}
+                onClick={handleOpenAppointmentDialog}
               >
                 <CalendarPlus className="h-4 w-4" />
               </Button>

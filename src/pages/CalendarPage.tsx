@@ -83,10 +83,6 @@ export default function CalendarPage() {
     }, 100);
   };
 
-  const handleOpenAppointmentDialog = () => {
-    openModal(undefined, currentDate);
-  };
-
   return (
     <div className="p-6 space-y-6 animate-fade-in overflow-y-auto">
       <Card className="border-rose-100 shadow-soft">
@@ -94,7 +90,6 @@ export default function CalendarPage() {
           isLoading={isLoading}
           isMobile={isMobile}
           onOpenBlockedDateDialog={() => setOpenBlockedDateDialog(true)}
-          onOpenAppointmentDialog={handleOpenAppointmentDialog}
         />
         
         <CardContent className="p-0">

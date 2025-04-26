@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AppointmentFormWrapper } from './AppointmentFormWrapper';
 import { AppointmentForm } from './AppointmentForm';
@@ -8,8 +8,16 @@ import { Loader } from 'lucide-react';
 import { useServices } from '@/context/ServiceContext';
 
 export function AppointmentModal() {
-  const { isOpen, closeModal, selectedDate } = useAppointmentsModal();
-  const { services, loading } = useServices();
+  const { isOpen, closeModal, selectedClient, selectedDate } = useAppointmentsModal();
+  const { services, loading, fetchServices } = useServices();
+
+  // Force fetch services when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log("AppointmentModal opened, fetching services...");
+      fetchServices();
+    }
+  }, [isOpen, fetchServices]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
@@ -17,7 +25,7 @@ export function AppointmentModal() {
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center">
             <span className="mr-2">💅</span>
-            Novo Agendamento
+            {selectedClient ? `Agendar para ${selectedClient.name}` : 'Novo Agendamento'}
           </DialogTitle>
         </DialogHeader>
         {loading && services.length === 0 ? (
@@ -27,7 +35,9 @@ export function AppointmentModal() {
           </div>
         ) : (
           <AppointmentFormWrapper>
-            <AppointmentForm onSuccess={() => closeModal()} initialDate={selectedDate || undefined} />
+            <AppointmentForm 
+              initialDate={selectedDate || undefined} 
+            />
           </AppointmentFormWrapper>
         )}
       </DialogContent>

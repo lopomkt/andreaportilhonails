@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
+import { useServices } from "@/context/ServiceContext";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -44,14 +45,15 @@ export function AppointmentForm({
 }: AppointmentFormProps) {
   const { 
     clients, 
-    services, 
     appointments, 
     addAppointment, 
     updateAppointment,
     blockedDates,
   } = useData();
   
-  const { selectedClient, selectedDate } = useAppointmentsModal();
+  const { services, loading: servicesLoading } = useServices();
+  
+  const { selectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
   const [clientId, setClientId] = useState(
     selectedClient?.id || initialClientId || appointment?.clientId || ""
@@ -75,6 +77,9 @@ export function AppointmentForm({
       // Add half hour
       timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
     }
+    
+    // Add the last hour (19:00) without minutes
+    timeSlots.push(`${endTime.toString().padStart(2, '0')}:00`);
     
     return timeSlots;
   };
@@ -115,6 +120,10 @@ export function AppointmentForm({
     (clientId && clients.find(c => c.id === clientId)) || 
     null
   );
+  
+  useEffect(() => {
+    console.log("AppointmentForm mounted - services count:", services.length);
+  }, [services]);
 
   useEffect(() => {
     if (selectedClient) {
@@ -265,6 +274,8 @@ export function AppointmentForm({
         });
       }
       
+      closeModal();
+      
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error saving appointment:", error);
@@ -296,21 +307,34 @@ export function AppointmentForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div className="space-y-2">
           <Label htmlFor="service">Serviço <span className="text-red-500">*</span></Label>
-          <Select 
-            value={serviceId} 
-            onValueChange={setServiceId}
-          >
-            <SelectTrigger id="service">
-              <SelectValue placeholder="Selecione um serviço" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map(service => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.name} - {formatCurrency(service.price)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {servicesLoading ? (
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Carregando serviços...</span>
+            </div>
+          ) : (
+            <Select 
+              value={serviceId} 
+              onValueChange={setServiceId}
+            >
+              <SelectTrigger id="service">
+                <SelectValue placeholder="Selecione um serviço" />
+              </SelectTrigger>
+              <SelectContent>
+                {services && services.length > 0 ? (
+                  services.map(service => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name} - {formatCurrency(service.price)}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="loading" disabled>
+                    Nenhum serviço disponível
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
       
@@ -426,7 +450,7 @@ export function AppointmentForm({
       )}
       
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onSuccess}>
+        <Button type="button" variant="outline" onClick={() => closeModal()}>
           Cancelar
         </Button>
         <Button 

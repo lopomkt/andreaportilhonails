@@ -123,18 +123,6 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
     setIsViewingDetails(false);
   };
 
-  const handleScheduleClick = (client: Client) => {
-    console.log("Scheduling for client:", client);
-    setSelectedClient(client);
-    setIsScheduling(true);
-    setFormData({
-      serviceId: "",
-      date: "",
-      time: ""
-    });
-    fetchServices();
-  };
-
   const handleSuccess = async () => {
     console.log("Client saved successfully");
     await onClientUpdated();
@@ -337,7 +325,6 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
             client={client}
             onViewDetails={() => handleViewDetails(client)}
             onEditClick={() => handleEditClick(client)}
-            onScheduleClick={() => handleScheduleClick(client)}
             lastServiceName={lastServices[client.id]}
           />
         ))
@@ -454,79 +441,6 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
               ))}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Agendar para {selectedClient?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Serviço</label>
-                <select 
-                  className="w-full p-2 border rounded-md"
-                  id="serviceId"
-                  value={formData.serviceId}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Selecione um serviço</option>
-                  {services.map(service => (
-                    <option key={service.id} value={service.id}>
-                      {service.name} - R$ {service.price.toFixed(2)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Data</label>
-                <input 
-                  type="date" 
-                  className="w-full p-2 border rounded-md"
-                  id="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Hora</label>
-                <select 
-                  className="w-full p-2 border rounded-md"
-                  id="time"
-                  value={formData.time}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Selecione um horário</option>
-                  {Array.from({ length: 25 }, (_, i) => {
-                    const hour = Math.floor(i / 2) + 7;
-                    const minute = i % 2 === 0 ? '00' : '30';
-                    const timeValue = `${hour.toString().padStart(2, '0')}:${minute}`;
-                    return hour < 19 || (hour === 19 && minute === '00') ? (
-                      <option key={timeValue} value={timeValue}>
-                        {timeValue}
-                      </option>
-                    ) : null;
-                  }).filter(Boolean)}
-                </select>
-              </div>
-              <Button 
-                className="w-full bg-nail-500 hover:bg-nail-600"
-                onClick={handleCreateAppointment}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  'Agendar'
-                )}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

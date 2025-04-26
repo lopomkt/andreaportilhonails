@@ -6,7 +6,7 @@ interface AppointmentsModalContextType {
   isOpen: boolean;
   selectedClient: Client | null;
   selectedDate: Date | null;
-  openModal: (client?: Client, date?: Date) => void;
+  openModal: (client?: Client | null, date?: Date | null) => void;
   closeModal: () => void;
 }
 
@@ -35,16 +35,27 @@ export const AppointmentsModalProvider: React.FC<{ children: React.ReactNode }> 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const openModal = (client?: Client, date?: Date) => {
-    setSelectedClient(client || null);
-    setSelectedDate(date || null);
-    setIsOpen(true);
+  const openModal = (client: Client | null = null, date: Date | null = null) => {
+    console.log("Opening appointment modal with:", { client: client?.name, date: date?.toISOString() });
+    
+    // Set data first before opening modal to avoid rendering issues
+    setSelectedClient(client);
+    setSelectedDate(date);
+    
+    // Open modal in next tick to ensure data is set first
+    setTimeout(() => {
+      setIsOpen(true);
+    }, 0);
   };
 
   const closeModal = () => {
     setIsOpen(false);
-    setSelectedClient(null);
-    setSelectedDate(null);
+    
+    // Clear data after modal is closed to avoid stale data
+    setTimeout(() => {
+      setSelectedClient(null);
+      setSelectedDate(null);
+    }, 300); // Small delay to allow animation to complete
   };
 
   return (
