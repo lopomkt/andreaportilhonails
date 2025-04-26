@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Appointment } from '@/types';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
+import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 
 interface TimeSlotProps {
   slot: { 
@@ -15,12 +16,18 @@ interface TimeSlotProps {
     appointments: Appointment[]; 
     isBlocked: boolean 
   };
-  onTimeClick: (time: Date) => void;
   onAppointmentClick: (appointment: Appointment) => void;
 }
 
-export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppointmentClick }) => {
+export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) => {
   const { time, appointments, isBlocked } = slot;
+  const { openModal } = useAppointmentsModal();
+  
+  const handleTimeClick = () => {
+    if (!isBlocked && appointments.length === 0) {
+      openModal(undefined, time);
+    }
+  };
   
   return (
     <div 
@@ -29,7 +36,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppoint
         isBlocked ? "bg-gray-100" : "hover:bg-gray-50 cursor-pointer",
         appointments.length > 0 ? "bg-nail-50" : ""
       )}
-      onClick={() => !isBlocked && appointments.length === 0 && onTimeClick(time)}
+      onClick={handleTimeClick}
     >
       <div className="flex items-center">
         <div className="text-sm font-medium mr-2">
@@ -63,7 +70,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppoint
                   className="text-xs"
                   onClick={(e) => { 
                     e.stopPropagation(); 
-                    onTimeClick(time); 
+                    openModal(undefined, time); 
                   }}
                 >
                   <Clock className="h-3 w-3 mr-1" />

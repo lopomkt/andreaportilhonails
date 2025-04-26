@@ -5,6 +5,7 @@ import { Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, isToday } from "date-fns";
 import { formatAvailableTime } from "@/lib/formatters";
+import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
 interface TimeSlot {
   time: Date;
@@ -13,10 +14,11 @@ interface TimeSlot {
 
 interface SuggestedTimeSlotsProps {
   slots: TimeSlot[];
-  onSlotClick: (time: Date) => void;
 }
 
-export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsProps) => {
+export const SuggestedTimeSlots = ({ slots }: SuggestedTimeSlotsProps) => {
+  const { openModal } = useAppointmentsModal();
+  
   if (slots.length === 0) return null;
 
   return (
@@ -49,7 +51,7 @@ export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsPro
                       variant="ghost" 
                       size="sm" 
                       className="text-rose-600"
-                      onClick={() => onSlotClick(slot.time)}
+                      onClick={() => openModal(undefined, slot.time)}
                     >
                       <Clock className="h-4 w-4 mr-1" /> Agendar
                     </Button>

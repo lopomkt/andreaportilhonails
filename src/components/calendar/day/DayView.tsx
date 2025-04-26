@@ -1,21 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { addMinutes, format, isSameDay, isWithinInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { format, isSameDay, isWithinInterval } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { TimeSlot } from './TimeSlot';
 import { Appointment } from '@/types';
 
 export interface DayViewProps {
   date: Date;
   onDaySelect?: (date: Date) => void;
-  onSuggestedTimeSelect?: (date: Date, time: string) => void;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   date,
-  onDaySelect,
-  onSuggestedTimeSelect
+  onDaySelect
 }) => {
   const { appointments, blockedDates } = useSupabaseData();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -66,11 +64,10 @@ export const DayView: React.FC<DayViewProps> = ({
           <TimeSlot 
             key={index} 
             slot={slot} 
-            onTimeClick={onSuggestedTimeSelect ? (t) => onSuggestedTimeSelect(date, format(t, 'HH:mm')) : () => {}} 
             onAppointmentClick={setSelectedAppointment} 
           />
         ))}
       </div>
     </div>
   );
-};
+}

@@ -6,14 +6,15 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Appointment } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
+import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
 interface WelcomeCardProps {
   todayAppointments: Appointment[];
   todayRevenue: number;
-  openQuickAppointment: () => void;
 }
 
-export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointment }: WelcomeCardProps) => {
+export const WelcomeCard = ({ todayAppointments, todayRevenue }: WelcomeCardProps) => {
+  const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();
   const firstAppointment = todayAppointments.length > 0 ? 
     [...todayAppointments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] : null;
@@ -23,10 +24,6 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
-  };
-
-  const handleOpenQuickAppointment = () => {
-    openQuickAppointment();
   };
 
   const handleViewCalendar = () => {
@@ -66,7 +63,7 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
             </Button>
             <Button 
               className="bg-rose-600 text-white hover:bg-rose-700 shadow-soft w-full md:w-auto" 
-              onClick={handleOpenQuickAppointment}
+              onClick={() => openModal()}
             >
               <CalendarClock className="mr-2 h-4 w-4" />
               Novo Agendamento

@@ -4,12 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { UserRound, Calendar, Pencil, Calendar as CalendarIcon, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 
 interface ClientCardProps {
   client: Client;
   onViewDetails: () => void;
   onEditClick: () => void;
-  onScheduleClick: () => void;
   lastServiceName?: string;
 }
 
@@ -17,9 +17,10 @@ export function ClientCard({
   client,
   onViewDetails,
   onEditClick,
-  onScheduleClick,
   lastServiceName
 }: ClientCardProps) {
+  const { openModal } = useAppointmentsModal();
+  
   return (
     <Card 
       className="cursor-pointer hover:border-nail-300 transition-colors border-nail-500/30"
@@ -74,7 +75,7 @@ export function ClientCard({
             className="flex-1 bg-nail-500 hover:bg-nail-600"
             onClick={(e) => {
               e.stopPropagation();
-              onScheduleClick();
+              openModal(client);
             }}
           >
             <CalendarIcon className="h-4 w-4 mr-1" />
