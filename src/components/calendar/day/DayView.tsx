@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
+import { Appointment } from '@/types';
 
 export interface DayViewProps {
   date: Date;
@@ -21,8 +22,8 @@ export const DayView: React.FC<DayViewProps> = ({
   onDaySelect
 }) => {
   const { appointments, blockedDates, services } = useSupabaseData();
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
   const { openModal } = useAppointmentsModal();
   
   useEffect(() => {
