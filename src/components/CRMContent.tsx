@@ -1,8 +1,12 @@
+
 import { useEffect, useState } from "react";
-import { MainLayout } from "@/components/layout/MobileNavbar";
+import MainLayout from "@/components/layouts/MainLayout";
 import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { AppointmentsModalProvider } from "@/context/AppointmentsModalContext";
+import { AppointmentModal } from "@/components/AppointmentModal";
+import { AppointmentModalOpener } from "@/components/AppointmentModalOpener";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
@@ -48,25 +52,29 @@ export const CRMContent = () => {
   }
 
   return (
-    <div id="crm-conteudo" className="min-h-dvh overflow-y-auto">
-      <MainLayout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Navigate to="/" replace />} />
-          <Route path="/calendario" element={<CalendarPage />} />
-          <Route path="/clientes" element={<ClientsPage />} />
-          <Route path="/servicos" element={<ServicesPage />} />
-          <Route path="/relatorios" element={<ReportsPage />} />
-          <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
-          <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
-          <Route path="/funcionalidades/ausencias" element={<AbsenceRulesPage />} />
-          <Route path="/funcionalidades/mensagens" element={<MessagesTemplatePage />} />
-          <Route path="/funcionalidades/ranking-clientes" element={<ClientRankingPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <QuickAppointmentButton />
-        <WhatsAppButton />
-      </MainLayout>
-    </div>
+    <AppointmentsModalProvider>
+      <div id="crm-conteudo" className="min-h-dvh overflow-y-auto">
+        <MainLayout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
+            <Route path="/calendario" element={<CalendarPage />} />
+            <Route path="/clientes" element={<ClientsPage />} />
+            <Route path="/servicos" element={<ServicesPage />} />
+            <Route path="/relatorios" element={<ReportsPage />} />
+            <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
+            <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
+            <Route path="/funcionalidades/ausencias" element={<AbsenceRulesPage />} />
+            <Route path="/funcionalidades/mensagens" element={<MessagesTemplatePage />} />
+            <Route path="/funcionalidades/ranking-clientes" element={<ClientRankingPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <WhatsAppButton />
+          <QuickAppointmentButton />
+          <AppointmentModal />
+          <AppointmentModalOpener />
+        </MainLayout>
+      </div>
+    </AppointmentsModalProvider>
   );
 };

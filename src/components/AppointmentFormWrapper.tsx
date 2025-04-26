@@ -5,9 +5,11 @@ import ClientForm from './ClientForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '@/types';
+import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 
 export function AppointmentFormWrapper({ children }: { children: React.ReactNode }) {
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { selectedClient: initialSelectedClient } = useAppointmentsModal();
+  const [selectedClient, setSelectedClient] = useState<Client | null>(initialSelectedClient);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
 

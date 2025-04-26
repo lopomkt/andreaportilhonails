@@ -6,19 +6,15 @@ import { MobileNav } from "@/components/layouts/MobileNav";
 import {
   PanelLeft,
   PanelRight,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DataProvider } from "@/context/DataContext";
-import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
-import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
 import { ClientProvider } from "@/context/ClientContext";
 import { AppointmentProvider } from "@/context/AppointmentContext";
 import { ServiceProvider } from "@/context/ServiceContext";
 
 export default function MainLayout() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const location = useLocation();
 
@@ -78,9 +74,6 @@ export default function MainLayout() {
                     <Outlet />
                   </div>
                 </main>
-
-                <WhatsAppButton />
-                <QuickAppointmentButton />
               </div>
             </div>
           </DataProvider>

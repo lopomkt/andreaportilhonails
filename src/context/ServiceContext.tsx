@@ -32,10 +32,18 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   
   // Direct implementation of fetchServices for immediate use
   const fetchServices = useCallback(async (): Promise<Service[]> => {
     console.log("ServiceProvider: Iniciando busca direta de serviços");
+    
+    // If services are already loaded and initialization is complete, return them
+    if (services.length > 0 && isInitialized) {
+      console.log("ServiceProvider: Usando serviços em cache:", services.length);
+      return services;
+    }
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -58,10 +66,12 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
         
         console.log(`ServiceProvider: ${mappedServices.length} serviços carregados diretamente`);
         setServices(mappedServices);
+        setIsInitialized(true);
         return mappedServices;
       }
       
       console.log("ServiceProvider: Nenhum serviço encontrado na busca direta");
+      setIsInitialized(true);
       return [];
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar serviços';
@@ -76,19 +86,21 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [services, isInitialized]);
   
   // Complete service context with all needed methods
   const serviceContext = useServiceHook(setServices, services);
 
   // Automatically load services when the provider is mounted
   useEffect(() => {
-    const loadInitialServices = async () => {
-      console.log("ServiceProvider: Carregando serviços iniciais");
-      await fetchServices();
-    };
-    
-    loadInitialServices();
+    if (!isInitialized) {
+      const loadInitialServices = async () => {
+        console.log("ServiceProvider: Carregando serviços iniciais");
+        await fetchServices();
+      };
+      
+      loadInitialServices();
+    }
     
     // Set up a realtime listener for service changes
     const channel = supabase
@@ -106,7 +118,7 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchServices]);
+  }, [fetchServices, isInitialized]);
 
   return (
     <ServiceContext.Provider
