@@ -1,19 +1,20 @@
 
-import React, { useState, useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { SidebarNav } from "@/components/layouts/SidebarNav";
 import { MobileNav } from "@/components/layouts/MobileNav";
-import {
-  PanelLeft,
-  PanelRight,
-} from "lucide-react";
+import { PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DataProvider } from "@/context/DataContext";
 import { ClientProvider } from "@/context/ClientContext";
 import { AppointmentProvider } from "@/context/AppointmentContext";
 import { ServiceProvider } from "@/context/ServiceContext";
 
-export default function MainLayout() {
+interface MainLayoutProps {
+  children: ReactNode;
+}
+
+export default function MainLayout({ children }: MainLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const location = useLocation();
@@ -71,7 +72,7 @@ export default function MainLayout() {
                     </button>
                   </div>
                   <div className="flex-1 px-0 py-0 overflow-auto">
-                    <Outlet />
+                    {children}
                   </div>
                 </main>
               </div>
