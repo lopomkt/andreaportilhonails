@@ -10,6 +10,7 @@ interface ClientCardProps {
   client: Client;
   onViewDetails: () => void;
   onEditClick: () => void;
+  onScheduleClick?: () => void; // Make this optional since we're adding it
   lastServiceName?: string;
 }
 
@@ -17,6 +18,7 @@ export function ClientCard({
   client,
   onViewDetails,
   onEditClick,
+  onScheduleClick,
   lastServiceName
 }: ClientCardProps) {
   const { openModal } = useAppointmentsModal();
@@ -75,7 +77,10 @@ export function ClientCard({
             className="flex-1 bg-nail-500 hover:bg-nail-600"
             onClick={(e) => {
               e.stopPropagation();
+              // Use the context's openModal directly
               openModal(client);
+              // Also call the provided onScheduleClick if it exists
+              if (onScheduleClick) onScheduleClick();
             }}
           >
             <CalendarIcon className="h-4 w-4 mr-1" />

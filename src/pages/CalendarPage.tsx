@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -8,8 +7,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { BlockedDateForm } from "@/components/BlockedDateForm";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarViewTabs } from "@/components/calendar/CalendarViewTabs";
+import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
 export default function CalendarPage() {
+  const { openModal } = useAppointmentsModal();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +19,6 @@ export default function CalendarPage() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get the view mode from localStorage or default to "week"
   const [calendarView, setCalendarView] = useState<"day" | "week" | "month">(() => {
     const savedView = localStorage.getItem('calendarViewMode');
     return (savedView === "day" || savedView === "week" || savedView === "month") 
@@ -26,7 +26,6 @@ export default function CalendarPage() {
       : "week";
   });
   
-  // Parse date from URL on component mount
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const dateParam = searchParams.get('date');
@@ -83,6 +82,10 @@ export default function CalendarPage() {
     }, 100);
   };
 
+  const handleOpenAppointmentDialog = () => {
+    openModal(undefined, currentDate);
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fade-in overflow-y-auto">
       <Card className="border-rose-100 shadow-soft">
@@ -90,6 +93,7 @@ export default function CalendarPage() {
           isLoading={isLoading}
           isMobile={isMobile}
           onOpenBlockedDateDialog={() => setOpenBlockedDateDialog(true)}
+          onOpenAppointmentDialog={handleOpenAppointmentDialog}
         />
         
         <CardContent className="p-0">

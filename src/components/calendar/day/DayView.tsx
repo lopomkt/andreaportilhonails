@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { format, isSameDay, isWithinInterval } from 'date-fns';
+import { format, isSameDay, isWithinInterval, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TimeSlot } from './TimeSlot';
 import { Appointment } from '@/types';

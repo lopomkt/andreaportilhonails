@@ -11,13 +11,12 @@ import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 interface WelcomeCardProps {
   todayAppointments: Appointment[];
   todayRevenue: number;
+  openQuickAppointment?: (defaultDate?: Date) => void;
 }
 
-export const WelcomeCard = ({ todayAppointments, todayRevenue }: WelcomeCardProps) => {
+export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointment }: WelcomeCardProps) => {
   const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();
-  const firstAppointment = todayAppointments.length > 0 ? 
-    [...todayAppointments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] : null;
 
   const getCurrentTimeOfDay = () => {
     const hour = new Date().getHours();
@@ -28,6 +27,16 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue }: WelcomeCardProp
 
   const handleViewCalendar = () => {
     navigate("/calendario");
+  };
+
+  const handleNewAppointment = () => {
+    // Use the context's openModal
+    openModal();
+    
+    // Also call the provided openQuickAppointment if it exists (for backward compatibility)
+    if (openQuickAppointment) {
+      openQuickAppointment();
+    }
   };
 
   return (
@@ -42,10 +51,10 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue }: WelcomeCardProp
                 "Você não tem agendamentos hoje"}
             </p>
             
-            {firstAppointment && firstAppointment.client && (
+            {todayAppointments.length > 0 && todayAppointments[0].client && (
               <div className="mt-2">
                 <p className="text-white/90 text-sm">
-                  Primeiro cliente: <span className="font-semibold">{firstAppointment.client.name}</span> às {format(new Date(firstAppointment.date), 'HH:mm')}
+                  Primeiro cliente: <span className="font-semibold">{todayAppointments[0].client.name}</span> às {format(new Date(todayAppointments[0].date), 'HH:mm')}
                 </p>
                 <p className="text-white/90 text-sm mt-1">
                   Faturamento previsto hoje: <span className="font-semibold">{formatCurrency(todayRevenue)}</span>
@@ -63,7 +72,8 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue }: WelcomeCardProp
             </Button>
             <Button 
               className="bg-rose-600 text-white hover:bg-rose-700 shadow-soft w-full md:w-auto" 
-              onClick={() => openModal()}
+              onClick={handleNewAppointment}
+              id="quick-appointment-button"
             >
               <CalendarClock className="mr-2 h-4 w-4" />
               Novo Agendamento

@@ -13,6 +13,7 @@ import { useTimeSlotsCalculation } from "@/hooks/dashboard/useTimeSlotsCalculati
 import { CalendarRange } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
+import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
 export default function Dashboard() {
   const {
@@ -22,31 +23,14 @@ export default function Dashboard() {
     clients
   } = useData();
   
+  const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();
   
   const todayAppointments = getAppointmentsForDate(new Date());
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
   
   const openQuickAppointment = (defaultDate?: Date) => {
-    if (window.openQuickAppointmentModal) {
-      window.openQuickAppointmentModal(defaultDate);
-    } else {
-      console.error("Modal de agendamento rápido não disponível");
-      if (defaultDate) {
-        localStorage.setItem('defaultAppointmentDate', defaultDate.toISOString());
-      } else {
-        localStorage.removeItem('defaultAppointmentDate');
-      }
-      
-      setTimeout(() => {
-        const quickAppointmentButton = document.getElementById('quick-appointment-button');
-        if (quickAppointmentButton) {
-          quickAppointmentButton.click();
-        } else {
-          console.error("Botão de agendamento rápido não encontrado");
-        }
-      }, 100);
-    }
+    openModal(undefined, defaultDate);
   };
   
   const navigateToCalendarDay = () => {
@@ -136,7 +120,10 @@ export default function Dashboard() {
       </div>
 
       {suggestedSlots.length > 0 && (
-        <SuggestedTimeSlots slots={suggestedSlots} onSlotClick={openQuickAppointment} />
+        <SuggestedTimeSlots 
+          slots={suggestedSlots} 
+          onSlotClick={openQuickAppointment} 
+        />
       )}
 
       <BirthdaysCard clients={clients} />

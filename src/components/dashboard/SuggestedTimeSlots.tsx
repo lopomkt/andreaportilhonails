@@ -14,12 +14,23 @@ interface TimeSlot {
 
 interface SuggestedTimeSlotsProps {
   slots: TimeSlot[];
+  onSlotClick?: (defaultDate?: Date) => void;
 }
 
-export const SuggestedTimeSlots = ({ slots }: SuggestedTimeSlotsProps) => {
+export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsProps) => {
   const { openModal } = useAppointmentsModal();
   
   if (slots.length === 0) return null;
+
+  const handleSlotClick = (time: Date) => {
+    // Use the context's openModal
+    openModal(undefined, time);
+    
+    // Also call the provided onSlotClick if it exists (for backward compatibility)
+    if (onSlotClick) {
+      onSlotClick(time);
+    }
+  };
 
   return (
     <Card className="bg-white border-rose-100 shadow-soft">
@@ -51,7 +62,7 @@ export const SuggestedTimeSlots = ({ slots }: SuggestedTimeSlotsProps) => {
                       variant="ghost" 
                       size="sm" 
                       className="text-rose-600"
-                      onClick={() => openModal(undefined, slot.time)}
+                      onClick={() => handleSlotClick(slot.time)}
                     >
                       <Clock className="h-4 w-4 mr-1" /> Agendar
                     </Button>
