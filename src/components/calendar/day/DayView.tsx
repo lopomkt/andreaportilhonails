@@ -1,10 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { format, isSameDay, isWithinInterval, addMinutes } from 'date-fns';
+import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { TimeSlot } from './TimeSlot';
 import { Appointment } from '@/types';
+import { cn } from "@/lib/utils";
 
 export interface DayViewProps {
   date: Date;
@@ -21,11 +25,13 @@ export const DayView: React.FC<DayViewProps> = ({
 
   useEffect(() => {
     const slots = [];
-    const startHour = 7;
-    const endHour = 22;
+    const startHour = 7;  // Start at 7:00 AM
+    const endHour = 19;   // End at 7:00 PM (19:00) - fixing per requirement #3
     
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
+        if (hour === endHour && minute > 0) continue; // Skip slots after 19:00
+        
         const slotTime = new Date(date);
         slotTime.setHours(hour, minute, 0, 0);
         

@@ -11,10 +11,9 @@ import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 interface WelcomeCardProps {
   todayAppointments: Appointment[];
   todayRevenue: number;
-  openQuickAppointment?: (defaultDate?: Date) => void;
 }
 
-export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointment }: WelcomeCardProps) => {
+export const WelcomeCard = ({ todayAppointments, todayRevenue }: WelcomeCardProps) => {
   const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();
 
@@ -30,13 +29,7 @@ export const WelcomeCard = ({ todayAppointments, todayRevenue, openQuickAppointm
   };
 
   const handleNewAppointment = () => {
-    // Use the context's openModal
     openModal();
-    
-    // Also call the provided openQuickAppointment if it exists (for backward compatibility)
-    if (openQuickAppointment) {
-      openQuickAppointment();
-    }
   };
 
   return (

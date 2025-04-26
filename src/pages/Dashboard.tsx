@@ -1,3 +1,4 @@
+
 import { useData } from "@/context/DataContext";
 import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, isAfter, isBefore, format } from "date-fns";
@@ -28,10 +29,6 @@ export default function Dashboard() {
   
   const todayAppointments = getAppointmentsForDate(new Date());
   const todayRevenue = todayAppointments.filter(appt => appt.status === "confirmed").reduce((total, appt) => total + appt.price, 0);
-  
-  const openQuickAppointment = (defaultDate?: Date) => {
-    openModal(undefined, defaultDate);
-  };
   
   const navigateToCalendarDay = () => {
     navigate(`/calendario?date=${format(new Date(), 'yyyy-MM-dd')}&view=day`);
@@ -97,7 +94,6 @@ export default function Dashboard() {
       <WelcomeCard 
         todayAppointments={todayAppointments}
         todayRevenue={todayRevenue}
-        openQuickAppointment={openQuickAppointment}
       />
       
       <MotivationalMessage />
@@ -120,10 +116,7 @@ export default function Dashboard() {
       </div>
 
       {suggestedSlots.length > 0 && (
-        <SuggestedTimeSlots 
-          slots={suggestedSlots} 
-          onSlotClick={openQuickAppointment} 
-        />
+        <SuggestedTimeSlots slots={suggestedSlots} />
       )}
 
       <BirthdaysCard clients={clients} />

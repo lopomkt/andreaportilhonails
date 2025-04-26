@@ -14,22 +14,15 @@ interface TimeSlot {
 
 interface SuggestedTimeSlotsProps {
   slots: TimeSlot[];
-  onSlotClick?: (defaultDate?: Date) => void;
 }
 
-export const SuggestedTimeSlots = ({ slots, onSlotClick }: SuggestedTimeSlotsProps) => {
+export const SuggestedTimeSlots = ({ slots }: SuggestedTimeSlotsProps) => {
   const { openModal } = useAppointmentsModal();
   
   if (slots.length === 0) return null;
 
   const handleSlotClick = (time: Date) => {
-    // Use the context's openModal
     openModal(undefined, time);
-    
-    // Also call the provided onSlotClick if it exists (for backward compatibility)
-    if (onSlotClick) {
-      onSlotClick(time);
-    }
   };
 
   return (

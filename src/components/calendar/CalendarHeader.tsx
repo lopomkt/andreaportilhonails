@@ -1,10 +1,11 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarClock, Lock } from "lucide-react";
-import { Animation } from "@/components/ui/animation";
+import { CardHeader } from "@/components/ui/card";
+import { ChevronDown, Plus, Settings, CalendarX, CalendarPlus } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-interface CalendarHeaderProps {
+export interface CalendarHeaderProps {
   isLoading: boolean;
   isMobile: boolean;
   onOpenBlockedDateDialog: () => void;
@@ -17,30 +18,63 @@ export function CalendarHeader({
   onOpenBlockedDateDialog,
   onOpenAppointmentDialog
 }: CalendarHeaderProps) {
+  const today = new Date();
+  
   return (
-    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-3">
-      <div>
-        <CardTitle className="font-bold text-rose-700 text-xl">Calendário</CardTitle>
-        <CardDescription className="text-sm">Gerencie seus Agendamentos</CardDescription>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-        <Button 
-          className="bg-gray-500 text-white shadow-soft hover:bg-gray-600 w-full sm:w-auto" 
-          onClick={onOpenBlockedDateDialog}
-          disabled={isLoading}
-        >
-          {isLoading ? <Animation className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
-          {isMobile ? "Bloquear" : "Bloquear Horário"}
-        </Button>
-        <Button 
-          className="bg-rose-500 text-white shadow-soft hover:bg-rose-600 w-full sm:w-auto" 
-          onClick={onOpenAppointmentDialog}
-          disabled={isLoading}
-        >
-          {isLoading ? <Animation className="mr-2 h-4 w-4" /> : <CalendarClock className="mr-2 h-4 w-4" />}
-          {isMobile ? "Agendar" : "Novo Agendamento"}
-        </Button>
+    <CardHeader className="pb-3 border-b">
+      <div className="flex flex-col sm:flex-row justify-between gap-2">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-semibold">
+            Agenda
+          </h3>
+          <span className="text-muted-foreground text-sm">
+            {format(today, "'Hoje é' EEEE, d 'de' MMMM", { locale: ptBR })}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {!isMobile ? (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 sm:flex-none"
+                onClick={onOpenBlockedDateDialog}
+              >
+                <CalendarX className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Bloquear Horário</span>
+                <span className="sm:hidden">Bloquear</span>
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm"
+                className="flex-1 sm:flex-none"
+                onClick={onOpenAppointmentDialog}
+              >
+                <CalendarPlus className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Novo Agendamento</span>
+                <span className="sm:hidden">Agendar</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={onOpenBlockedDateDialog}
+              >
+                <CalendarX className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={onOpenAppointmentDialog}
+              >
+                <CalendarPlus className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </CardHeader>
   );

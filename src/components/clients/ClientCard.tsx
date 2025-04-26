@@ -10,7 +10,7 @@ interface ClientCardProps {
   client: Client;
   onViewDetails: () => void;
   onEditClick: () => void;
-  onScheduleClick?: () => void; // Make this optional since we're adding it
+  onScheduleClick?: () => void; // Optional prop for backward compatibility
   lastServiceName?: string;
 }
 
@@ -22,6 +22,18 @@ export function ClientCard({
   lastServiceName
 }: ClientCardProps) {
   const { openModal } = useAppointmentsModal();
+  
+  const handleScheduleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Open the appointment modal with this client
+    openModal(client);
+    
+    // Also call the legacy onScheduleClick if it exists (for backward compatibility)
+    if (onScheduleClick) {
+      onScheduleClick();
+    }
+  };
   
   return (
     <Card 
@@ -75,13 +87,7 @@ export function ClientCard({
           <Button 
             size="sm" 
             className="flex-1 bg-nail-500 hover:bg-nail-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Use the context's openModal directly
-              openModal(client);
-              // Also call the provided onScheduleClick if it exists
-              if (onScheduleClick) onScheduleClick();
-            }}
+            onClick={handleScheduleClick}
           >
             <CalendarIcon className="h-4 w-4 mr-1" />
             Agendar

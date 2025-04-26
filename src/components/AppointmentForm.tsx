@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { format, addMinutes, isAfter, isBefore, isSameDay, parse, set } from "date-fns";
+import { format, addMinutes, isAfter, isBefore, isSameDay, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Client, Service, Appointment, AppointmentStatus } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import { Check, AlertTriangle, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
+import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -49,11 +50,19 @@ export function AppointmentForm({
     updateAppointment,
     blockedDates,
   } = useData();
+  
+  const { selectedClient, selectedDate } = useAppointmentsModal();
 
-  const [clientId, setClientId] = useState(initialClientId || appointment?.clientId || "");
+  const [clientId, setClientId] = useState(
+    selectedClient?.id || initialClientId || appointment?.clientId || ""
+  );
+  
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
   const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
-  const [date, setDate] = useState<Date>(propDate || initialDate || (appointment ? new Date(appointment.date) : new Date()));
+  
+  const [date, setDate] = useState<Date>(
+    selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
+  );
   
   const getAvailableTimeSlots = () => {
     const timeSlots = [];
@@ -73,6 +82,7 @@ export function AppointmentForm({
   const availableTimeSlots = getAvailableTimeSlots();
 
   const defaultTime = () => {
+    if (selectedDate) return format(selectedDate, "HH:mm");
     if (initialTime) return initialTime;
     if (appointment) return format(new Date(appointment.date), "HH:mm");
     if (initialDate) return format(initialDate, "HH:mm");
@@ -100,11 +110,23 @@ export function AppointmentForm({
   const [hasConflict, setHasConflict] = useState(false);
   const [conflictDetails, setConflictDetails] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(
-    clientId && clients.find(c => c.id === clientId) 
-      ? clients.find(c => c.id === clientId) || null
-      : null
+  const [selectedClientState, setSelectedClientState] = useState<Client | null>(
+    selectedClient || 
+    (clientId && clients.find(c => c.id === clientId)) || 
+    null
   );
+
+  useEffect(() => {
+    if (selectedClient) {
+      setClientId(selectedClient.id);
+      setSelectedClientState(selectedClient);
+    }
+    
+    if (selectedDate) {
+      setDate(selectedDate);
+      setTime(format(selectedDate, "HH:mm"));
+    }
+  }, [selectedClient, selectedDate, clients]);
 
   const selectedService = services.find(s => s.id === serviceId);
 
@@ -258,7 +280,7 @@ export function AppointmentForm({
 
   const handleClientSelect = (client: Client) => {
     setClientId(client.id);
-    setSelectedClient(client);
+    setSelectedClientState(client);
   };
 
   return (
@@ -267,7 +289,7 @@ export function AppointmentForm({
         <Label htmlFor="client">Cliente <span className="text-red-500">*</span></Label>
         <ClientAutocomplete 
           onClientSelect={handleClientSelect} 
-          selectedClient={selectedClient} 
+          selectedClient={selectedClientState} 
         />
       </div>
       

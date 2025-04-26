@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClientAutocomplete } from './ClientAutocomplete';
 import ClientForm from './ClientForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -12,6 +12,11 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
   const [selectedClient, setSelectedClient] = useState<Client | null>(initialSelectedClient);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
+  
+  // Update selected client when context changes
+  useEffect(() => {
+    setSelectedClient(initialSelectedClient);
+  }, [initialSelectedClient]);
 
   const recursivelyModifyChildren = (children: React.ReactNode): React.ReactNode => {
     return React.Children.map(children, child => {
