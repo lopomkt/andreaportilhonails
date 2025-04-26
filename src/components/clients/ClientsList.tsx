@@ -38,7 +38,17 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchServices();
+    const loadServices = async () => {
+      console.log("ClientsList: Carregando serviços iniciais");
+      try {
+        await fetchServices();
+        console.log("ClientsList: Serviços carregados:", services.length);
+      } catch (error) {
+        console.error("ClientsList: Erro ao carregar serviços:", error);
+      }
+    };
+    
+    loadServices();
   }, [fetchServices]);
 
   useEffect(() => {
@@ -81,7 +91,22 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
 
   useEffect(() => {
     if (isScheduling) {
-      fetchServices();
+      const loadServicesForScheduling = async () => {
+        console.log("ClientsList: Carregando serviços para agendamento");
+        try {
+          await fetchServices();
+          console.log("ClientsList: Serviços carregados para agendamento:", services.length);
+          setFormData({
+            serviceId: "",
+            date: "",
+            time: ""
+          });
+        } catch (error) {
+          console.error("ClientsList: Erro ao carregar serviços para agendamento:", error);
+        }
+      };
+      
+      loadServicesForScheduling();
     }
   }, [isScheduling, fetchServices]);
 
@@ -275,7 +300,7 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
   };
 
   useEffect(() => {
-    console.log("Serviços carregados na ClientsList:", services);
+    console.log("ClientsList: Serviços disponíveis:", services.length);
   }, [services]);
 
   return (

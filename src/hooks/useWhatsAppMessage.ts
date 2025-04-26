@@ -16,6 +16,8 @@ export function useWhatsAppMessage() {
   const fetchTemplates = useCallback(async () => {
     try {
       setLoading(true);
+      console.log("useWhatsAppMessage: Iniciando busca de templates de mensagens");
+      
       const { data, error } = await supabase
         .from('mensagens_templates')
         .select('*')
@@ -28,7 +30,7 @@ export function useWhatsAppMessage() {
           description: "Não foi possível carregar os modelos de mensagens. Por favor, tente novamente.",
           variant: "destructive",
         });
-        return;
+        return [];
       }
       
       if (data) {
@@ -46,7 +48,11 @@ export function useWhatsAppMessage() {
         if (mappedTemplates.length > 0 && !messageType) {
           setMessageType(mappedTemplates[0].type);
         }
+        
+        return mappedTemplates;
       }
+      
+      return [];
     } catch (error) {
       console.error("Erro ao buscar templates de mensagens:", error);
       toast({
@@ -54,6 +60,7 @@ export function useWhatsAppMessage() {
         description: "Ocorreu um erro ao buscar os modelos de mensagens",
         variant: "destructive",
       });
+      return [];
     } finally {
       setLoading(false);
     }
@@ -61,7 +68,24 @@ export function useWhatsAppMessage() {
 
   // Carregar templates quando o hook for inicializado
   useEffect(() => {
-    fetchTemplates();
+    fetchTemplates().then(loadedTemplates => {
+      console.log(`useWhatsAppMessage: ${loadedTemplates.length} templates carregados inicialmente`);
+    });
+    
+    // Configurar listener para atualizações em tempo real dos templates
+    const channel = supabase
+      .channel('templates-changes')
+      .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'mensagens_templates' }, 
+          () => {
+            console.log("useWhatsAppMessage: Mudança detectada na tabela de templates, atualizando...");
+            fetchTemplates();
+          })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchTemplates]);
 
   const handleSendMessage = async () => {

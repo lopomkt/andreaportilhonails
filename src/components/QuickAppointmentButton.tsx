@@ -12,9 +12,9 @@ import { toast } from "@/components/ui/use-toast";
 export function QuickAppointmentButton() {
   const [open, setOpen] = useState(false);
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
-  const { fetchServices, services } = useServices();
+  const { services, fetchServices, loading } = useServices();
   
-  // Carregar os serviços quando o componente montar e quando o modal for aberto
+  // Load services when component mounts
   useEffect(() => {
     const loadServices = async () => {
       try {
@@ -34,34 +34,36 @@ export function QuickAppointmentButton() {
     loadServices();
   }, [fetchServices]);
   
-  // Verificar quando o modal é aberto
+  // Reload services when modal opens
   useEffect(() => {
     if (open) {
+      console.log("QuickAppointmentButton: Modal aberto, verificando serviços...");
+      // Make sure services are loaded when modal is opened
+      fetchServices().then(() => {
+        console.log("QuickAppointmentButton: Serviços atualizados no modal:", services.length);
+      }).catch(error => {
+        console.error("QuickAppointmentButton: Erro ao carregar serviços no modal:", error);
+      });
+      
+      // Check for stored date in localStorage
       try {
-        console.log("QuickAppointmentButton: Modal aberto, verificando serviços...");
-        // Garantir que os serviços estejam carregados quando o modal for aberto
-        fetchServices().then(() => {
-          console.log("QuickAppointmentButton: Serviços atualizados no modal:", services.length);
-        });
-        
-        // Verificar data armazenada no localStorage
         const storedDate = localStorage.getItem('defaultAppointmentDate');
         if (storedDate) {
           const parsedDate = new Date(storedDate);
           if (!isNaN(parsedDate.getTime())) {
             setInitialDate(parsedDate);
           }
-          // Limpar após uso
+          // Clear after use
           localStorage.removeItem('defaultAppointmentDate');
         } else {
           setInitialDate(undefined);
         }
       } catch (error) {
-        console.error("Erro ao analisar a data armazenada ou carregar serviços:", error);
+        console.error("Erro ao analisar a data armazenada:", error);
         setInitialDate(undefined);
       }
     }
-  }, [open, fetchServices, services.length]);
+  }, [open, fetchServices]);
 
   // Expose method to open the dialog through window object
   useEffect(() => {
@@ -99,7 +101,7 @@ export function QuickAppointmentButton() {
   );
 }
 
-// Adicionar a declaração global do tipo para TypeScript
+// Add the global type declaration for TypeScript
 declare global {
   interface Window {
     openQuickAppointmentModal?: (defaultDate?: Date) => void;

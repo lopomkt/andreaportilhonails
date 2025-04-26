@@ -33,7 +33,7 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
   const [error, setError] = useState<string | null>(null);
   const serviceContext = useServiceHook(setServices, services);
 
-  // Carregar serviços automaticamente quando o provedor for montado
+  // Automatically load services when the provider is mounted
   useEffect(() => {
     const loadInitialServices = async () => {
       console.log("ServiceProvider: Carregando serviços iniciais");
@@ -70,21 +70,23 @@ export const ServiceProvider = ({ children }: { children: React.ReactNode }) => 
     
     loadInitialServices();
     
-    // Configurar listener para atualizações em tempo real dos serviços
+    // Set up a realtime listener for service changes
     const channel = supabase
       .channel('services-changes')
       .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'servicos' }, 
           () => {
             console.log("ServiceProvider: Mudança detectada na tabela de serviços, atualizando...");
-            serviceContext.fetchServices();
+            serviceContext.fetchServices().then(updatedServices => {
+              console.log(`ServiceProvider: Serviços atualizados via realtime, ${updatedServices.length} serviços carregados`);
+            });
           })
       .subscribe();
       
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [serviceContext]);
+  }, [serviceContext.fetchServices]);
 
   return (
     <ServiceContext.Provider
