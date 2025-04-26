@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Send } from "lucide-react";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
-import { Client, MessageTemplate } from "@/types";
+import { Client, MessageTemplate, Service } from "@/types";
 import { MessagePreview } from "./MessagePreview";
 import { MessageTypeSelect } from "./MessageTypeSelect";
 import { whatsappButtonStyles } from "./styles";
@@ -15,6 +15,7 @@ interface MessageFormProps {
   messageType: string;
   onMessageTypeChange: (value: string) => void;
   templates: MessageTemplate[];
+  services?: Service[]; // Add the services prop as optional
   onSend: () => void;
 }
 
@@ -24,6 +25,7 @@ export function MessageForm({
   messageType,
   onMessageTypeChange,
   templates,
+  services,
   onSend
 }: MessageFormProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
