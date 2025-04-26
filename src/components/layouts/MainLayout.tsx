@@ -26,10 +26,9 @@ export default function MainLayout() {
   useEffect(() => {
     setIsMobileNavOpen(false); // Close mobile nav when route changes
     
-    // On mobile devices, collapse the sidebar when navigating
-    if (window.innerWidth < 768) {
-      setIsCollapsed(true);
-    }
+    // Auto-collapse the sidebar when navigating
+    setIsCollapsed(true);
+    
   }, [location.pathname]);
 
   return (

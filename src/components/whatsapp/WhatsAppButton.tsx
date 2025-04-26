@@ -105,7 +105,8 @@ export function WhatsAppButton() {
                 toast({
                   title: "Atenção",
                   description: "Nenhum tipo de mensagem disponível. Verifique se há templates cadastrados.",
-                  variant: "warning"
+                  // Change "warning" to "default" for compatibility
+                  variant: "default"
                 });
               }
             }).catch(error => {

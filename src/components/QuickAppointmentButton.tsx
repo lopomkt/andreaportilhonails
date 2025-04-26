@@ -59,7 +59,8 @@ export function QuickAppointmentButton() {
           toast({
             title: "Atenção",
             description: "Nenhum serviço disponível. Por favor, verifique se há serviços cadastrados.",
-            variant: "warning",
+            // Change "warning" to "default" with a more descriptive message
+            variant: "default",
           });
         }
       }).catch(error => {
