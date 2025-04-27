@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from "react";
-import { DashboardStats, RevenueData } from "@/types";
+import { DashboardStats, RevenueData, Appointment } from "@/types";
 import { ClientProvider, useClients } from "./ClientContext";
 import { AppointmentProvider, useAppointments } from "./AppointmentContext";
 import { ServiceProvider, useServices } from "./ServiceContext";
@@ -17,9 +17,9 @@ interface DataContextType {
   calculatedMonthlyRevenue: (month?: number, year?: number) => number;
   getRevenueData: () => RevenueData[];
   
-  // Add these missing methods to fix the type errors
+  // Update these methods to match their implementation
   fetchBlockedDates: () => Promise<void>;
-  fetchAppointments: () => Promise<void>;
+  fetchAppointments: () => Promise<Appointment[]>; // Updated return type
   addBlockedDate: (blockedDate: any) => Promise<any>;
 }
 
@@ -64,7 +64,7 @@ export const DataContext = createContext<CombinedContextType>({
   refetchAppointments: async () => {},
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
-  fetchAppointments: async () => {}, // Added missing method
+  fetchAppointments: async () => [], // Updated return type
   
   // Service context properties
   services: [],
@@ -83,8 +83,8 @@ export const DataContext = createContext<CombinedContextType>({
   
   // Blocked dates context properties
   blockedDates: [],
-  fetchBlockedDates: async () => {}, // Added missing method
-  addBlockedDate: async () => ({}), // Added missing method
+  fetchBlockedDates: async () => {}, 
+  addBlockedDate: async () => ({}),
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {

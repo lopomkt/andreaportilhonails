@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -53,7 +54,7 @@ interface DataContextType {
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
   fetchBlockedDates: () => Promise<void>;
-  fetchAppointments: () => Promise<void>;
+  fetchAppointments: () => Promise<Appointment[]>; // Updated return type to match implementation
   addBlockedDate: (blockedDate: Omit<BlockedDate, "id">) => Promise<any>;
 }
 
@@ -255,7 +256,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           await fetchServices();
         },
         fetchBlockedDates,
-        fetchAppointments,
+        fetchAppointments, // This function returns Promise<Appointment[]>
         addBlockedDate,
       }}
     >

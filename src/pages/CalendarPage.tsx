@@ -134,7 +134,7 @@ export default function CalendarPage() {
               
               // Refresh both appointments and blocked dates
               fetchBlockedDates();
-              fetchAppointments();
+              fetchAppointments(); // We don't need to await or use the return value here
               
               toast({
                 title: "Horário bloqueado",
