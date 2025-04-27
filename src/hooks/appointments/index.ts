@@ -16,7 +16,7 @@ export function useAppointments() {
   const { 
     addAppointment, 
     updateAppointment 
-  } = useAppointmentOperations(setAppointments);
+  } = useAppointmentOperations();
   
   const { 
     getAppointmentsForDate, 
