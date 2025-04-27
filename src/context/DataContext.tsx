@@ -16,6 +16,11 @@ interface DataContextType {
   calculateNetProfit: () => number;
   calculatedMonthlyRevenue: (month?: number, year?: number) => number;
   getRevenueData: () => RevenueData[];
+  
+  // Add these missing methods to fix the type errors
+  fetchBlockedDates: () => Promise<void>;
+  fetchAppointments: () => Promise<void>;
+  addBlockedDate: (blockedDate: any) => Promise<any>;
 }
 
 // Create a type that combines all the context types
@@ -59,6 +64,7 @@ export const DataContext = createContext<CombinedContextType>({
   refetchAppointments: async () => {},
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
+  fetchAppointments: async () => {}, // Added missing method
   
   // Service context properties
   services: [],
@@ -77,7 +83,8 @@ export const DataContext = createContext<CombinedContextType>({
   
   // Blocked dates context properties
   blockedDates: [],
-  fetchBlockedDates: async () => {},
+  fetchBlockedDates: async () => {}, // Added missing method
+  addBlockedDate: async () => ({}), // Added missing method
 });
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
