@@ -9,7 +9,7 @@ import { useServices } from '@/context/ServiceContext';
 
 export function AppointmentModal() {
   const { isOpen, closeModal, selectedClient, selectedDate } = useAppointmentsModal();
-  const { services, loading, fetchServices } = useServices();
+  const { services, loading: servicesLoading, fetchServices } = useServices();
 
   // Force fetch services when modal opens
   useEffect(() => {
@@ -28,7 +28,7 @@ export function AppointmentModal() {
             {selectedClient ? `Agendar para ${selectedClient.name}` : 'Novo Agendamento'}
           </DialogTitle>
         </DialogHeader>
-        {loading && services.length === 0 ? (
+        {servicesLoading && services.length === 0 ? (
           <div className="flex justify-center items-center py-10">
             <Loader className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Carregando serviços...</span>

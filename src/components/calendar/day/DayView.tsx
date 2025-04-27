@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
+import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, CalendarX } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -10,6 +10,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
 
   const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
     try {
+      console.log("Creating appointment:", appointment);
       const dbAppointmentData = mapAppAppointmentToDb(appointment);
       
       if (!dbAppointmentData.cliente_id || !dbAppointmentData.servico_id || !dbAppointmentData.data) {
@@ -19,7 +20,11 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       const { data, error } = await supabase
         .from('agendamentos')
         .insert(dbAppointmentData as any)
-        .select('*')
+        .select(`
+          *,
+          clientes(*),
+          servicos(*)
+        `)
         .single();
         
       if (error) throw error;
@@ -35,6 +40,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       
       return { error: 'Falha ao criar agendamento' };
     } catch (err: any) {
+      console.error("Error creating appointment:", err);
       const errorMessage = err?.message || 'Erro ao criar agendamento';
       toast({
         title: 'Erro',
@@ -47,13 +53,18 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
 
   const updateAppointment = useCallback(async (id: string, appointmentData: Partial<Appointment>) => {
     try {
+      console.log("Updating appointment:", id, appointmentData);
       const dbAppointmentData = mapAppAppointmentToDb(appointmentData);
       
       const { data, error } = await supabase
         .from('agendamentos')
         .update(dbAppointmentData)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          clientes(*),
+          servicos(*)
+        `)
         .single();
         
       if (error) throw error;
@@ -75,6 +86,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       
       return { error: 'Falha ao atualizar agendamento' };
     } catch (err: any) {
+      console.error("Error updating appointment:", err);
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
       toast({
         title: 'Erro',

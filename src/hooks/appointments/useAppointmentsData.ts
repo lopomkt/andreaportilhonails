@@ -12,6 +12,7 @@ export function useAppointmentsData() {
   const { toast } = useToast();
 
   const fetchAppointments = useCallback(async (): Promise<Appointment[]> => {
+    console.log("Fetching appointments...");
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -29,16 +30,19 @@ export function useAppointmentsData() {
         const mappedAppointments = data.map(item => 
           mapDbAppointmentToApp(item, item.clientes, item.servicos)
         );
+        console.log(`Fetched ${mappedAppointments.length} appointments`);
         setAppointments(mappedAppointments);
+        setError(null);
         return mappedAppointments;
       }
       
       return [];
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar agendamentos';
+      console.error("Error fetching appointments:", errorMessage);
       setError(errorMessage);
       toast({
-        title: 'Erro',
+        title: 'Erro ao buscar agendamentos',
         description: errorMessage,
         variant: 'destructive'
       });
