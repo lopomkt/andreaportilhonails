@@ -26,7 +26,7 @@ export function useBlockedDates() {
       if (data) {
         const mappedDates: BlockedDate[] = data.map(item => ({
           id: item.id,
-          date: new Date(item.data),
+          date: item.data, // Keep as string to match the type
           reason: item.motivo || "",
           allDay: item.dia_todo,
           dia_todo: item.dia_todo,
@@ -56,11 +56,14 @@ export function useBlockedDates() {
         throw new Error('Data é obrigatória');
       }
       
-      const dateObj = typeof blockedDate.date === 'string' ? new Date(blockedDate.date) : blockedDate.date;
+      // Convert date to ISO string if it's a Date object
+      const dateString = typeof blockedDate.date === 'string' 
+        ? blockedDate.date 
+        : (blockedDate.date as unknown as Date).toISOString();
       
       // Create data object for insert
       const dataToInsert = {
-        data: dateObj.toISOString(),
+        data: dateString,
         motivo: blockedDate.reason || null,
         descricao: blockedDate.description || null,
         dia_todo: blockedDate.allDay !== undefined ? blockedDate.allDay : true
@@ -79,7 +82,7 @@ export function useBlockedDates() {
       if (data) {
         const newBlockedDate: BlockedDate = {
           id: data.id,
-          date: new Date(data.data),
+          date: data.data,
           reason: data.motivo || "",
           allDay: data.dia_todo,
           dia_todo: data.dia_todo,

@@ -44,8 +44,8 @@ export interface BlockedDate {
   description?: string;
   value?: string;
   dia_todo: boolean;
-  allDay: boolean; // Added to match usage
-  motivo?: string; // Added to match usage
+  allDay: boolean;
+  motivo?: string;
 }
 
 export type CalendarView = 'day' | 'week' | 'month';

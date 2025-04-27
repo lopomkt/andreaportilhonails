@@ -85,7 +85,8 @@ export function BlockedDateForm({
       }
       
       const newBlockedDate = {
-        date: blockedDateTime,
+        // Convert the Date object to string as required by the BlockedDate type
+        date: blockedDateTime.toISOString(),
         reason,
         description,
         allDay,

@@ -251,6 +251,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addService,
         updateService,
         deleteService,
+        fetchServices: async () => {
+          await fetchServices();
+        },
         fetchBlockedDates,
         fetchAppointments,
         addBlockedDate,
