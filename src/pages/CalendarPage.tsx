@@ -9,9 +9,11 @@ import { BlockedDateForm } from "@/components/BlockedDateForm";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarViewTabs } from "@/components/calendar/CalendarViewTabs";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
+import { useData } from "@/context/DataContext";
 
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
+  const { appointments, refetchAppointments } = useData();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +29,7 @@ export default function CalendarPage() {
       : "week";
   });
   
+  // Parse date from URL if available
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const dateParam = searchParams.get('date');
@@ -48,6 +51,14 @@ export default function CalendarPage() {
       }
     }
   }, [location]);
+
+  // Fetch appointments when the component mounts or when the date changes
+  useEffect(() => {
+    const fetchData = async () => {
+      await refetchAppointments();
+    };
+    fetchData();
+  }, [refetchAppointments]);
 
   const handleDaySelect = (date: Date) => {
     const selectedDate = new Date(date);
@@ -117,7 +128,11 @@ export default function CalendarPage() {
           <BlockedDateForm 
             onSuccess={() => {
               setOpenBlockedDateDialog(false);
-              window.location.reload();
+              refetchAppointments();
+              toast({
+                title: "Sucesso",
+                description: "Horário bloqueado com sucesso"
+              });
             }}
             initialDate={currentDate}
           />

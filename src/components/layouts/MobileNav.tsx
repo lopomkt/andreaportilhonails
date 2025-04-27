@@ -1,69 +1,48 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-interface MobileNavProps {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-}
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { 
+  Calendar, 
+  Users, 
+  Scissors, 
+  DollarSign, 
+  BarChart2, 
+  Settings 
+} from "lucide-react";
 
-export function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
+export default function MobileNav() {
   const location = useLocation();
   
-  const navItems = [
-    { path: '/', label: 'Dashboard' },
-    { path: '/calendario', label: 'Calendário' },
-    { path: '/clientes', label: 'Clientes' },
-    { path: '/servicos', label: 'Serviços' },
-    { path: '/relatorios', label: 'Relatórios' },
-    { path: '/funcionalidades', label: 'Funcionalidades' },
+  const routes = [
+    { title: "Dashboard", href: "/", icon: <BarChart2 className="w-5 h-5" /> },
+    { title: "Calendário", href: "/calendario", icon: <Calendar className="w-5 h-5" /> },
+    { title: "Clientes", href: "/clientes", icon: <Users className="w-5 h-5" /> },
+    { title: "Serviços", href: "/servicos", icon: <Scissors className="w-5 h-5" /> },
+    { title: "Financeiro", href: "/financeiro", icon: <DollarSign className="w-5 h-5" /> },
+    { title: "Configurações", href: "/configuracoes", icon: <Settings className="w-5 h-5" /> },
   ];
 
-  const isActive = (path: string) => {
-    if (path === '/' && location.pathname === '/') return true;
-    if (path !== '/' && location.pathname.startsWith(path)) return true;
-    return false;
-  };
-
   return (
-    <div className={cn(
-      "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm transition-all duration-100",
-      isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-    )}>
-      <div className="fixed inset-y-0 left-0 z-50 w-3/4 max-w-xs bg-white shadow-xl">
-        <div className="flex h-16 items-center justify-between px-4 border-b">
-          <div className="font-semibold text-lg">Menu</div>
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="rounded-full p-1.5 hover:bg-accent"
-          >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Fechar menu</span>
-          </button>
-        </div>
-        <nav className="flex flex-col p-4 space-y-1">
-          {navItems.map((item) => (
+    <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-white border-t border-gray-200 md:hidden">
+      <div className="grid h-full grid-cols-6 mx-auto">
+        {routes.map((route) => {
+          const isActive = location.pathname === route.href;
+          return (
             <Link
-              key={item.path}
-              to={item.path}
-              onClick={() => setIsOpen(false)}
+              key={route.href}
+              to={route.href}
               className={cn(
-                "flex items-center px-3 py-2.5 text-sm font-medium rounded-md",
-                isActive(item.path)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                "flex flex-col items-center justify-center",
+                isActive ? "text-primary" : "text-gray-500 hover:text-primary"
               )}
             >
-              {item.label}
+              {route.icon}
+              <span className="text-xs mt-1">{route.title}</span>
             </Link>
-          ))}
-        </nav>
+          );
+        })}
       </div>
-      <div 
-        className="fixed inset-0 z-40 bg-black/20" 
-        onClick={() => setIsOpen(false)}
-      />
     </div>
   );
 }

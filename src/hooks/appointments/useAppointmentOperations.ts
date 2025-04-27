@@ -4,9 +4,11 @@ import { Appointment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapAppAppointmentToDb } from '@/integrations/supabase/mappers';
 import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/DataContext';
 
-export function useAppointmentOperations(setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>) {
+export function useAppointmentOperations() {
   const { toast } = useToast();
+  const { refetchAppointments } = useData();
 
   const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
     try {
@@ -25,7 +27,9 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       if (error) throw error;
       
       if (data) {
-        setAppointments(prev => [...prev, data as unknown as Appointment]);
+        // Refresh appointments data after adding a new one
+        await refetchAppointments();
+        
         toast({
           title: 'Agendamento criado',
           description: 'Agendamento cadastrado com sucesso'
@@ -43,7 +47,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       });
       return { error: errorMessage };
     }
-  }, [setAppointments, toast]);
+  }, [toast, refetchAppointments]);
 
   const updateAppointment = useCallback(async (id: string, appointmentData: Partial<Appointment>) => {
     try {
@@ -59,11 +63,8 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       if (error) throw error;
       
       if (data) {
-        setAppointments(prev => 
-          prev.map(appointment => 
-            appointment.id === id ? { ...appointment, ...appointmentData } : appointment
-          )
-        );
+        // Refresh appointments data after updating
+        await refetchAppointments();
         
         toast({
           title: 'Agendamento atualizado',
@@ -83,7 +84,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       });
       return { error: errorMessage };
     }
-  }, [setAppointments, toast]);
+  }, [toast, refetchAppointments]);
 
   return {
     addAppointment,

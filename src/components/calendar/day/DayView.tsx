@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
@@ -29,11 +30,11 @@ export const DayView: React.FC<DayViewProps> = ({
   useEffect(() => {
     const slots = [];
     const startHour = 7;
-    const endHour = 19;
+    const endHour = 19; // Changed from 22 to 19 as requested
     
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === endHour && minute > 0) continue;
+        if (hour === endHour && minute > 0) continue; // Only include 19:00, not 19:30
         
         const slotTime = new Date(date);
         slotTime.setHours(hour, minute, 0, 0);
