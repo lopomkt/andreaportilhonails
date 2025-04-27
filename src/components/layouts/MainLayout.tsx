@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import SidebarNav from "@/components/layouts/SidebarNav";
-import MobileNav from "@/components/layouts/MobileNav";
+import { SidebarNav } from "@/components/layouts/SidebarNav";
+import { MobileNav } from "@/components/layouts/MobileNav";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DataProvider } from "@/context/DataContext";

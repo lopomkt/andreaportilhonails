@@ -4,11 +4,9 @@ import { Appointment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapAppAppointmentToDb } from '@/integrations/supabase/mappers';
 import { useToast } from '@/hooks/use-toast';
-import { useData } from '@/context/DataContext';
 
-export function useAppointmentOperations() {
+export function useAppointmentOperations(setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>) {
   const { toast } = useToast();
-  const { refetchAppointments } = useData();
 
   const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
     try {
@@ -27,9 +25,7 @@ export function useAppointmentOperations() {
       if (error) throw error;
       
       if (data) {
-        // Refresh appointments data after adding a new one
-        await refetchAppointments();
-        
+        setAppointments(prev => [...prev, data as unknown as Appointment]);
         toast({
           title: 'Agendamento criado',
           description: 'Agendamento cadastrado com sucesso'
@@ -47,7 +43,7 @@ export function useAppointmentOperations() {
       });
       return { error: errorMessage };
     }
-  }, [toast, refetchAppointments]);
+  }, [setAppointments, toast]);
 
   const updateAppointment = useCallback(async (id: string, appointmentData: Partial<Appointment>) => {
     try {
@@ -63,8 +59,11 @@ export function useAppointmentOperations() {
       if (error) throw error;
       
       if (data) {
-        // Refresh appointments data after updating
-        await refetchAppointments();
+        setAppointments(prev => 
+          prev.map(appointment => 
+            appointment.id === id ? { ...appointment, ...appointmentData } : appointment
+          )
+        );
         
         toast({
           title: 'Agendamento atualizado',
@@ -84,7 +83,7 @@ export function useAppointmentOperations() {
       });
       return { error: errorMessage };
     }
-  }, [toast, refetchAppointments]);
+  }, [setAppointments, toast]);
 
   return {
     addAppointment,

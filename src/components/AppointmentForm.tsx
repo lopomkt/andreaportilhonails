@@ -17,7 +17,6 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useServices } from "@/context/ServiceContext";
-import { useAppointmentOperations } from "@/hooks/appointments/useAppointmentOperations";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -47,12 +46,12 @@ export function AppointmentForm({
   const { 
     clients, 
     appointments, 
+    addAppointment, 
+    updateAppointment,
     blockedDates,
-    refetchAppointments,
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
-  const { addAppointment, updateAppointment } = useAppointmentOperations();
   
   const { selectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
@@ -254,8 +253,6 @@ export function AppointmentForm({
           price
         });
         
-        await refetchAppointments();
-        
         toast({
           title: "Agendamento atualizado",
           description: "O agendamento foi atualizado com sucesso.",
@@ -270,8 +267,6 @@ export function AppointmentForm({
           notes,
           price
         });
-        
-        await refetchAppointments();
         
         toast({
           title: "Agendamento criado",
