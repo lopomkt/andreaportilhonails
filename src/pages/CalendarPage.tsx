@@ -9,9 +9,11 @@ import { BlockedDateForm } from "@/components/BlockedDateForm";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarViewTabs } from "@/components/calendar/CalendarViewTabs";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
+import { useData } from "@/context/DataProvider";
 
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
+  const { fetchBlockedDates, fetchAppointments } = useData();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +85,17 @@ export default function CalendarPage() {
     }, 100);
   };
 
+  // Handle the suggested time selection by opening the appointment modal
+  const handleSuggestedTimeSelect = (date: Date, timeString: string) => {
+    // Create a new date object with the selected time
+    const selectedDateTime = new Date(date);
+    const [hours, minutes] = timeString.split(':').map(Number);
+    selectedDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Open the modal with this date/time
+    openModal(null, selectedDateTime);
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fade-in overflow-y-auto">
       <Card className="border-rose-100 shadow-soft">
@@ -98,6 +111,7 @@ export default function CalendarPage() {
             currentDate={currentDate}
             onDaySelect={handleDaySelect}
             onViewChange={handleViewChange}
+            onSuggestedTimeSelect={handleSuggestedTimeSelect}
           />
         </CardContent>
       </Card>
@@ -117,7 +131,15 @@ export default function CalendarPage() {
           <BlockedDateForm 
             onSuccess={() => {
               setOpenBlockedDateDialog(false);
-              window.location.reload();
+              
+              // Refresh both appointments and blocked dates
+              fetchBlockedDates();
+              fetchAppointments();
+              
+              toast({
+                title: "Horário bloqueado",
+                description: "O horário foi bloqueado com sucesso"
+              });
             }}
             initialDate={currentDate}
           />

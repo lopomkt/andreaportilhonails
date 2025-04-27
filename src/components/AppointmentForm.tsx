@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export function AppointmentForm({
   );
   
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
-  const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "pending");
+  const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "confirmed");
   
   const [date, setDate] = useState<Date>(
     selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
@@ -273,8 +274,6 @@ export function AppointmentForm({
           description: "O agendamento foi criado com sucesso.",
         });
       }
-      
-      closeModal();
       
       if (onSuccess) onSuccess();
     } catch (error) {

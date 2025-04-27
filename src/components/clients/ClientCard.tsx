@@ -1,3 +1,4 @@
+
 import { Client } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -22,8 +23,10 @@ export function ClientCard({
   
   const handleScheduleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     
     // Open ONLY the appointment modal with this client
+    // Without timeout to ensure only one modal is opened
     openModal(client);
   };
   
@@ -69,6 +72,7 @@ export function ClientCard({
             className="flex-1"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               onEditClick();
             }}
           >

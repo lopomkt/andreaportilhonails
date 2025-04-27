@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { formatMinutesToHumanTime } from '@/lib/formatters';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 
 export interface DayViewProps {
   date: Date;
@@ -30,6 +31,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
   const isMobile = useIsMobile();
+  const { openModal } = useAppointmentsModal();
 
   // Normalize date (sem forçar horário fixo)
   const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -42,14 +44,17 @@ export const DayView: React.FC<DayViewProps> = ({
     if (onDaySelect) onDaySelect(addDays(normalizedDate, 1));
   };
 
-  // Generate time slots for the day (from 7:00 to 22:00)
+  // Generate time slots for the day (from 7:00 to 19:00)
   useEffect(() => {
     const slots = [];
     const startHour = 7;
-    const endHour = 22;
+    const endHour = 19;
     
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
+        // Don't add 19:30
+        if (hour === endHour && minute > 0) continue;
+        
         const slotTime = new Date(normalizedDate);
         slotTime.setHours(hour, minute, 0, 0);
         
@@ -82,6 +87,15 @@ export const DayView: React.FC<DayViewProps> = ({
     
     setTimeSlots(slots);
   }, [normalizedDate, appointments, blockedDates]);
+
+  const handleTimeClick = (time: Date) => {
+    // Open appointment modal with the selected date/time
+    if (onSuggestedTimeSelect) {
+      onSuggestedTimeSelect(time, format(time, 'HH:mm'));
+    } else {
+      openModal(null, time);
+    }
+  };
 
   return (
     <div className="day-view-container px-2 pt-4">
@@ -145,7 +159,7 @@ export const DayView: React.FC<DayViewProps> = ({
           <TimeSlot 
             key={index} 
             slot={slot} 
-            onTimeClick={onSuggestedTimeSelect ? (t) => onSuggestedTimeSelect(normalizedDate, format(t, 'HH:mm')) : () => {}} 
+            onTimeClick={handleTimeClick}
             onAppointmentClick={setSelectedAppointment} 
           />
         ))}

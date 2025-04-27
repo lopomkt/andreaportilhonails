@@ -6,10 +6,12 @@ import { AppointmentForm } from './AppointmentForm';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { Loader } from 'lucide-react';
 import { useServices } from '@/context/ServiceContext';
+import { useData } from '@/context/DataProvider';
 
 export function AppointmentModal() {
   const { isOpen, closeModal, selectedClient, selectedDate } = useAppointmentsModal();
   const { services, loading: servicesLoading, fetchServices } = useServices();
+  const { refetchAppointments } = useData();
 
   // Force fetch services when modal opens
   useEffect(() => {
@@ -36,7 +38,12 @@ export function AppointmentModal() {
         ) : (
           <AppointmentFormWrapper>
             <AppointmentForm 
-              initialDate={selectedDate || undefined} 
+              initialDate={selectedDate || undefined}
+              onSuccess={() => {
+                closeModal();
+                // Refresh appointments list after successful creation
+                refetchAppointments();
+              }}
             />
           </AppointmentFormWrapper>
         )}
