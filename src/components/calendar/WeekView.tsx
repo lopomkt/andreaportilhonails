@@ -9,17 +9,18 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Appointment } from '@/types';
+
 interface WeekViewProps {
   date: Date;
   onDaySelect: (date: Date) => void;
 }
+
 export const WeekView: React.FC<WeekViewProps> = ({
   date,
   onDaySelect
 }) => {
-  const {
-    appointments
-  } = useSupabaseData();
+  const { appointments } = useSupabaseData();
   const isMobile = useIsMobile();
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(date.getFullYear(), date.getMonth(), 1));
@@ -28,9 +29,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   const getWeeksOfMonth = (month: Date) => {
     const monthStart = startOfMonth(month);
     const monthEnd = endOfMonth(month);
-    const firstWeekStart = startOfWeek(monthStart, {
-      locale: ptBR
-    });
+    const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
 
     // Calculate how many weeks to display
     const totalDays = differenceInDays(monthEnd, firstWeekStart) + 1;
@@ -43,23 +42,41 @@ export const WeekView: React.FC<WeekViewProps> = ({
     }
     return weeks;
   };
+  
   const weeksInMonth = getWeeksOfMonth(currentMonth);
+  
   const getWeekStats = (weekStart: Date) => {
-    const weekEnd = endOfWeek(weekStart, {
-      locale: ptBR
-    });
+    const weekEnd = endOfWeek(weekStart, { locale: ptBR });
     const daysInWeek = eachDayOfInterval({
       start: weekStart,
       end: weekEnd
     });
+    
+    // Fix for desktop: Ensure dates are properly normalized for comparison
+    const normalizedAppointments = appointments.map(appt => ({
+      ...appt,
+      // Create a normalized date for accurate comparison
+      normalizedDate: new Date(new Date(appt.date).setHours(0, 0, 0, 0))
+    }));
+    
     let totalAppointments = 0;
     let totalConfirmed = 0;
     let totalCanceled = 0;
     let totalRevenue = 0;
     let expectedRevenue = 0;
+    
     daysInWeek.forEach(day => {
-      const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), day));
+      // Normalize the day for comparison
+      const normalizedDay = new Date(day.setHours(0, 0, 0, 0));
+      
+      // Filter appointments for this day using the normalized date
+      const dayAppointments = normalizedAppointments.filter(appt => {
+        const apptDate = appt.normalizedDate;
+        return isSameDay(apptDate, normalizedDay);
+      });
+      
       totalAppointments += dayAppointments.length;
+      
       dayAppointments.forEach(appt => {
         if (appt.status === 'confirmed') {
           totalConfirmed++;
@@ -70,6 +87,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
         expectedRevenue += appt.price;
       });
     });
+    
     return {
       totalAppointments,
       totalConfirmed,
@@ -80,19 +98,81 @@ export const WeekView: React.FC<WeekViewProps> = ({
       endDate: weekEnd
     };
   };
+  
   const handleWeekClick = (weekStart: Date) => {
+    // Fix: Ensure the date is properly normalized to avoid timezone issues
+    const normalizedDate = new Date(weekStart);
+    normalizedDate.setHours(0, 0, 0, 0);
+    
     if (isMobile) {
-      setSelectedWeekStart(weekStart);
+      setSelectedWeekStart(normalizedDate);
     } else {
-      onDaySelect(weekStart);
+      onDaySelect(normalizedDate);
     }
   };
+  
   const navigateToPreviousMonth = () => {
     setCurrentMonth(prevMonth => subMonths(prevMonth, 1));
   };
+  
   const navigateToNextMonth = () => {
     setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
   };
+  
+  const renderWeekDetails = (weekStart: Date | null) => {
+    if (!weekStart) return null;
+    
+    const weekEnd = endOfWeek(weekStart, { locale: ptBR });
+    const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+    
+    return (
+      <div className="space-y-3">
+        {daysInWeek.map(day => {
+          // Normalize the day for accurate comparison
+          const normalizedDay = new Date(day);
+          normalizedDay.setHours(0, 0, 0, 0);
+          
+          const dayAppointments = appointments.filter(appt => {
+            // Normalize appointment date for comparison
+            const apptDate = new Date(appt.date);
+            apptDate.setHours(0, 0, 0, 0);
+            return isSameDay(apptDate, normalizedDay);
+          });
+          
+          return (
+            <div key={day.toString()} className="border-b pb-3">
+              <h3 className="font-medium mb-2">
+                {format(day, 'EEEE, dd/MM', { locale: ptBR })}
+              </h3>
+              {dayAppointments.length > 0 ? (
+                <div className="space-y-2">
+                  {dayAppointments.map(appt => (
+                    <div key={appt.id} className="flex justify-between items-center p-2 bg-accent/10 rounded-md">
+                      <div>
+                        <p className="font-medium">{appt.client?.name}</p>
+                        <p className="text-sm text-muted-foreground">{appt.service?.name}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={appt.status === 'confirmed' ? 'success' : appt.status === 'pending' ? 'warning' : 'destructive'}>
+                          {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                        </Badge>
+                        <span className="text-sm font-medium">
+                          {appt.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum agendamento</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+  
   return <div className="space-y-4">
       <div className="flex justify-between items-center mb-3 mx-[15px]">
         <h2 className="text-lg font-bold my-[15px] py-0 mx-0 md:text-2xl">
@@ -203,42 +283,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="mt-4 max-h-[60vh]">
-            {selectedWeekStart && <div className="space-y-3">
-                {eachDayOfInterval({
-              start: selectedWeekStart,
-              end: endOfWeek(selectedWeekStart, {
-                locale: ptBR
-              })
-            }).map(day => {
-              const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), day));
-              return <div key={day.toString()} className="border-b pb-3">
-                      <h3 className="font-medium mb-2">
-                        {format(day, 'EEEE, dd/MM', {
-                    locale: ptBR
-                  })}
-                      </h3>
-                      {dayAppointments.length > 0 ? <div className="space-y-2">
-                          {dayAppointments.map(appt => <div key={appt.id} className="flex justify-between items-center p-2 bg-accent/10 rounded-md">
-                              <div>
-                                <p className="font-medium">{appt.client?.name}</p>
-                                <p className="text-sm text-muted-foreground">{appt.service?.name}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={appt.status === 'confirmed' ? 'success' : appt.status === 'pending' ? 'warning' : 'destructive'}>
-                                  {appt.status === 'confirmed' ? 'Confirmado' : appt.status === 'pending' ? 'Pendente' : 'Cancelado'}
-                                </Badge>
-                                <span className="text-sm font-medium">
-                                  {appt.price.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        })}
-                                </span>
-                              </div>
-                            </div>)}
-                        </div> : <p className="text-sm text-muted-foreground">Nenhum agendamento</p>}
-                    </div>;
-            })}
-              </div>}
+            {selectedWeekStart && renderWeekDetails(selectedWeekStart)}
           </ScrollArea>
         </DialogContent>
       </Dialog>

@@ -1,9 +1,9 @@
 
 import { useState, useCallback } from 'react';
-import { BlockedDate, ServiceResponse } from '@/types';
+import { BlockedDate } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { mapDbBlockedDateToApp, mapAppBlockedDateToDb } from '@/integrations/supabase/mappers';
 import { useToast } from '@/hooks/use-toast';
+import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
 
 export function useBlockedDates() {
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
@@ -14,28 +14,21 @@ export function useBlockedDates() {
   const fetchBlockedDates = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('datas_bloqueadas')
-        .select('*')
-        .order('data', { ascending: true });
-        
-      if (error) {
-        throw error;
-      }
+      const blockedDatesData = await BlockedDateService.getAll();
       
-      if (data) {
-        const mappedDates: BlockedDate[] = data.map(item => ({
-          id: item.id,
-          date: item.data, // Keep as string to match the type
-          reason: item.motivo || "",
-          allDay: item.dia_todo,
-          dia_todo: item.dia_todo,
-          description: item.descricao || ""
-        }));
-        setBlockedDates(mappedDates);
-      }
+      // Ensure dates are stored as strings to match the BlockedDate type
+      const formattedBlockedDates: BlockedDate[] = blockedDatesData.map(item => ({
+        id: item.id,
+        date: typeof item.date === 'string' ? item.date : (item.date as Date).toISOString(),
+        reason: item.reason || '',
+        allDay: item.allDay || item.dia_todo || false,
+      }));
+      
+      setBlockedDates(formattedBlockedDates);
+      setError(null);
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar datas bloqueadas';
+      console.error("Error fetching blocked dates:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -47,61 +40,37 @@ export function useBlockedDates() {
     }
   }, [toast]);
 
-  const addBlockedDate = async (blockedDate: Omit<BlockedDate, "id">): Promise<ServiceResponse<BlockedDate>> => {
+  const addBlockedDate = useCallback(async (blockedDate: Omit<BlockedDate, 'id'>): Promise<any> => {
     try {
       setLoading(true);
       
-      // Make sure required fields are present
-      if (!blockedDate.date) {
-        throw new Error('Data é obrigatória');
-      }
+      // Convert Date object to ISO string if needed
+      const dateValue = typeof blockedDate.date === 'object' 
+        ? (blockedDate.date as Date).toISOString() 
+        : blockedDate.date;
       
-      // Convert date to ISO string if it's a Date object
-      const dateString = typeof blockedDate.date === 'string' 
-        ? blockedDate.date 
-        : (blockedDate.date as unknown as Date).toISOString();
+      const success = await BlockedDateService.create({
+        date: dateValue,
+        reason: blockedDate.reason,
+        allDay: blockedDate.allDay
+      });
       
-      // Create data object for insert
-      const dataToInsert = {
-        data: dateString,
-        motivo: blockedDate.reason || null,
-        descricao: blockedDate.description || null,
-        dia_todo: blockedDate.allDay !== undefined ? blockedDate.allDay : true
-      };
-      
-      const { data, error } = await supabase
-        .from('datas_bloqueadas')
-        .insert(dataToInsert)
-        .select('*')
-        .single();
-        
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        const newBlockedDate: BlockedDate = {
-          id: data.id,
-          date: data.data,
-          reason: data.motivo || "",
-          allDay: data.dia_todo,
-          dia_todo: data.dia_todo,
-          description: data.descricao || ""
-        };
-        
-        setBlockedDates(prev => [...prev, newBlockedDate]);
+      if (success) {
+        // After successful creation, refresh the blocked dates
+        await fetchBlockedDates();
         
         toast({
           title: 'Data bloqueada',
-          description: 'Data bloqueada com sucesso'
+          description: 'A data foi bloqueada com sucesso'
         });
         
-        return { data: newBlockedDate };
+        return { success: true };
       }
       
-      return { error: 'Falha ao bloquear data' };
+      throw new Error('Falha ao bloquear a data');
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao bloquear data';
+      console.error("Error adding blocked date:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -112,7 +81,7 @@ export function useBlockedDates() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchBlockedDates, toast]);
 
   return {
     blockedDates,

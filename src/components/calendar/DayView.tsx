@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
@@ -33,8 +32,9 @@ export const DayView: React.FC<DayViewProps> = ({
   const isMobile = useIsMobile();
   const { openModal } = useAppointmentsModal();
 
-  // Normalize date (sem forçar horário fixo)
+  // Normalize date (without forcing a fixed time) - this fixes timezone issues
   const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  normalizedDate.setHours(0, 0, 0, 0);
 
   // Adicionar navegação entre dias
   const handlePrevDay = () => {
@@ -58,9 +58,15 @@ export const DayView: React.FC<DayViewProps> = ({
         const slotTime = new Date(normalizedDate);
         slotTime.setHours(hour, minute, 0, 0);
         
-        // Check if this time slot has appointments
+        // Fix: Normalize appointment dates for proper comparison
         const slotAppointments = appointments.filter(appointment => {
           const appointmentDate = new Date(appointment.date);
+          
+          // For proper comparison, check day first
+          if (!isSameDay(appointmentDate, normalizedDate)) {
+            return false;
+          }
+          
           const appointmentEndTime = appointment.endTime 
             ? new Date(appointment.endTime)
             : addMinutes(appointmentDate, appointment.service?.durationMinutes || 60);
@@ -71,7 +77,7 @@ export const DayView: React.FC<DayViewProps> = ({
           });
         });
         
-        // Check if time is blocked
+        // Check if time is blocked - normalize blocked dates too
         const isTimeBlocked = blockedDates.some(blockedDate => {
           const blockDate = new Date(blockedDate.date);
           return isSameDay(blockDate, normalizedDate) && blockedDate.allDay;

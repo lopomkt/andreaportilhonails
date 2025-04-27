@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -252,11 +251,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addService,
         updateService,
         deleteService,
-        fetchServices: async () => {
-          await fetchServices();
-        },
         fetchBlockedDates,
-        fetchAppointments, // This function returns Promise<Appointment[]>
+        fetchAppointments,
         addBlockedDate,
       }}
     >

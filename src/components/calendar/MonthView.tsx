@@ -124,8 +124,9 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const handleDayClick = (day: Date) => {
     if (day) {
       // Create a new Date object with the exact same day that was clicked
-      // This fixes the issue where clicking on day 21 was selecting day 20
+      // and set the time to midnight to fix timezone issues
       const selectedDate = new Date(day);
+      selectedDate.setHours(0, 0, 0, 0);
       onDaySelect(selectedDate);
     }
   };
