@@ -62,11 +62,13 @@ export function BlockedDateForm({
       setIsSubmitting(true);
       
       // Convert the Date object to ISO string to match the BlockedDate type
+      // Include dia_todo property to match BlockedDate type
       await addBlockedDate({
         date: data.date.toISOString(),
         reason: data.reason || "",
         description: data.description || "",
         allDay: data.allDay,
+        dia_todo: data.allDay, // Add this missing field
       });
       
       if (onSuccess) {

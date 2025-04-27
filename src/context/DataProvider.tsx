@@ -53,7 +53,7 @@ interface DataContextType {
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
   fetchBlockedDates: () => Promise<void>;
-  fetchAppointments: () => Promise<Appointment[]>; // Updated return type to match implementation
+  fetchAppointments: () => Promise<Appointment[]>; // Updated to return Promise<Appointment[]>
   addBlockedDate: (blockedDate: Omit<BlockedDate, "id">) => Promise<any>;
 }
 
@@ -96,7 +96,7 @@ export const DataContext = createContext<DataContextType>({
   updateService: async () => ({}),
   deleteService: async () => ({}),
   fetchBlockedDates: async () => {},
-  fetchAppointments: async () => {},
+  fetchAppointments: async () => [], // Updated to return empty array
   addBlockedDate: async () => ({}),
 });
 
