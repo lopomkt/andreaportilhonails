@@ -21,10 +21,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
-export default function SidebarNav() {
+interface SidebarNavProps {
+  isCollapsed: boolean;
+}
+
+export default function SidebarNav({ isCollapsed: propIsCollapsed }: SidebarNavProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(propIsCollapsed || false);
   const [isPinned, setIsPinned] = useLocalStorage<boolean>("sidebar-pinned", false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -56,6 +60,11 @@ export default function SidebarNav() {
       setIsCollapsed(!isPinned);
     }
   }, [isPinned, isMobile]);
+
+  // Update local isCollapsed state when prop changes
+  useEffect(() => {
+    setIsCollapsed(propIsCollapsed);
+  }, [propIsCollapsed]);
 
   // Desktop menu state
   const isExpanded = !isCollapsed || (isHovered && !isPinned) || isPinned;
