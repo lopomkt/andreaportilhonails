@@ -8,16 +8,10 @@ import {
   Scissors, 
   DollarSign, 
   BarChart2, 
-  Settings,
-  X 
+  Settings 
 } from "lucide-react";
 
-interface MobileNavProps {
-  isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-export default function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
+export default function MobileNav() {
   const location = useLocation();
   
   const routes = [
@@ -29,42 +23,25 @@ export default function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
     { title: "Configurações", href: "/configuracoes", icon: <Settings className="w-5 h-5" /> },
   ];
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
-      <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="font-semibold">Menu</div>
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="p-1 rounded-md hover:bg-gray-100"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <nav className="p-4">
-          <ul className="space-y-2">
-            {routes.map((route) => {
-              const isActive = location.pathname === route.href;
-              return (
-                <li key={route.href}>
-                  <Link
-                    to={route.href}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "flex items-center px-4 py-2 rounded-md",
-                      isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
-                    )}
-                  >
-                    {route.icon}
-                    <span className="ml-3">{route.title}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+    <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-white border-t border-gray-200 md:hidden">
+      <div className="grid h-full grid-cols-6 mx-auto">
+        {routes.map((route) => {
+          const isActive = location.pathname === route.href;
+          return (
+            <Link
+              key={route.href}
+              to={route.href}
+              className={cn(
+                "flex flex-col items-center justify-center",
+                isActive ? "text-primary" : "text-gray-500 hover:text-primary"
+              )}
+            >
+              {route.icon}
+              <span className="text-xs mt-1">{route.title}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
