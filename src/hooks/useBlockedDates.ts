@@ -11,7 +11,7 @@ export function useBlockedDates() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchBlockedDates = useCallback(async (): Promise<BlockedDate[]> => {
+  const fetchBlockedDates = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -24,12 +24,16 @@ export function useBlockedDates() {
       }
       
       if (data) {
-        const mappedDates: BlockedDate[] = data.map(item => mapDbBlockedDateToApp(item));
+        const mappedDates: BlockedDate[] = data.map(item => ({
+          id: item.id,
+          date: new Date(item.data),
+          reason: item.motivo || "",
+          allDay: item.dia_todo,
+          dia_todo: item.dia_todo,
+          description: item.descricao || ""
+        }));
         setBlockedDates(mappedDates);
-        return mappedDates;
       }
-      
-      return [];
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar datas bloqueadas';
       setError(errorMessage);
@@ -38,7 +42,6 @@ export function useBlockedDates() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return [];
     } finally {
       setLoading(false);
     }
@@ -53,17 +56,14 @@ export function useBlockedDates() {
         throw new Error('Data é obrigatória');
       }
       
-      // Convert app model to database model
-      const dbBlockedDateData = mapAppBlockedDateToDb(blockedDate);
+      const dateObj = typeof blockedDate.date === 'string' ? new Date(blockedDate.date) : blockedDate.date;
       
-      // Create data object with required fields only for insert
-      // Ensure 'data' field is properly set as it's required
+      // Create data object for insert
       const dataToInsert = {
-        data: dbBlockedDateData.data,
-        motivo: dbBlockedDateData.motivo || null,
-        descricao: dbBlockedDateData.descricao || null,
-        valor: dbBlockedDateData.valor || null,
-        dia_todo: dbBlockedDateData.dia_todo !== undefined ? dbBlockedDateData.dia_todo : true
+        data: dateObj.toISOString(),
+        motivo: blockedDate.reason || null,
+        descricao: blockedDate.description || null,
+        dia_todo: blockedDate.allDay !== undefined ? blockedDate.allDay : true
       };
       
       const { data, error } = await supabase
@@ -77,7 +77,15 @@ export function useBlockedDates() {
       }
       
       if (data) {
-        const newBlockedDate = mapDbBlockedDateToApp(data);
+        const newBlockedDate: BlockedDate = {
+          id: data.id,
+          date: new Date(data.data),
+          reason: data.motivo || "",
+          allDay: data.dia_todo,
+          dia_todo: data.dia_todo,
+          description: data.descricao || ""
+        };
+        
         setBlockedDates(prev => [...prev, newBlockedDate]);
         
         toast({
@@ -103,46 +111,11 @@ export function useBlockedDates() {
     }
   };
 
-  const deleteBlockedDate = async (id: string): Promise<ServiceResponse<boolean>> => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('datas_bloqueadas')
-        .delete()
-        .eq('id', id);
-        
-      if (error) {
-        throw error;
-      }
-      
-      setBlockedDates(prev => prev.filter(date => date.id !== id));
-      
-      toast({
-        title: 'Bloqueio removido',
-        description: 'Data desbloqueada com sucesso'
-      });
-      
-      return { data: true };
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Erro ao desbloquear data';
-      setError(errorMessage);
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      return { error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     blockedDates,
     loading,
     error,
     fetchBlockedDates,
-    addBlockedDate,
-    deleteBlockedDate
+    addBlockedDate
   };
 }
