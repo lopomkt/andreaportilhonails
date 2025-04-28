@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, isSameDay, eachDayOfInterval, getWeekOfMonth, addWeeks, subWeeks, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -12,6 +11,7 @@ import { Appointment } from '@/types';
 import { useData } from '@/context/DataProvider';
 import { AppointmentCard } from './day/AppointmentCard';
 import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface WeekViewProps {
   date: Date;
@@ -30,17 +30,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return weekStart;
   });
   
-  // Fetch fresh data when week view is shown
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments, currentWeek]);
 
-  // Navigate to previous week
   const handlePrevWeek = () => {
     setCurrentWeek(prev => subWeeks(prev, 1));
   };
 
-  // Navigate to next week
   const handleNextWeek = () => {
     setCurrentWeek(prev => addWeeks(prev, 1));
   };
@@ -49,10 +46,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
     const weekEnd = endOfWeek(weekStart, { locale: ptBR });
     const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
     
-    // Fix for desktop: Ensure dates are properly normalized for comparison
     const normalizedAppointments = appointments.map(appt => ({
       ...appt,
-      // Create a normalized date for accurate comparison
       normalizedDate: new Date(new Date(appt.date).setHours(0, 0, 0, 0))
     }));
     
@@ -63,11 +58,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
     let expectedRevenue = 0;
     
     daysInWeek.forEach(day => {
-      // Normalize the day for comparison
       const normalizedDay = new Date(day);
       normalizedDay.setHours(0, 0, 0, 0);
       
-      // Filter appointments for this day using the normalized date
       const dayAppointments = normalizedAppointments.filter(appt => {
         const apptDate = new Date(appt.normalizedDate);
         return isSameDay(apptDate, normalizedDay);
@@ -82,13 +75,11 @@ export const WeekView: React.FC<WeekViewProps> = ({
         } else if (appt.status === 'canceled') {
           totalCanceled++;
         } else {
-          // Pending appointments count towards expected revenue
           expectedRevenue += appt.price;
         }
       });
     });
     
-    // Add confirmed revenue to expected for total expected
     expectedRevenue += totalRevenue;
     
     return {
@@ -103,7 +94,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
   
   const handleWeekClick = (weekStart: Date) => {
-    // Fix: Ensure the date is properly normalized to avoid timezone issues
     const normalizedDate = new Date(weekStart);
     normalizedDate.setHours(0, 0, 0, 0);
     
@@ -123,12 +113,10 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return (
       <div className="space-y-3">
         {daysInWeek.map(day => {
-          // Normalize the day for accurate comparison
           const normalizedDay = new Date(day);
           normalizedDay.setHours(0, 0, 0, 0);
           
           const dayAppointments = appointments.filter(appt => {
-            // Normalize appointment date for comparison
             const apptDate = new Date(appt.date);
             apptDate.setHours(0, 0, 0, 0);
             return isSameDay(apptDate, normalizedDay);
@@ -168,7 +156,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Week navigation */}
       <div className="flex justify-between items-center mx-[15px] my-4">
         <Button 
           variant="outline" 
@@ -260,7 +247,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
         </CardContent>
       </Card>
 
-      {/* Daily break-down of the week */}
       <div className="mt-4 space-y-3">
         {eachDayOfInterval({ start: stats.startDate, end: stats.endDate }).map(day => {
           const normalizedDay = new Date(day);
@@ -272,7 +258,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
             return isSameDay(apptDate, normalizedDay);
           });
           
-          // Skip days with no appointments if not today
           if (dayAppointments.length === 0 && !isToday(day)) {
             return null;
           }
@@ -341,7 +326,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
         })}
       </div>
 
-      {/* Week Details Modal */}
       <Dialog open={!!selectedWeekStart} onOpenChange={() => setSelectedWeekStart(null)}>
         <DialogContent className="max-w-lg max-h-[80vh]">
           <DialogHeader>

@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useData } from '@/context/DataProvider';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { Appointment, Client, Service } from '@/types';
-import { ClientSearch } from './clients/ClientSearch';
+import { ClientAutocomplete } from './ClientAutocomplete';
 import { calculateEndTimeFromDate } from '@/lib/dateUtils';
 import { toast } from '@/hooks/use-toast';
 
@@ -39,7 +39,7 @@ interface AppointmentFormProps {
 
 export function AppointmentForm({ initialDate, appointment, onSuccess }: AppointmentFormProps) {
   const { services } = useData();
-  const { selectedClient } = useAppointmentsModal();
+  const { selectedClient: contextSelectedClient } = useAppointmentsModal();
   const { addAppointment, updateAppointment } = useData();
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedClient, setSelectedClientState] = useState<Client | null>(null);
@@ -83,17 +83,17 @@ export function AppointmentForm({ initialDate, appointment, onSuccess }: Appoint
       if (appointment.client) {
         setSelectedClientState(appointment.client);
       }
-    } else if (selectedClient) {
+    } else if (contextSelectedClient) {
       // New appointment with pre-selected client
-      form.setValue("clientId", selectedClient.id);
-      setSelectedClientState(selectedClient);
+      form.setValue("clientId", contextSelectedClient.id);
+      setSelectedClientState(contextSelectedClient);
     }
 
     if (initialDate) {
       form.setValue("date", initialDate);
       form.setValue("time", format(initialDate, "HH:mm"));
     }
-  }, [appointment, selectedClient, initialDate, form, services]);
+  }, [appointment, contextSelectedClient, initialDate, form, services]);
 
   // Update price when service is selected
   useEffect(() => {
@@ -186,7 +186,7 @@ export function AppointmentForm({ initialDate, appointment, onSuccess }: Appoint
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Cliente</FormLabel>
-              <ClientSearch 
+              <ClientAutocomplete 
                 selectedClient={selectedClient} 
                 onClientSelect={handleClientSelect} 
               />
