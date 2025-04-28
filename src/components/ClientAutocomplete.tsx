@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,13 +15,15 @@ interface ClientAutocompleteProps {
   selectedClient?: Client | null;
   autofocus?: boolean;
   placeholder?: string;
+  className?: string;
 }
 
 export function ClientAutocomplete({ 
   onClientSelect, 
   selectedClient = null,
   autofocus = false,
-  placeholder = 'Buscar cliente por nome ou telefone...'
+  placeholder = 'Buscar cliente por nome ou telefone...',
+  className
 }: ClientAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,7 +85,6 @@ export function ClientAutocomplete({
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     
-    // Clear selected client when user starts typing
     if (selectedClient) {
       onClientSelect(null);
     }
@@ -134,8 +134,6 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  // This function accepts a Client | null parameter but we need to adapt it
-  // to match the onSuccess prop which expects a function with no parameters
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
@@ -148,7 +146,7 @@ export function ClientAutocomplete({
   };
 
   return (
-    <div className="w-full relative">
+    <div className={cn("w-full relative", className)}>
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
         <div className="flex-1">
           <Input
@@ -158,7 +156,6 @@ export function ClientAutocomplete({
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => {
-              // Only open dropdown if search query is long enough
               if (searchQuery.length >= 2) {
                 setIsOpen(true);
               }
