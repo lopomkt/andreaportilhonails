@@ -6,11 +6,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React from "react";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
-
-type TimeSlot = {
-  date: Date;
-  available: boolean;
-};
+import { TimeSlot } from "@/types";
 
 interface SuggestedTimeSlotsProps {
   slots: TimeSlot[];

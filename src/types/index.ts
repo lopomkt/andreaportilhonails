@@ -171,11 +171,12 @@ export interface CancellationReason {
   reason: string;
 }
 
-// Add TimeSlot type to avoid conflict
+// Define a unified TimeSlot type that works for both components
 export interface TimeSlot {
   date: Date;
   available: boolean;
-  hour: number;
-  minute: number;
+  hour?: number;
+  minute?: number;
+  time?: Date;
+  duration?: number;
 }
-
