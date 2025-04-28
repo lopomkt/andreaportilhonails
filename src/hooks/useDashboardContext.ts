@@ -54,7 +54,13 @@ export const useDashboardContext = (
       }, 0);
 
       const monthName = monthStart.toLocaleString("default", { month: "long" });
-      data.push({ month: monthName, revenue: monthRevenue });
+      data.push({ 
+        name: monthName, 
+        revenue: monthRevenue, 
+        expenses: monthRevenue * 0.3, // Mock expenses
+        date: monthStart.toISOString(),
+        month: monthName
+      });
     }
 
     return data;

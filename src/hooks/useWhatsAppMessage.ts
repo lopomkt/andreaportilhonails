@@ -36,7 +36,8 @@ export function useWhatsAppMessage() {
       if (data && data.length > 0) {
         const mappedTemplates: MessageTemplate[] = data.map(item => ({
           id: item.id,
-          type: item.tipo,
+          tipo: item.tipo,
+          type: item.tipo, // Map tipo to type for compatibility
           message: item.mensagem,
           active: true
         }));
@@ -46,8 +47,8 @@ export function useWhatsAppMessage() {
         
         // Define um tipo de mensagem padrão se disponível
         if (mappedTemplates.length > 0 && !messageType) {
-          console.log("Definindo tipo de mensagem padrão:", mappedTemplates[0].type);
-          setMessageType(mappedTemplates[0].type);
+          console.log("Definindo tipo de mensagem padrão:", mappedTemplates[0].tipo);
+          setMessageType(mappedTemplates[0].tipo);
         }
         
         return mappedTemplates;
@@ -74,8 +75,8 @@ export function useWhatsAppMessage() {
       console.log(`useWhatsAppMessage: ${loadedTemplates.length} templates carregados inicialmente`);
       
       if (loadedTemplates.length > 0 && !messageType) {
-        setMessageType(loadedTemplates[0].type);
-        console.log("useWhatsAppMessage: Definido messageType padrão:", loadedTemplates[0].type);
+        setMessageType(loadedTemplates[0].tipo);
+        console.log("useWhatsAppMessage: Definido messageType padrão:", loadedTemplates[0].tipo);
       }
     });
     
@@ -88,8 +89,8 @@ export function useWhatsAppMessage() {
             console.log("useWhatsAppMessage: Mudança detectada na tabela de templates, atualizando...");
             fetchTemplates().then(loadedTemplates => {
               if (loadedTemplates.length > 0 && !messageType) {
-                setMessageType(loadedTemplates[0].type);
-                console.log("useWhatsAppMessage: MessageType atualizado após mudança:", loadedTemplates[0].type);
+                setMessageType(loadedTemplates[0].tipo);
+                console.log("useWhatsAppMessage: MessageType atualizado após mudança:", loadedTemplates[0].tipo);
               }
             });
           })
@@ -112,7 +113,7 @@ export function useWhatsAppMessage() {
     
     try {
       // Obter todos os templates para o tipo de mensagem selecionado
-      const typeTemplates = templates.filter(template => template.type === messageType);
+      const typeTemplates = templates.filter(template => template.tipo === messageType);
       
       // Utilizar o primeiro template do tipo selecionado
       const selectedTemplate = typeTemplates.length > 0 ? typeTemplates[0] : null;
@@ -124,6 +125,7 @@ export function useWhatsAppMessage() {
       let messageContent = selectedTemplate.message.replace(/{{nome}}/g, selectedClient.name || '');
       
       const messageData = {
+        phone: selectedClient.phone, // Add phone property
         client: selectedClient,
         message: messageContent
       };

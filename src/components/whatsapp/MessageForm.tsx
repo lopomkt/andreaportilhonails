@@ -32,7 +32,7 @@ export function MessageForm({
   
   // When messageType changes, find corresponding template
   useEffect(() => {
-    const template = templates.find(t => t.tipo === messageType || t.type === messageType);
+    const template = templates.find(t => t.tipo === messageType);
     setSelectedTemplate(template || null);
   }, [messageType, templates]);
 

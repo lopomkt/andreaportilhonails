@@ -31,6 +31,9 @@ export interface Client {
   createdAt?: string | Date; // Add this field to support existing code
 }
 
+// Confirmation Status type
+export type ConfirmationStatus = 'confirmed' | 'not_confirmed' | 'canceled';
+
 // Appointment Status
 export type AppointmentStatus = "pending" | "confirmed" | "canceled";
 
@@ -55,7 +58,7 @@ export interface Appointment {
   client?: Client;
   service?: Service;
   created_at?: string;
-  confirmationStatus?: 'confirmed' | 'not_confirmed' | 'canceled'; // Add this field to support existing code
+  confirmationStatus?: ConfirmationStatus; // Add this field to support existing code
 }
 
 // Service type
@@ -109,7 +112,7 @@ export interface MonthlyRevenueData {
   profit?: number;
 }
 
-// WhatsApp Message Data
+// WhatsApp Message Data - Fixed to match how it's used
 export interface WhatsAppMessageData {
   phone: string;
   message: string;
@@ -119,7 +122,7 @@ export interface WhatsAppMessageData {
   appointment?: Appointment; // Add this field to support existing code
 }
 
-// Message Template
+// Message Template - Updated to support both tipo and type
 export interface MessageTemplate {
   id: string;
   message: string;
@@ -152,3 +155,27 @@ export interface DbBlockedDate {
   dia_todo: boolean;
   valor?: string;
 }
+
+// Add AbsenceRule type
+export interface AbsenceRule {
+  id: string;
+  name: string;
+  description?: string;
+  daysInAdvance: number;
+  active: boolean;
+}
+
+// Add CancellationReason type
+export interface CancellationReason {
+  id: string;
+  reason: string;
+}
+
+// Add TimeSlot type to avoid conflict
+export interface TimeSlot {
+  date: Date;
+  available: boolean;
+  hour: number;
+  minute: number;
+}
+

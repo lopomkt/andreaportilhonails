@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";

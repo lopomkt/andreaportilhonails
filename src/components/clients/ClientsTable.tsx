@@ -8,7 +8,7 @@ interface ClientsTableProps {
 }
 
 export function ClientsTable({ clients }: ClientsTableProps) {
-  const calculateAge = (birthdate: string | undefined) => {
+  const calculateAge = (birthdate: string | Date | undefined) => {
     if (!birthdate) return null;
     return differenceInYears(new Date(), new Date(birthdate));
   };

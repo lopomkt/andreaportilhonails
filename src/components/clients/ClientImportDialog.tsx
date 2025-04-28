@@ -121,19 +121,19 @@ export function ClientImportDialog({ open, onOpenChange, onSuccess }: ClientImpo
           
           console.log(`Importing ${clients.length} clients`, clients);
           
-          // Insert clients into Supabase
+          // Insert clients into Supabase - fix by mapping birthdates to strings
+          const dbClients = clients.map(client => ({
+            nome: client.name,
+            telefone: client.phone,
+            email: client.email || null,
+            data_nascimento: client.birthdate ? client.birthdate.toString() : null,
+            observacoes: client.notes || null,
+            data_criacao: new Date().toISOString()
+          }));
+          
           const { data, error } = await supabase
             .from('clientes')
-            .insert(
-              clients.map(client => ({
-                nome: client.name,
-                telefone: client.phone,
-                email: client.email || null,
-                data_nascimento: client.birthdate || null,
-                observacoes: client.notes || null,
-                data_criacao: new Date().toISOString()
-              }))
-            );
+            .insert(dbClients);
           
           if (error) {
             throw new Error(`Erro ao importar clientes: ${error.message}`);
