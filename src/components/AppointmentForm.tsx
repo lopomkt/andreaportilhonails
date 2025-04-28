@@ -259,15 +259,16 @@ export function AppointmentForm({
   });
 }
 
-    const { data, error } = await supabase.from('agendamentos').insert([
+const { data, error } = await supabase.from('agendamentos').insert([
   {
     cliente_id: clientId,
     servico_id: serviceId,
-    data: new Date(date),
-    hora_fim: new Date(dateEnd),
-    preco: servicePrice,
-    status: 'ativo',
-    observacoes: observations,
+    data: new Date(`${date}T${time}:00.000Z`), // Junta a data com a hora
+    hora_fim: new Date(`${date}T${endTime || time}:00.000Z`), // Usa hora final se existir, se não usa mesma hora
+    preco: price,
+    status: 'confirmado',
+    observacoes: "",
+    motivo_cancelamento: null,
     created_at: new Date()
   }
 ]);
@@ -285,7 +286,12 @@ if (error) {
     description: "Agendamento criado com sucesso!",
     variant: "default"
   });
-  // Aqui talvez você queira refazer a busca dos agendamentos para atualizar o calendário.
+  // Aqui você pode adicionar a atualização da agenda automaticamente:
+  if (refetchAppointments) {
+    await refetchAppointments();
+  }
+}
+
 }
 
     if (hasConflict) {
