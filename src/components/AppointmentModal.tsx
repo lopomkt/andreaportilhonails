@@ -9,28 +9,39 @@ import { useServices } from '@/context/ServiceContext';
 import { useData } from '@/context/DataProvider';
 
 export function AppointmentModal() {
-  const { isOpen, closeModal, selectedClient, selectedDate } = useAppointmentsModal();
+  const { isOpen, closeModal, selectedClient, selectedDate, selectedAppointment } = useAppointmentsModal();
   const { services, loading: servicesLoading, fetchServices } = useServices();
-  const { refetchAppointments, refetchClients, fetchBlockedDates } = useData();
+  const { fetchAppointments, fetchBlockedDates, fetchClients } = useData();
 
   // Force fetch services and data when modal opens
   useEffect(() => {
     if (isOpen) {
       console.log("AppointmentModal opened, fetching data...");
       fetchServices();
-      refetchClients();
+      fetchClients();
       fetchBlockedDates();
     }
-  }, [isOpen, fetchServices, refetchClients, fetchBlockedDates]);
+  }, [isOpen, fetchServices, fetchClients, fetchBlockedDates]);
 
-  // Handle successful appointment creation
+  // Handle successful appointment creation or update
   const handleAppointmentSuccess = async () => {
     closeModal();
     
-    // Refresh appointments list after successful creation
-    await refetchAppointments();
-    await fetchBlockedDates();
+    // Refresh all relevant data
+    await Promise.all([
+      fetchAppointments(),
+      fetchBlockedDates(),
+      fetchClients()
+    ]);
+    
+    console.log("All data refreshed after appointment success");
   };
+
+  const title = selectedAppointment 
+    ? "Editar Agendamento" 
+    : selectedClient 
+      ? `Agendar para ${selectedClient.name}` 
+      : 'Novo Agendamento';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
@@ -38,7 +49,7 @@ export function AppointmentModal() {
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center">
             <span className="mr-2">💅</span>
-            {selectedClient ? `Agendar para ${selectedClient.name}` : 'Novo Agendamento'}
+            {title}
           </DialogTitle>
         </DialogHeader>
         {servicesLoading && services.length === 0 ? (
@@ -50,6 +61,7 @@ export function AppointmentModal() {
           <AppointmentFormWrapper>
             <AppointmentForm 
               initialDate={selectedDate || undefined}
+              appointment={selectedAppointment}
               onSuccess={handleAppointmentSuccess}
             />
           </AppointmentFormWrapper>

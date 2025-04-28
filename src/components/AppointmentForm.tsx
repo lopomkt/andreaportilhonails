@@ -1,521 +1,337 @@
-import { useState, useEffect } from "react";
-import { useData } from "@/context/DataContext";
+
+import React, { useState, useEffect } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { format, addHours, setHours, setMinutes } from "date-fns";
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { format, addMinutes, isAfter, isBefore, isSameDay, parse } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Client, Service, Appointment, AppointmentStatus } from "@/types";
-import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { Check, AlertTriangle, Loader2 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatCurrency, formatDuration } from "@/lib/formatters";
-import { ClientAutocomplete } from "@/components/ClientAutocomplete";
-import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
-import { useServices } from "@/context/ServiceContext";
+import { useData } from '@/context/DataProvider';
+import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
+import { Appointment, Client, Service } from '@/types';
+import { ClientSearch } from './clients/ClientSearch';
+import { calculateEndTimeFromDate } from '@/lib/dateUtils';
+import { toast } from '@/hooks/use-toast';
+
+const formSchema = z.object({
+  clientId: z.string().min(1, "Cliente é obrigatório"),
+  serviceId: z.string().min(1, "Serviço é obrigatório"),
+  date: z.date({
+    required_error: "Data é obrigatória",
+  }),
+  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido"),
+  price: z.coerce.number().min(0, "Preço não pode ser negativo"),
+  notes: z.string().optional(),
+});
 
 interface AppointmentFormProps {
-  onSuccess?: () => void;
-  appointment?: Appointment;
-  serviceId?: string;
-  clientId?: string;
-  date?: Date;
-  price?: number;
-  notes?: string;
-  status?: AppointmentStatus;
   initialDate?: Date;
-  initialTime?: string; 
+  appointment?: Appointment | null;
+  onSuccess?: () => void;
 }
 
-export function AppointmentForm({ 
-  onSuccess, 
-  appointment, 
-  serviceId: initialServiceId, 
-  clientId: initialClientId,
-  date: propDate,
-  notes: initialNotes,
-  price: initialPrice,
-  status: initialStatus,
-  initialDate,
-  initialTime 
-}: AppointmentFormProps) {
-  const { 
-    clients, 
-    appointments, 
-    addAppointment, 
-    updateAppointment,
-    blockedDates,
-  } = useData();
-  
-  const { services, loading: servicesLoading } = useServices();
-  
-  const { selectedClient, selectedDate, closeModal } = useAppointmentsModal();
+export function AppointmentForm({ initialDate, appointment, onSuccess }: AppointmentFormProps) {
+  const { services } = useData();
+  const { selectedClient } = useAppointmentsModal();
+  const { addAppointment, updateAppointment } = useData();
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedClient, setSelectedClientState] = useState<Client | null>(null);
 
-  const [clientId, setClientId] = useState(
-    selectedClient?.id || initialClientId || appointment?.clientId || ""
-  );
-  
-  const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
-  const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "confirmed");
-  
-  const [date, setDate] = useState<Date>(
-    selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
-  );
-  
-  const getAvailableTimeSlots = () => {
-    const timeSlots = [];
-    const startTime = 7; // 7:00 AM
-    const endTime = 19; // 7:00 PM (19:00)
-    
-    for (let hour = startTime; hour < endTime; hour++) {
-      // Add full hour
-      timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-      // Add half hour
-      timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
-    }
-    
-    // Add the last hour (19:00) without minutes
-    timeSlots.push(`${endTime.toString().padStart(2, '0')}:00`);
-    
-    return timeSlots;
-  };
+  const isEditMode = !!appointment;
 
-  const availableTimeSlots = getAvailableTimeSlots();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      clientId: "",
+      serviceId: "",
+      date: initialDate || new Date(),
+      time: format(initialDate || new Date(), "HH:mm"),
+      price: 0,
+      notes: "",
+    },
+  });
 
-  const defaultTime = () => {
-    if (selectedDate) return format(selectedDate, "HH:mm");
-    if (initialTime) return initialTime;
-    if (appointment) return format(new Date(appointment.date), "HH:mm");
-    if (initialDate) return format(initialDate, "HH:mm");
-    
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    
-    // If current time is outside working hours (7:00-19:00), default to 7:00
-    if (currentHour < 7 || currentHour >= 19) {
-      return "07:00";
-    }
-    
-    // Round to nearest 30 minutes
-    const roundedMinutes = Math.round(currentMinute / 30) * 30;
-    const roundedHour = roundedMinutes === 60 ? currentHour + 1 : currentHour;
-    const minutes = roundedMinutes === 60 ? "00" : roundedMinutes.toString().padStart(2, "0");
-    
-    return `${roundedHour.toString().padStart(2, "0")}:${minutes}`;
-  };
-  
-  const [time, setTime] = useState(defaultTime());
-  const [notes, setNotes] = useState(initialNotes || appointment?.notes || "");
-  const [price, setPrice] = useState(initialPrice || appointment?.price || 0);
-  const [hasConflict, setHasConflict] = useState(false);
-  const [conflictDetails, setConflictDetails] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedClientState, setSelectedClientState] = useState<Client | null>(
-    selectedClient || 
-    (clientId && clients.find(c => c.id === clientId)) || 
-    null
-  );
-  
+  // Set initial form values based on appointment or selected client
   useEffect(() => {
-    console.log("AppointmentForm mounted - services count:", services.length);
-  }, [services]);
+    if (appointment) {
+      // We're editing an existing appointment
+      const appointmentDate = new Date(appointment.date);
+      
+      form.reset({
+        clientId: appointment.clientId,
+        serviceId: appointment.serviceId,
+        date: appointmentDate,
+        time: format(appointmentDate, "HH:mm"),
+        price: appointment.price,
+        notes: appointment.notes || "",
+      });
 
-  useEffect(() => {
-    if (selectedClient) {
-      setClientId(selectedClient.id);
+      // Find the service for this appointment
+      const matchingService = services.find(service => service.id === appointment.serviceId);
+      if (matchingService) {
+        setSelectedService(matchingService);
+      }
+
+      // Set selected client if available
+      if (appointment.client) {
+        setSelectedClientState(appointment.client);
+      }
+    } else if (selectedClient) {
+      // New appointment with pre-selected client
+      form.setValue("clientId", selectedClient.id);
       setSelectedClientState(selectedClient);
     }
-    
-    if (selectedDate) {
-      setDate(selectedDate);
-      setTime(format(selectedDate, "HH:mm"));
+
+    if (initialDate) {
+      form.setValue("date", initialDate);
+      form.setValue("time", format(initialDate, "HH:mm"));
     }
-  }, [selectedClient, selectedDate, clients]);
+  }, [appointment, selectedClient, initialDate, form, services]);
 
-  const selectedService = services.find(s => s.id === serviceId);
-
+  // Update price when service is selected
   useEffect(() => {
-    if (serviceId) {
-      const service = services.find(s => s.id === serviceId);
-      if (service) {
-        setPrice(service.price);
-      }
+    if (selectedService && !isEditMode) {
+      form.setValue("price", selectedService.price);
     }
-  }, [serviceId, services]);
+  }, [selectedService, form, isEditMode]);
 
-  useEffect(() => {
-    if (!date || !time || !serviceId) {
-      setHasConflict(false);
-      return;
-    }
-
-    const startDateTime = new Date(date);
-    const [hours, minutes] = time.split(":").map(Number);
-    startDateTime.setHours(hours, minutes, 0, 0);
-    
-    const service = services.find(s => s.id === serviceId);
-    if (!service) {
-      setHasConflict(false);
-      return;
-    }
-    
-    const endDateTime = addMinutes(startDateTime, service.durationMinutes);
-    
-    // Check for whole day blocks
-    const isDateBlocked = blockedDates.some(blockedDate => 
-      isSameDay(new Date(blockedDate.date), date) && blockedDate.allDay
-    );
-    
-    if (isDateBlocked) {
-      setHasConflict(true);
-      setConflictDetails("Esta data está bloqueada para agendamentos.");
-      return;
-    }
-    
-    // Check for time-specific blocks
-    const isTimeBlocked = blockedDates.some(blockedDate => {
-      // Skip if it's a whole day block (already checked above)
-      if (blockedDate.allDay || blockedDate.dia_todo) return false;
-      
-      // Only check blocks for the same day
-      if (!isSameDay(new Date(blockedDate.date), date)) return false;
-      
-      // Check if the block has time information (stored in valor and description fields)
-      if (blockedDate.valor) {
-        try {
-          // Parse start and end times for the block
-          const blockStartStr = blockedDate.valor;
-          const blockEndStr = blockedDate.description || ""; // End time might be stored in description
-        
-          if (!blockStartStr) return false;
-          
-          const [blockStartHour, blockStartMinute] = blockStartStr.split(':').map(Number);
-          
-          let blockEndHour = blockStartHour + 1; // Default to 1 hour duration
-          let blockEndMinute = blockStartMinute;
-          
-          if (blockEndStr && blockEndStr.includes(':')) {
-            [blockEndHour, blockEndMinute] = blockEndStr.split(':').map(Number);
-          }
-          
-          // Create block start/end date objects
-          const blockStart = new Date(date);
-          blockStart.setHours(blockStartHour, blockStartMinute, 0, 0);
-          
-          const blockEnd = new Date(date);
-          blockEnd.setHours(blockEndHour, blockEndMinute, 0, 0);
-          
-          // Check for overlap
-          return (
-            (isAfter(startDateTime, blockStart) && isBefore(startDateTime, blockEnd)) ||
-            (isAfter(endDateTime, blockStart) && isBefore(endDateTime, blockEnd)) ||
-            (isBefore(startDateTime, blockStart) && isAfter(endDateTime, blockEnd)) ||
-            (startDateTime.getTime() === blockStart.getTime())
-          );
-        } catch (err) {
-          console.error("Error parsing blocked time:", err);
-          return false;
-        }
-      }
-      
-      return false;
-    });
-    
-    if (isTimeBlocked) {
-      setHasConflict(true);
-      setConflictDetails("Este horário está bloqueado e não disponível para agendamentos.");
-      return;
-    }
-    
-    const conflictingAppointments = appointments.filter(a => {
-      if (appointment && a.id === appointment.id) return false;
-      if (a.status === "canceled") return false;
-      
-      const appointmentStart = new Date(a.date);
-      
-      const appointmentService = services.find(s => s.id === a.serviceId);
-      const appointmentDuration = appointmentService?.durationMinutes || 60;
-      const appointmentEnd = addMinutes(appointmentStart, appointmentDuration);
-      
-      return (
-        (isAfter(startDateTime, appointmentStart) && isBefore(startDateTime, appointmentEnd)) ||
-        (isAfter(endDateTime, appointmentStart) && isBefore(endDateTime, appointmentEnd)) ||
-        (isBefore(startDateTime, appointmentStart) && isAfter(endDateTime, appointmentEnd)) ||
-        (isAfter(startDateTime, appointmentStart) && isBefore(endDateTime, appointmentEnd)) ||
-        (startDateTime.getTime() === appointmentStart.getTime())
-      );
-    });
-    
-    if (conflictingAppointments.length > 0) {
-      setHasConflict(true);
-      
-      const conflict = conflictingAppointments[0];
-      const conflictClient = clients.find(c => c.id === conflict.clientId);
-      const conflictService = services.find(s => s.id === conflict.serviceId);
-      
-      setConflictDetails(
-        `Conflito com o agendamento de ${conflictClient?.name || "Cliente"} para ${conflictService?.name || "Serviço"} às ${format(new Date(conflict.date), "HH:mm")}.`
-      );
-    } else {
-      setHasConflict(false);
-      setConflictDetails("");
-    }
-  }, [date, time, serviceId, services, appointments, appointment, blockedDates, clients]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!clientId || !serviceId || !date || !time) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (hasConflict) {
-      toast({
-        title: "Conflito de horário",
-        description: conflictDetails,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    const appointmentDate = new Date(date);
-    const [hours, minutes] = time.split(":").map(Number);
-    appointmentDate.setHours(hours, minutes, 0, 0);
-    
-    const selectedService = services.find(s => s.id === serviceId);
-    const endDateTime = addMinutes(appointmentDate, selectedService?.durationMinutes || 60);
-    
+  // Handle form submission
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
-      if (appointment) {
+      // Combine date and time
+      const [hours, minutes] = data.time.split(":").map(Number);
+      const appointmentDate = new Date(data.date);
+      appointmentDate.setHours(hours, minutes, 0, 0);
+
+      // Calculate end time based on service duration
+      const serviceDuration = selectedService?.durationMinutes || 60;
+      const endTime = calculateEndTimeFromDate(appointmentDate, serviceDuration);
+
+      if (isEditMode && appointment) {
+        // Update existing appointment
         await updateAppointment(appointment.id, {
-          clientId,
-          serviceId,
-          date: appointmentDate.toISOString(),
-          endTime: endDateTime.toISOString(),
-          status,
-          notes,
-          price
+          clientId: data.clientId,
+          serviceId: data.serviceId,
+          date: appointmentDate,
+          endTime,
+          price: data.price,
+          notes: data.notes,
         });
-        
+
         toast({
           title: "Agendamento atualizado",
-          description: "O agendamento foi atualizado com sucesso.",
+          description: "Agendamento atualizado com sucesso!",
         });
       } else {
+        // Create new appointment
         await addAppointment({
-          clientId,
-          serviceId,
-          date: appointmentDate.toISOString(),
-          endTime: endDateTime.toISOString(),
-          status,
-          notes,
-          price
+          clientId: data.clientId,
+          serviceId: data.serviceId,
+          date: appointmentDate,
+          endTime,
+          price: data.price,
+          notes: data.notes,
+          status: "pending",
         });
-        
+
         toast({
           title: "Agendamento criado",
-          description: "O agendamento foi criado com sucesso.",
+          description: "Agendamento criado com sucesso!",
         });
       }
-      
-      if (onSuccess) onSuccess();
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error("Error saving appointment:", error);
       toast({
-        title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o agendamento. Tente novamente.",
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar o agendamento",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
+    }
+  }
+
+  const handleServiceChange = (serviceId: string) => {
+    const service = services.find((s) => s.id === serviceId);
+    if (service) {
+      setSelectedService(service);
+      // Only update price if not in edit mode or if user hasn't manually changed it
+      if (!isEditMode) {
+        form.setValue("price", service.price);
+      }
     }
   };
 
   const handleClientSelect = (client: Client) => {
-    setClientId(client.id);
     setSelectedClientState(client);
+    form.setValue("clientId", client.id);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="client">Cliente <span className="text-red-500">*</span></Label>
-        <ClientAutocomplete 
-          onClientSelect={handleClientSelect} 
-          selectedClient={selectedClientState} 
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div className="space-y-2">
-          <Label htmlFor="service">Serviço <span className="text-red-500">*</span></Label>
-          {servicesLoading ? (
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Carregando serviços...</span>
-            </div>
-          ) : (
-            <Select 
-              value={serviceId} 
-              onValueChange={setServiceId}
-            >
-              <SelectTrigger id="service">
-                <SelectValue placeholder="Selecione um serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {services && services.length > 0 ? (
-                  services.map(service => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - {formatCurrency(service.price)}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="loading" disabled>
-                    Nenhum serviço disponível
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      </div>
-      
-      {selectedService && (
-        <div className="text-sm mt-1 p-2 bg-primary/10 rounded-md">
-          <p className="font-medium">{selectedService.name}</p>
-          <div className="flex justify-between mt-1">
-            <span>Preço: {formatCurrency(selectedService.price)}</span>
-            <span>Duração: {formatDuration(selectedService.durationMinutes)}</span>
-          </div>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Data <span className="text-red-500">*</span></Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(date) => date && setDate(date)}
-                initialFocus
-                disabled={date => 
-                  blockedDates.some(bd => 
-                    bd.allDay && isSameDay(new Date(bd.date), date)
-                  )
-                }
-                className={cn("p-3 pointer-events-auto")}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Client selection */}
+        <FormField
+          control={form.control}
+          name="clientId"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Cliente</FormLabel>
+              <ClientSearch 
+                selectedClient={selectedClient} 
+                onClientSelect={handleClientSelect} 
               />
-            </PopoverContent>
-          </Popover>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="time">Horário <span className="text-red-500">*</span></Label>
-          <Select 
-            value={time}
-            onValueChange={setTime}
-          >
-            <SelectTrigger id="time" className="w-full">
-              <SelectValue placeholder="Selecione um horário" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTimeSlots.map((slot) => (
-                <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select 
-          value={status} 
-          onValueChange={(value) => setStatus(value as AppointmentStatus)}
-        >
-          <SelectTrigger id="status">
-            <SelectValue placeholder="Selecione um status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="confirmed">Confirmado</SelectItem>
-            <SelectItem value="canceled">Cancelado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="price">Preço</Label>
-        <Input 
-          id="price" 
-          type="number" 
-          min="0" 
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="notes">Observações</Label>
-        <Textarea 
-          id="notes" 
-          placeholder="Observações ou detalhes adicionais..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
+
+        {/* Service selection */}
+        <FormField
+          control={form.control}
+          name="serviceId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Serviço</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  handleServiceChange(value);
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um serviço" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name} - {service.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      {hasConflict && (
-        <div className="flex items-start gap-2 p-3 text-amber-800 bg-amber-50 rounded-md border border-amber-200">
-          <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-500" />
-          <div>
-            <h4 className="font-medium">Conflito de horário</h4>
-            <p className="text-sm">{conflictDetails}</p>
-          </div>
+
+        {/* Date selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Data</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className="pl-3 text-left font-normal"
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP", { locale: ptBR })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Time selection */}
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Horário</FormLabel>
+                <div className="relative">
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="time"
+                      className="pl-10"
+                      min="07:00"
+                      max="19:00"
+                    />
+                  </FormControl>
+                  <Clock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-      )}
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={() => closeModal()}>
-          Cancelar
-        </Button>
-        <Button 
-          type="submit" 
-          className="bg-primary hover:bg-primary/90"
-          disabled={!clientId || !serviceId || !date || !time || isSubmitting}
-        >
-          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-          {appointment ? "Atualizar Agendamento" : "Criar Agendamento"}
-        </Button>
-      </div>
-    </form>
+
+        {/* Price */}
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valor</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Notes */}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Observações adicionais" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end space-x-2">
+          <Button type="submit" className="bg-primary hover:bg-primary/90">
+            {isEditMode ? "Atualizar" : "Agendar"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
