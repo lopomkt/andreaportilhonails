@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Appointment, ServiceResponse, WhatsAppMessageData } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,7 @@ export function useAppointments() {
   const { toast } = useToast();
 
   const fetchAppointments = useCallback(async (): Promise<Appointment[]> => {
+    console.log("useAppointments: fetchAppointments called");
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -33,6 +33,7 @@ export function useAppointments() {
           return mapDbAppointmentToApp(item, item.clientes, item.servicos);
         });
         
+        console.log(`useAppointments: Fetched ${mappedAppointments.length} appointments`);
         setAppointments(mappedAppointments);
         return mappedAppointments;
       }
@@ -40,6 +41,7 @@ export function useAppointments() {
       return [];
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar agendamentos';
+      console.error("Error fetching appointments:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',

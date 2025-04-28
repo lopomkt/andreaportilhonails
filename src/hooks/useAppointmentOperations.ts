@@ -27,13 +27,16 @@ export function useAppointmentOperations() {
         ? mapAppStatusToDbStatus(appointmentData.status as any) 
         : 'confirmado';
 
+      // Calculate end time if not provided
+      const horaFim = appointmentData.horaFim || new Date(appointmentData.data.getTime() + 60 * 60 * 1000); // Default +1 hour
+
       const { data, error } = await supabase
         .from('agendamentos')
         .insert({
           cliente_id: appointmentData.clienteId,
           servico_id: appointmentData.servicoId,
           data: appointmentData.data.toISOString(),
-          hora_fim: appointmentData.horaFim ? appointmentData.horaFim.toISOString() : null,
+          hora_fim: horaFim.toISOString(),
           preco: appointmentData.preco,
           status: dbStatus,
           observacoes: appointmentData.observacoes || null,
@@ -54,7 +57,10 @@ export function useAppointmentOperations() {
         title: "Sucesso", 
         description: "Agendamento criado com sucesso!" 
       });
-      await refetchAppointments(); // Update the CRM list
+      
+      // Immediately refresh the appointments list to update the UI
+      await refetchAppointments();
+      
       return { success: true, data };
       
     } catch (err: any) {
@@ -89,15 +95,15 @@ export function useAppointmentOperations() {
   }, [getAppointmentsForDate]);
 
   // Function to refresh appointments
-  const refetchAppointmentsData = useCallback(async (): Promise<void> => {
-    console.log("DataContext: refetchAppointments called");
+  const refreshAppointments = useCallback(async (): Promise<void> => {
+    console.log("useAppointmentOperations: refreshAppointments called");
     await refetchAppointments();
   }, [refetchAppointments]);
 
   return {
     getAppointmentsForDate,
     calculateDailyRevenue,
-    refetchAppointments: refetchAppointmentsData,
+    refetchAppointments: refreshAppointments,
     createAppointment,
   };
 }

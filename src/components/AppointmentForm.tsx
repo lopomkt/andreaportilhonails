@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format, addMinutes, isAfter, isBefore, isSameDay, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Client, Service, Appointment, AppointmentStatus } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Check, AlertTriangle, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,6 +18,7 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useServices } from "@/context/ServiceContext";
+import { useAppointmentOperations } from "@/hooks/useAppointmentOperations";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -53,6 +54,8 @@ export function AppointmentForm({
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
+  const { createAppointment } = useAppointmentOperations();
+  const { toast } = useToast();
   
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
@@ -239,11 +242,12 @@ export function AppointmentForm({
     const [hours, minutes] = time.split(":").map(Number);
     appointmentDate.setHours(hours, minutes, 0, 0);
     
-    const currentSelectedService = services.find(s => s.id === serviceId);
-    const endDateTime = addMinutes(appointmentDate, currentSelectedService?.durationMinutes || 60);
+    const selectedService = services.find(s => s.id === serviceId);
+    const endDateTime = addMinutes(appointmentDate, selectedService?.durationMinutes || 60);
     
     try {
       if (appointment) {
+        // Use the updateAppointment from DataProvider for existing appointments
         await updateAppointment(appointment.id, {
           clientId,
           serviceId,
@@ -259,14 +263,16 @@ export function AppointmentForm({
           description: "O agendamento foi atualizado com sucesso.",
         });
       } else {
-        await addAppointment({
-          clientId,
-          serviceId,
-          date: appointmentDate.toISOString(),
-          endTime: endDateTime.toISOString(),
-          status,
-          notes,
-          price
+        // Use our specialized createAppointment for new appointments
+        await createAppointment({
+          clienteId: clientId,
+          servicoId: serviceId,
+          data: appointmentDate,
+          horaFim: endDateTime,
+          preco: price,
+          status: status,
+          observacoes: notes,
+          motivoCancelamento: ""
         });
         
         toast({

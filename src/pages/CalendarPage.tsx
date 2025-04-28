@@ -13,7 +13,7 @@ import { useData } from "@/context/DataProvider";
 
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
-  const { fetchBlockedDates, fetchAppointments } = useData();
+  const { fetchBlockedDates, fetchAppointments, refetchAppointments } = useData();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,27 @@ export default function CalendarPage() {
       }
     }
   }, [location]);
+
+  // Initial data fetch
+  useEffect(() => {
+    const loadCalendarData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([fetchBlockedDates(), fetchAppointments()]);
+      } catch (error) {
+        console.error("Error loading calendar data:", error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar os dados do calendário",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadCalendarData();
+  }, [fetchBlockedDates, fetchAppointments, toast]);
 
   const handleDaySelect = (date: Date) => {
     const selectedDate = new Date(date);
@@ -96,6 +117,33 @@ export default function CalendarPage() {
     openModal(null, selectedDateTime);
   };
 
+  const handleBlockedDateSuccess = async () => {
+    setOpenBlockedDateDialog(false);
+    setIsLoading(true);
+    
+    try {
+      // Refresh both blocked dates and appointments
+      await Promise.all([
+        fetchBlockedDates(),
+        refetchAppointments()
+      ]);
+      
+      toast({
+        title: "Horário bloqueado",
+        description: "O horário foi bloqueado com sucesso"
+      });
+    } catch (error) {
+      console.error("Error refreshing calendar data:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar dados do calendário",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fade-in overflow-y-auto">
       <Card className="border-rose-100 shadow-soft">
@@ -129,18 +177,7 @@ export default function CalendarPage() {
             </DialogDescription>
           </DialogHeader>
           <BlockedDateForm 
-            onSuccess={() => {
-              setOpenBlockedDateDialog(false);
-              
-              // Refresh both appointments and blocked dates
-              fetchBlockedDates();
-              fetchAppointments(); // We don't need to await or use the return value here
-              
-              toast({
-                title: "Horário bloqueado",
-                description: "O horário foi bloqueado com sucesso"
-              });
-            }}
+            onSuccess={handleBlockedDateSuccess}
             initialDate={currentDate}
           />
         </DialogContent>

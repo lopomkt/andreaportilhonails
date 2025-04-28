@@ -21,6 +21,12 @@ export function AppointmentModal() {
     }
   }, [isOpen, fetchServices]);
 
+  const handleSuccess = () => {
+    closeModal();
+    // Refresh appointments list after successful creation
+    refetchAppointments();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border-rose-100 shadow-premium">
@@ -39,11 +45,7 @@ export function AppointmentModal() {
           <AppointmentFormWrapper>
             <AppointmentForm 
               initialDate={selectedDate || undefined}
-              onSuccess={() => {
-                closeModal();
-                // Refresh appointments list after successful creation
-                refetchAppointments();
-              }}
+              onSuccess={handleSuccess}
             />
           </AppointmentFormWrapper>
         )}

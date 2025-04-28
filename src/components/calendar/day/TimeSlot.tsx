@@ -23,7 +23,8 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) 
   const { time, appointments, isBlocked } = slot;
   const { openModal } = useAppointmentsModal();
   
-  const handleTimeClick = () => {
+  const handleTimeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!isBlocked && appointments.length === 0) {
       openModal(undefined, time);
     }
