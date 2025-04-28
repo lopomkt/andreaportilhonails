@@ -58,13 +58,19 @@ export function useAppointments() {
     try {
       setLoading(true);
       
+      // Validate required fields
+      if (!appointment.clientId || !appointment.serviceId || !appointment.date) {
+        const errorMsg = 'Cliente, serviço e data são obrigatórios';
+        toast({
+          title: 'Campos obrigatórios',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg };
+      }
+      
       // Convert app model to database model
       const dbAppointmentData = mapAppAppointmentToDb(appointment);
-      
-      // Make sure required fields are present
-      if (!dbAppointmentData.cliente_id || !dbAppointmentData.servico_id || !dbAppointmentData.data) {
-        throw new Error('Cliente, serviço e data são obrigatórios');
-      }
       
       // Convert Date objects to ISO strings for Supabase
       const data = typeof appointment.date === 'string' 
@@ -83,16 +89,18 @@ export function useAppointments() {
         servico_id: dbAppointmentData.servico_id,
         data: data,
         preco: dbAppointmentData.preco || 0,
-        status: dbAppointmentData.status || 'pendente',
+        status: dbAppointmentData.status || 'confirmado',
         hora_fim: hora_fim,
         motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
         observacoes: dbAppointmentData.observacoes || null,
         status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
       };
       
+      console.log("Inserting appointment data:", dataToInsert);
+      
       const { data: responseData, error } = await supabase
         .from('agendamentos')
-        .insert(dataToInsert as any) // Type assertion to bypass Supabase's strict typing
+        .insert(dataToInsert as any)
         .select(`
           *,
           clientes(*),
@@ -101,12 +109,21 @@ export function useAppointments() {
         .single();
         
       if (error) {
-        throw error;
+        console.error("Supabase error:", error);
+        toast({
+          title: 'Erro',
+          description: error.message || 'Erro ao criar agendamento',
+          variant: 'destructive'
+        });
+        return { error: error.message };
       }
       
       if (responseData) {
         const newAppointment = mapDbAppointmentToApp(responseData, responseData.clientes, responseData.servicos);
         setAppointments(prev => [...prev, newAppointment]);
+        
+        // Refresh appointments list
+        await fetchAppointments();
         
         toast({
           title: 'Agendamento criado',
@@ -119,6 +136,7 @@ export function useAppointments() {
       return { error: 'Falha ao criar agendamento' };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao criar agendamento';
+      console.error("Error creating appointment:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',

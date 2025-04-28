@@ -15,7 +15,8 @@ export function useAppointments() {
   
   const { 
     addAppointment, 
-    updateAppointment 
+    updateAppointment,
+    createAppointment 
   } = useAppointmentOperations(setAppointments);
   
   const { 
@@ -32,6 +33,7 @@ export function useAppointments() {
     fetchAppointments,
     addAppointment,
     updateAppointment,
+    createAppointment,
     getAppointmentsForDate,
     calculateDailyRevenue,
     generateWhatsAppLink

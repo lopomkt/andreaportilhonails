@@ -13,6 +13,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       console.log("Creating appointment:", appointment);
       const dbAppointmentData = mapAppAppointmentToDb(appointment);
       
+      // Validate required fields
       if (!dbAppointmentData.cliente_id || !dbAppointmentData.servico_id || !dbAppointmentData.data) {
         throw new Error('Cliente, serviço e data são obrigatórios');
       }
@@ -51,6 +52,70 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
     }
   }, [setAppointments, toast]);
 
+  const createAppointment = useCallback(async (appointment: any) => {
+    try {
+      console.log("Creating appointment with data:", appointment);
+      
+      // Validate required fields
+      if (!appointment.clienteId || !appointment.servicoId || !appointment.data) {
+        throw new Error('Cliente, serviço e data são obrigatórios');
+      }
+      
+      // Ensure date is in ISO format
+      const formattedData = {
+        cliente_id: appointment.clienteId,
+        servico_id: appointment.servicoId,
+        data: appointment.data instanceof Date ? appointment.data.toISOString() : appointment.data,
+        hora_fim: appointment.horaFim instanceof Date ? appointment.horaFim.toISOString() : appointment.horaFim,
+        preco: appointment.preco || 0,
+        status: appointment.status || 'confirmado',
+        motivo_cancelamento: appointment.motivoCancelamento || null,
+        observacoes: appointment.observacoes || null,
+        status_confirmacao: appointment.statusConfirmacao || 'not_confirmed'
+      };
+      
+      console.log("Formatted appointment data for Supabase:", formattedData);
+      
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .insert(formattedData)
+        .select(`
+          *,
+          clientes(*),
+          servicos(*)
+        `)
+        .single();
+        
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      if (data) {
+        console.log("Appointment created successfully:", data);
+        setAppointments(prev => [...prev, data as unknown as Appointment]);
+        
+        toast({
+          title: 'Agendamento criado',
+          description: 'Agendamento cadastrado com sucesso'
+        });
+        
+        return { success: true, data };
+      }
+      
+      return { success: false, error: 'Falha ao criar agendamento' };
+    } catch (err: any) {
+      console.error("Error creating appointment:", err);
+      const errorMessage = err?.message || 'Erro ao criar agendamento';
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      return { success: false, error: errorMessage };
+    }
+  }, [setAppointments, toast]);
+
   const updateAppointment = useCallback(async (id: string, appointmentData: Partial<Appointment>) => {
     try {
       console.log("Updating appointment:", id, appointmentData);
@@ -81,10 +146,10 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
           description: 'Agendamento atualizado com sucesso'
         });
         
-        return { data };
+        return { success: true, data };
       }
       
-      return { error: 'Falha ao atualizar agendamento' };
+      return { success: false, error: 'Falha ao atualizar agendamento' };
     } catch (err: any) {
       console.error("Error updating appointment:", err);
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
@@ -93,12 +158,13 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { success: false, error: errorMessage };
     }
   }, [setAppointments, toast]);
 
   return {
     addAppointment,
-    updateAppointment
+    updateAppointment,
+    createAppointment
   };
 }
