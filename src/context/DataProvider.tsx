@@ -258,6 +258,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         deleteService,
         fetchBlockedDates,
         fetchAppointments,
+        fetchClients,
         addBlockedDate,
         fetchServices,
       }}
@@ -266,4 +267,3 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     </DataContext.Provider>
   );
 };
-

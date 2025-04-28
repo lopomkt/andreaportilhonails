@@ -39,9 +39,10 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
         // Send WhatsApp message
         if (appointment.client?.phone) {
           const whatsappLink = await generateWhatsAppLink({
-            client: appointment.client,
-            appointment,
-            message: `Olá ${appointment.client.name}! Estamos confirmando seu agendamento de ${appointment.service?.name} para ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}. Por favor, responda para confirmar. Obrigado!`
+            phone: appointment.client.phone,
+            message: `Olá ${appointment.client.name}! Estamos confirmando seu agendamento de ${appointment.service?.name} para ${format(appointmentDate, 'dd/MM/yyyy')} às ${format(appointmentDate, 'HH:mm')}. Por favor, responda para confirmar. Obrigado!`,
+            clientName: appointment.client.name,
+            appointmentDate: appointmentDate
           });
           window.open(whatsappLink, '_blank');
         }

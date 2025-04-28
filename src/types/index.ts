@@ -1,3 +1,4 @@
+
 // Add this to your types file or update the existing BlockedDate type
 export interface BlockedDate {
   id: string;
@@ -27,6 +28,7 @@ export interface Client {
   data_ultimo_agendamento?: string | Date; // For database mapping
   totalSpent?: number;
   valor_total?: number; // For database mapping
+  createdAt?: string | Date; // Add this field to support existing code
 }
 
 // Appointment Status
@@ -53,6 +55,7 @@ export interface Appointment {
   client?: Client;
   service?: Service;
   created_at?: string;
+  confirmationStatus?: 'confirmed' | 'not_confirmed' | 'canceled'; // Add this field to support existing code
 }
 
 // Service type
@@ -95,6 +98,15 @@ export interface RevenueData {
   revenue: number;
   expenses: number;
   date: string;
+  month?: string | number; // Add this field to support existing code
+}
+
+// Monthly Revenue Data type
+export interface MonthlyRevenueData {
+  month: string | number;
+  revenue: number;
+  expenses?: number;
+  profit?: number;
 }
 
 // WhatsApp Message Data
@@ -103,6 +115,8 @@ export interface WhatsAppMessageData {
   message: string;
   clientName?: string;
   appointmentDate?: string | Date;
+  client?: Client; // Add this field to support existing code
+  appointment?: Appointment; // Add this field to support existing code
 }
 
 // Message Template
@@ -110,7 +124,9 @@ export interface MessageTemplate {
   id: string;
   message: string;
   tipo: string;
+  type?: string; // Add this field to support existing code
   created_at?: string;
+  active?: boolean; // Add this field to support existing code
 }
 
 // Service Response
@@ -123,6 +139,8 @@ export interface ServiceResponse<T = any> {
 export interface ClientWithRank extends Client {
   rank: number;
   appointmentCount: number;
+  badge?: string | null; // Add badge property
+  totalSpent: number; // Make totalSpent required
 }
 
 // Database types for Supabase

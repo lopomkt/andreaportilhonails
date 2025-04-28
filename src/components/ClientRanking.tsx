@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, MessageCircle } from "lucide-react";
-import { Client } from "@/types";
+import { Client, ClientWithRank } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
 import { useData } from "@/context/DataContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,10 +14,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // Badge mapping for top clients
 const clientBadges = ["🥇", "🥈", "🥉"];
-interface ClientWithRank extends Client {
-  rank: number;
-  badge: string | null;
-}
 
 type PeriodFilter = "current" | "last" | "last3" | "last6" | "year" | "all";
 
@@ -91,7 +86,8 @@ export function ClientRanking() {
         .map(client => ({
           ...client,
           rank: 0, // Will be assigned after sorting
-          badge: null,
+          badge: null as string | null,
+          appointmentCount: 0,
           totalSpent: clientSpending[client.id] || 0,
         }))
         .sort((a, b) => b.totalSpent - a.totalSpent)
@@ -119,12 +115,11 @@ export function ClientRanking() {
     e.stopPropagation();
     try {
       // Create a special message for the ranked client
-      const message = {
-        client,
-        message: `Olá ${client.name}! 👑 Queria te parabenizar por ser uma das minhas clientes mais especiais! Como agradecimento pela sua preferência, vou te dar 10% de desconto no seu próximo atendimento. Quando quiser agendar, é só me avisar! 💕`
-      };
-      
-      const whatsappLink = await generateWhatsAppLink(message);
+      const whatsappLink = await generateWhatsAppLink({
+        phone: client.phone,
+        message: `Olá ${client.name}! 👑 Queria te parabenizar por ser uma das minhas clientes mais especiais! Como agradecimento pela sua preferência, vou te dar 10% de desconto no seu próximo atendimento. Quando quiser agendar, é só me avisar! 💕`,
+        clientName: client.name
+      });
       if (whatsappLink) {
         window.open(whatsappLink, '_blank');
       }
