@@ -54,10 +54,10 @@ export function AppointmentForm({
   
   const { services, loading: servicesLoading } = useServices();
   
-  const { selectedClient, selectedDate, closeModal } = useAppointmentsModal();
+  const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
   const [clientId, setClientId] = useState(
-    selectedClient?.id || initialClientId || appointment?.clientId || ""
+    contextSelectedClient?.id || initialClientId || appointment?.clientId || ""
   );
   
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
@@ -117,7 +117,7 @@ export function AppointmentForm({
   const [conflictDetails, setConflictDetails] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedClientState, setSelectedClientState] = useState<Client | null>(
-    selectedClient || 
+    contextSelectedClient || 
     (clientId && clients.find(c => c.id === clientId)) || 
     null
   );
@@ -127,16 +127,16 @@ export function AppointmentForm({
   }, [services]);
 
   useEffect(() => {
-    if (selectedClient) {
-      setClientId(selectedClient.id);
-      setSelectedClientState(selectedClient);
+    if (contextSelectedClient) {
+      setClientId(contextSelectedClient.id);
+      setSelectedClientState(contextSelectedClient);
     }
     
     if (selectedDate) {
       setDate(selectedDate);
       setTime(format(selectedDate, "HH:mm"));
     }
-  }, [selectedClient, selectedDate, clients]);
+  }, [contextSelectedClient, selectedDate, clients]);
 
   const selectedService = services.find(s => s.id === serviceId);
 
@@ -224,76 +224,6 @@ export function AppointmentForm({
       return;
     }
 
-    try {
-  const response = await createAppointment({
-    clienteId: clientId,
-    servicoId: serviceId,
-    data: date,
-    horaFim: null, // Pode ajustar depois se quiser ter horário de fim
-    preco: price, // Cuidado: aqui é o preço do serviço! Use a variável certa
-    status: "confirmado",
-    observacoes: "",
-    motivoCancelamento: ""
-  });
-
-  if (response.success) {
-    toast({
-      title: "Sucesso",
-      description: "Agendamento criado com sucesso!",
-      variant: "success",
-    });
-    // Aqui você pode fazer o que quiser: limpar form, fechar modal, etc.
-  } else {
-    toast({
-      title: "Erro",
-      description: "Erro ao criar agendamento!",
-      variant: "destructive",
-    });
-  }
-} catch (error) {
-  console.error(error);
-  toast({
-    title: "Erro inesperado",
-    description: "Tente novamente mais tarde.",
-    variant: "destructive",
-  });
-}
-
-const { data, error } = await supabase.from('agendamentos').insert([
-  {
-    cliente_id: clientId,
-    servico_id: serviceId,
-    data: new Date(`${date}T${time}:00.000Z`), // Junta a data com a hora
-    hora_fim: new Date(`${date}T${endTime || time}:00.000Z`), // Usa hora final se existir, se não usa mesma hora
-    preco: price,
-    status: 'confirmado',
-    observacoes: "",
-    motivo_cancelamento: null,
-    created_at: new Date()
-  }
-]);
-
-if (error) {
-  console.error("Erro ao salvar agendamento:", error);
-  toast({
-    title: "Erro",
-    description: "Não foi possível salvar o agendamento.",
-    variant: "destructive"
-  });
-} else {
-  toast({
-    title: "Sucesso",
-    description: "Agendamento criado com sucesso!",
-    variant: "default"
-  });
-  // Aqui você pode adicionar a atualização da agenda automaticamente:
-  if (refetchAppointments) {
-    await refetchAppointments();
-  }
-}
-
-}
-
     if (hasConflict) {
       toast({
         title: "Conflito de horário",
@@ -309,8 +239,8 @@ if (error) {
     const [hours, minutes] = time.split(":").map(Number);
     appointmentDate.setHours(hours, minutes, 0, 0);
     
-    const selectedService = services.find(s => s.id === serviceId);
-    const endDateTime = addMinutes(appointmentDate, selectedService?.durationMinutes || 60);
+    const currentSelectedService = services.find(s => s.id === serviceId);
+    const endDateTime = addMinutes(appointmentDate, currentSelectedService?.durationMinutes || 60);
     
     try {
       if (appointment) {
