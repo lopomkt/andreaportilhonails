@@ -11,12 +11,13 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
   const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
     try {
       console.log("Creating appointment:", appointment);
-      const dbAppointmentData = mapAppAppointmentToDb(appointment);
       
       // Validate required fields
-      if (!dbAppointmentData.cliente_id || !dbAppointmentData.servico_id || !dbAppointmentData.data) {
+      if (!appointment.clientId || !appointment.serviceId || !appointment.date) {
         throw new Error('Cliente, serviço e data são obrigatórios');
       }
+      
+      const dbAppointmentData = mapAppAppointmentToDb(appointment);
       
       const { data, error } = await supabase
         .from('agendamentos')
@@ -36,10 +37,10 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
           title: 'Agendamento criado',
           description: 'Agendamento cadastrado com sucesso'
         });
-        return { data };
+        return { data, success: true };
       }
       
-      return { error: 'Falha ao criar agendamento' };
+      return { error: 'Falha ao criar agendamento', success: false };
     } catch (err: any) {
       console.error("Error creating appointment:", err);
       const errorMessage = err?.message || 'Erro ao criar agendamento';
@@ -48,7 +49,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     }
   }, [setAppointments, toast]);
 
@@ -95,11 +96,6 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         console.log("Appointment created successfully:", data);
         setAppointments(prev => [...prev, data as unknown as Appointment]);
         
-        toast({
-          title: 'Agendamento criado',
-          description: 'Agendamento cadastrado com sucesso'
-        });
-        
         return { success: true, data };
       }
       
@@ -107,18 +103,21 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
     } catch (err: any) {
       console.error("Error creating appointment:", err);
       const errorMessage = err?.message || 'Erro ao criar agendamento';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      return { success: false, error: errorMessage };
+      return { success: false, error: err };
     }
-  }, [setAppointments, toast]);
+  }, [setAppointments]);
 
   const updateAppointment = useCallback(async (id: string, appointmentData: Partial<Appointment>) => {
     try {
       console.log("Updating appointment:", id, appointmentData);
+      
+      // Validate required fields for updates
+      if (appointmentData.date) {
+        appointmentData.date = appointmentData.date instanceof Date 
+          ? appointmentData.date.toISOString() 
+          : appointmentData.date;
+      }
+      
       const dbAppointmentData = mapAppAppointmentToDb(appointmentData);
       
       const { data, error } = await supabase
@@ -141,11 +140,6 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
           )
         );
         
-        toast({
-          title: 'Agendamento atualizado',
-          description: 'Agendamento atualizado com sucesso'
-        });
-        
         return { success: true, data };
       }
       
@@ -153,14 +147,9 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
     } catch (err: any) {
       console.error("Error updating appointment:", err);
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive'
-      });
       return { success: false, error: errorMessage };
     }
-  }, [setAppointments, toast]);
+  }, [setAppointments]);
 
   return {
     addAppointment,
