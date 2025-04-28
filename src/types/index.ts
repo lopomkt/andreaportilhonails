@@ -1,91 +1,86 @@
+// Types related to appointments
+export type AppointmentStatus = 'pending' | 'confirmed' | 'canceled';
+export type ConfirmationStatus = 'not_confirmed' | 'confirmed' | 'canceled';
 
-// Add this to your types file or update the existing BlockedDate type
-export interface BlockedDate {
-  id: string;
-  date: string | Date;
-  reason?: string;
-  motivo?: string;
-  description?: string;
-  allDay: boolean;
-  dia_todo: boolean;
-  valor?: string; // To store start time
-  descricao?: string; // To store end time
-}
-
-// Client type
-export interface Client {
-  id: string;
-  name: string;
-  nome?: string; // For database mapping
-  phone: string;
-  telefone?: string; // For database mapping
-  email?: string;
-  birthdate?: string | Date;
-  data_nascimento?: string | Date; // For database mapping
-  notes?: string;
-  observacoes?: string; // For database mapping
-  lastAppointment?: string | Date;
-  data_ultimo_agendamento?: string | Date; // For database mapping
-  totalSpent?: number;
-  valor_total?: number; // For database mapping
-  createdAt?: string | Date; // Add this field to support existing code
-}
-
-// Confirmation Status type
-export type ConfirmationStatus = 'confirmed' | 'not_confirmed' | 'canceled';
-
-// Appointment Status
-export type AppointmentStatus = "pending" | "confirmed" | "canceled";
-
-// Appointment type
 export interface Appointment {
   id: string;
   clientId: string;
-  cliente_id?: string; // For database mapping
   serviceId: string;
-  servico_id?: string; // For database mapping
   date: string | Date;
-  data?: string | Date; // For database mapping
-  endTime?: string | Date;
-  hora_fim?: string | Date; // For database mapping
   price: number;
-  preco?: number; // For database mapping
   status: AppointmentStatus;
-  notes?: string;
-  observacoes?: string; // For database mapping
-  cancellationReason?: string;
-  motivo_cancelamento?: string; // For database mapping
+  endTime?: string | Date | null;
+  cancellationReason?: string | null;
+  notes?: string | null;
   client?: Client;
   service?: Service;
-  created_at?: string;
-  confirmationStatus?: ConfirmationStatus; // Add this field to support existing code
+  confirmationStatus?: ConfirmationStatus;
 }
 
-// Service type
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  birthdate?: string; // ISO format string for birthdate
+  notes?: string;
+  lastAppointment?: string; // ISO format string
+  totalSpent?: number;
+  createdAt?: string;
+}
+
 export interface Service {
   id: string;
   name: string;
-  nome?: string; // For database mapping
-  description?: string;
-  descricao?: string; // For database mapping
-  durationMinutes: number;
-  duracao_minutos?: number; // For database mapping
   price: number;
-  preco?: number; // For database mapping
+  durationMinutes: number;
+  description?: string;
 }
 
-// Expense type
+export interface BlockedDate {
+  id: string;
+  date: string; // ISO format string
+  reason?: string;
+  description?: string;
+  value?: string;
+  dia_todo: boolean;
+  allDay: boolean;
+  motivo?: string;
+}
+
+export type CalendarView = 'day' | 'week' | 'month';
+
+export interface MessageTemplate {
+  id: string;
+  type: string;
+  message: string;
+  active?: boolean; // Make active optional since it doesn't exist in our database
+}
+
+export interface AbsenceRule {
+  id: string;
+  date: string; // ISO format string
+  startTime?: string;
+  endTime?: string;
+  reason: string;
+  allDay: boolean;
+}
+
+export interface CancellationReason {
+  id: string;
+  reason: string;
+}
+
 export interface Expense {
   id: string;
   name: string;
   amount: number;
-  date: string | Date;
-  isRecurring: boolean;
+  date: string; // ISO format string
   category?: string;
+  isRecurring: boolean;
   notes?: string;
 }
 
-// Dashboard Statistics
 export interface DashboardStats {
   monthRevenue: number;
   newClients: number;
@@ -95,88 +90,29 @@ export interface DashboardStats {
   weekAppointments: number;
 }
 
-// Revenue Data for charts
-export interface RevenueData {
-  name: string;
-  revenue: number;
-  expenses: number;
-  date: string;
-  month?: string | number; // Add this field to support existing code
-}
-
-// Monthly Revenue Data type
 export interface MonthlyRevenueData {
-  month: string | number;
+  month: string;
   revenue: number;
   expenses?: number;
   profit?: number;
 }
 
-// WhatsApp Message Data - Fixed to match how it's used
+export interface RevenueData {
+  month: string;
+  revenue: number;
+}
+
 export interface WhatsAppMessageData {
-  phone: string;
-  message: string;
-  clientName?: string;
-  appointmentDate?: string | Date;
-  client?: Client; // Add this field to support existing code
-  appointment?: Appointment; // Add this field to support existing code
+  client?: Client;
+  message?: string;
+  appointment?: Appointment;
 }
 
-// Message Template - Updated to support both tipo and type
-export interface MessageTemplate {
-  id: string;
-  message: string;
-  tipo: string;
-  type?: string; // Add this field to support existing code
-  created_at?: string;
-  active?: boolean; // Add this field to support existing code
+export interface RefetchFunction {
+  (): Promise<any>;
 }
 
-// Service Response
-export interface ServiceResponse<T = any> {
+export interface ServiceResponse<T> {
   data?: T;
-  error?: string;
-}
-
-// ClientWithRank for ranking components
-export interface ClientWithRank extends Client {
-  rank: number;
-  appointmentCount: number;
-  badge?: string | null; // Add badge property
-  totalSpent: number; // Make totalSpent required
-}
-
-// Database types for Supabase
-export interface DbBlockedDate {
-  id: string;
-  data: string;
-  motivo?: string;
-  descricao?: string;
-  dia_todo: boolean;
-  valor?: string;
-}
-
-// Add AbsenceRule type
-export interface AbsenceRule {
-  id: string;
-  name: string;
-  description?: string;
-  daysInAdvance: number;
-  active: boolean;
-}
-
-// Add CancellationReason type
-export interface CancellationReason {
-  id: string;
-  reason: string;
-}
-
-// Define a unified TimeSlot type that works for both components
-export interface TimeSlot {
-  date: Date;
-  available: boolean;
-  hour?: number;
-  minute?: number;
-  time?: Date;
-  duration?: number;
+  error?: any;
 }

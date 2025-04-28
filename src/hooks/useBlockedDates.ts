@@ -24,8 +24,7 @@ export function useBlockedDates() {
         motivo: item.reason || '',
         description: item.description || '', 
         allDay: item.allDay || item.dia_todo || false,
-        dia_todo: item.dia_todo || item.allDay || false,
-        valor: item.valor || '', // Include start time
+        dia_todo: item.dia_todo || item.allDay || false, // Make sure dia_todo is included
       }));
       
       setBlockedDates(formattedBlockedDates);
@@ -57,9 +56,7 @@ export function useBlockedDates() {
       const success = await BlockedDateService.create({
         date: dateValue,
         reason: blockedDate.reason,
-        allDay: blockedDate.allDay || blockedDate.dia_todo || false,
-        valor: blockedDate.valor || '', // Pass start time
-        descricao: blockedDate.description || '', // Pass end time or description
+        allDay: blockedDate.allDay || blockedDate.dia_todo || false
       });
       
       if (success) {

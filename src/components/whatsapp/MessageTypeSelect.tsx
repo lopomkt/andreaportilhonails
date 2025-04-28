@@ -22,11 +22,11 @@ export function MessageTypeSelect({
   templates
 }: MessageTypeSelectProps) {
   // Get unique message types from templates
-  const messageTypes = [...new Set(templates.map(t => t.tipo || ''))].filter(type => type !== '');
+  const messageTypes = [...new Set(templates.map(t => t.type))];
   
   // Group templates by type for easier rendering
   const groupedTemplates = messageTypes.reduce((acc, type) => {
-    acc[type] = templates.filter(t => t.tipo === type);
+    acc[type] = templates.filter(t => t.type === type);
     return acc;
   }, {} as Record<string, MessageTemplate[]>);
 

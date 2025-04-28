@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Appointment, DashboardStats, RevenueData, MonthlyRevenueData } from '@/types';
 
@@ -109,15 +110,7 @@ export function useDashboardStats(appointments: Appointment[]) {
       }, 0);
 
       const monthName = monthStart.toLocaleString("default", { month: "long" });
-      const expenses = monthRevenue * 0.3; // Mock expenses as 30% of revenue
-      
-      data.push({
-        name: monthName,
-        revenue: monthRevenue,
-        expenses: expenses,
-        date: monthStart.toISOString(),
-        month: monthName
-      });
+      data.push({ month: monthName, revenue: monthRevenue });
     }
 
     setRevenueData(data);

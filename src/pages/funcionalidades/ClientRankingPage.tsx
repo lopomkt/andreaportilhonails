@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
+// Badge mapping for top clients
 const clientBadges = ["🥇", "🥈", "🥉"];
 
 interface ClientWithRank extends Client {
@@ -36,6 +38,7 @@ const ClientRankingPage: React.FC = () => {
     setLoading(true);
     
     try {
+      // Calculate date ranges based on selected period
       const now = new Date();
       let startDate = new Date();
       let endDate = new Date();
@@ -62,17 +65,19 @@ const ClientRankingPage: React.FC = () => {
           endDate = now;
           break;
         case "all":
-          startDate = new Date(0);
+          startDate = new Date(0); // Beginning of time
           endDate = now;
           break;
       }
       
+      // Get confirmed appointments for the selected period
       const filteredAppointments = appointments.filter(appt => {
         const appointmentDate = new Date(appt.date);
         return appt.status === "confirmed" && 
           isWithinInterval(appointmentDate, { start: startDate, end: endDate });
       });
       
+      // Count appointments per client and calculate total spent
       const clientStats: Record<string, { count: number, spent: number }> = {};
       
       filteredAppointments.forEach(appt => {
@@ -85,17 +90,18 @@ const ClientRankingPage: React.FC = () => {
         }
       });
       
+      // Map clients with ranking
       const rankedClientsList = clients
         .filter(client => clientStats[client.id])
         .map(client => ({
           ...client,
-          rank: 0,
+          rank: 0, // Will be assigned after sorting
           badge: null,
           totalSpent: clientStats[client.id]?.spent || 0,
           appointmentsCount: clientStats[client.id]?.count || 0
         }))
         .sort((a, b) => b.totalSpent - a.totalSpent)
-        .slice(0, isMobile ? 10 : 20)
+        .slice(0, isMobile ? 10 : 20) // Show top 10 clients on mobile, 20 on desktop
         .map((client, index) => ({
           ...client,
           rank: index + 1,
@@ -115,25 +121,24 @@ const ClientRankingPage: React.FC = () => {
     }
   }, [clients, appointments, period, isMobile, toast]);
 
-  const sendWhatsAppMessage = async (client: Client) => {
+  const handleSendWhatsApp = async (client: Client) => {
     try {
-      const defaultMessage = `Olá ${client.name}! 💕 Sentimos sua falta! Há algum tempo não vemos você em nosso salão. Que tal agendar um horário? Temos novidades que você vai adorar! 💅✨`;
+      // Create a special message for the ranked client
+      const message = {
+        client,
+        message: `Olá ${client.name}! 👑 Queria te parabenizar por ser uma das minhas clientes mais especiais! Como agradecimento pela sua preferência, vou te dar 10% de desconto no seu próximo atendimento. Quando quiser agendar, é só me avisar! 💕`
+      };
       
-      const whatsappLink = await generateWhatsAppLink({
-        phone: client.phone,
-        client: client,
-        message: defaultMessage
-      });
-      
+      const whatsappLink = await generateWhatsAppLink(message);
       if (whatsappLink) {
         window.open(whatsappLink, '_blank');
       }
     } catch (error) {
       console.error("Error sending WhatsApp message:", error);
       toast({
-        title: "Erro",
-        description: "Não foi possível enviar a mensagem para este cliente",
-        variant: "destructive",
+        title: "Erro ao enviar mensagem",
+        description: "Não foi possível enviar a mensagem WhatsApp. Tente novamente.",
+        variant: "destructive"
       });
     }
   };
@@ -152,6 +157,7 @@ const ClientRankingPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-3 md:p-4 relative">
+      {/* Back button for mobile */}
       {isMobile && (
         <Button
           variant="ghost"
@@ -196,6 +202,7 @@ const ClientRankingPage: React.FC = () => {
             </div>
           ) : (
             <>
+              {/* Desktop View */}
               {!isMobile && (
                 <Table>
                   <TableHeader>
@@ -237,7 +244,7 @@ const ClientRankingPage: React.FC = () => {
                               variant="outline" 
                               size="sm" 
                               className="border-rose-200 text-rose-600 hover:bg-rose-50"
-                              onClick={() => sendWhatsAppMessage(client)}
+                              onClick={() => handleSendWhatsApp(client)}
                             >
                               <MessageCircle className="mr-1 h-3 w-3" />
                               Mensagem
@@ -257,6 +264,7 @@ const ClientRankingPage: React.FC = () => {
                 </Table>
               )}
 
+              {/* Mobile View - Card Layout */}
               {isMobile && (
                 <div className="grid grid-cols-1 gap-3">
                   {rankedClients.length > 0 ? (
@@ -287,7 +295,7 @@ const ClientRankingPage: React.FC = () => {
                                 variant="outline" 
                                 size="sm" 
                                 className="mt-1 h-7 px-2 py-0 text-xs border-rose-200 text-rose-600"
-                                onClick={() => sendWhatsAppMessage(client)}
+                                onClick={() => handleSendWhatsApp(client)}
                               >
                                 <MessageCircle className="mr-1 h-3 w-3" />
                                 WhatsApp

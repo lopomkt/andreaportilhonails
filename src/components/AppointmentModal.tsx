@@ -11,26 +11,15 @@ import { useData } from '@/context/DataProvider';
 export function AppointmentModal() {
   const { isOpen, closeModal, selectedClient, selectedDate } = useAppointmentsModal();
   const { services, loading: servicesLoading, fetchServices } = useServices();
-  const { refetchAppointments, refetchClients, fetchBlockedDates } = useData();
+  const { refetchAppointments } = useData();
 
-  // Force fetch services and data when modal opens
+  // Force fetch services when modal opens
   useEffect(() => {
     if (isOpen) {
-      console.log("AppointmentModal opened, fetching data...");
+      console.log("AppointmentModal opened, fetching services...");
       fetchServices();
-      refetchClients();
-      fetchBlockedDates();
     }
-  }, [isOpen, fetchServices, refetchClients, fetchBlockedDates]);
-
-  // Handle successful appointment creation
-  const handleAppointmentSuccess = async () => {
-    closeModal();
-    
-    // Refresh appointments list after successful creation
-    await refetchAppointments();
-    await fetchBlockedDates();
-  };
+  }, [isOpen, fetchServices]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
@@ -50,7 +39,11 @@ export function AppointmentModal() {
           <AppointmentFormWrapper>
             <AppointmentForm 
               initialDate={selectedDate || undefined}
-              onSuccess={handleAppointmentSuccess}
+              onSuccess={() => {
+                closeModal();
+                // Refresh appointments list after successful creation
+                refetchAppointments();
+              }}
             />
           </AppointmentFormWrapper>
         )}

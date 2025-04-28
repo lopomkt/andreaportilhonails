@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,35 +38,29 @@ const MessagesTemplatePage: React.FC = () => {
         
         if (data && data.length > 0) {
           // Usar dados do banco
-          const mappedTemplates: MessageTemplate[] = data.map(item => ({
+          setTemplates(data.map(item => ({
             id: item.id,
-            tipo: item.tipo,
-            type: item.tipo, // Add type as alias for tipo
+            type: item.tipo,
             message: item.mensagem,
             active: true // Adding active property with default true
-          }));
-          
-          setTemplates(mappedTemplates);
+          })));
         } else {
           // Usar templates padrão se não houver dados
-          const defaultTemplates: MessageTemplate[] = [
+          const defaultTemplates = [
             {
               id: "confirmation",
-              tipo: "confirmação",
               type: "confirmação",
               message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕",
               active: true
             },
             {
               id: "reminder",
-              tipo: "lembrete",
               type: "lembrete",
               message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.",
               active: true
             },
             {
               id: "reengagement",
-              tipo: "reengajamento",
               type: "reengajamento",
               message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!",
               active: true
@@ -81,7 +76,7 @@ const MessagesTemplatePage: React.FC = () => {
                 .from('mensagens_templates')
                 .insert({
                   id: template.id,
-                  tipo: template.tipo,
+                  tipo: template.type,
                   mensagem: template.message
                 });
             }
@@ -92,31 +87,26 @@ const MessagesTemplatePage: React.FC = () => {
       } catch (error) {
         console.error("Erro ao configurar templates:", error);
         // Fallback para templates padrão
-        const fallbackTemplates: MessageTemplate[] = [
+        setTemplates([
           {
             id: "confirmation",
-            tipo: "confirmação",
             type: "confirmação",
             message: "Olá {{nome}}! 💅✨ Seu agendamento está confirmado. Estou ansiosa para te receber! Qualquer mudança, me avise com antecedência, ok? 💕",
             active: true
           },
           {
             id: "reminder",
-            tipo: "lembrete",
             type: "lembrete",
             message: "Oi {{nome}} 👋 Passando para lembrar do seu horário amanhã. Estou te esperando! Não se atrase, tá? 💖 Se precisar remarcar, me avise o quanto antes.",
             active: true
           },
           {
             id: "reengagement",
-            tipo: "reengajamento",
             type: "reengajamento",
             message: "Oi {{nome}}! 💕 Estou com saudades! Faz um tempinho que não te vejo por aqui. Que tal agendar um horário para cuidar das suas unhas? Tenho novidades que você vai amar! 💅✨ Me avisa quando quiser agendar!",
             active: true
           }
-        ];
-        
-        setTemplates(fallbackTemplates);
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -164,7 +154,7 @@ const MessagesTemplatePage: React.FC = () => {
           
         updatedTemplates = templates.map(t => 
           t.id === editingTemplate.id 
-            ? { ...t, tipo: formType, type: formType, message: formMessage } 
+            ? { ...t, type: formType, message: formMessage } 
             : t
         );
         
@@ -186,8 +176,7 @@ const MessagesTemplatePage: React.FC = () => {
           
         const newTemplate: MessageTemplate = {
           id: newId,
-          tipo: formType,
-          type: formType, // Add type as alias for tipo
+          type: formType,
           message: formMessage,
           active: true // Adding active property with default true
         };

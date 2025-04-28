@@ -1,7 +1,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { addDays, isToday } from 'date-fns';
-import { TimeSlot } from '@/types';
+
+interface TimeSlot {
+  time: Date;
+  duration: number;
+}
 
 export const useTimeSlotsCalculation = (getAppointmentsForDate: (date: Date) => any[]) => {
   const [suggestedSlots, setSuggestedSlots] = useState<TimeSlot[]>([]);
@@ -34,10 +38,8 @@ export const useTimeSlotsCalculation = (getAppointmentsForDate: (date: Date) => 
         const duration = (endTime.getTime() - startTime.getTime()) / (60 * 1000);
         if (duration >= avgServiceDuration) {
           slots.push({
-            date: startTime,
             time: startTime,
-            duration: duration,
-            available: true
+            duration: duration
           });
         }
         return slots;
@@ -49,10 +51,8 @@ export const useTimeSlotsCalculation = (getAppointmentsForDate: (date: Date) => 
         const duration = (firstApptTime.getTime() - startTime.getTime()) / (60 * 1000);
         if (duration >= avgServiceDuration) {
           slots.push({
-            date: startTime,
             time: startTime,
-            duration: duration,
-            available: true
+            duration: duration
           });
         }
       }
@@ -69,10 +69,8 @@ export const useTimeSlotsCalculation = (getAppointmentsForDate: (date: Date) => 
           const duration = (nextStart.getTime() - currentEnd.getTime()) / (60 * 1000);
           if (duration >= avgServiceDuration) {
             slots.push({
-              date: currentEnd,
               time: currentEnd,
-              duration: duration,
-              available: true
+              duration: duration
             });
           }
         }
@@ -89,10 +87,8 @@ export const useTimeSlotsCalculation = (getAppointmentsForDate: (date: Date) => 
         const duration = (endTime.getTime() - lastApptEnd.getTime()) / (60 * 1000);
         if (duration >= avgServiceDuration) {
           slots.push({
-            date: lastApptEnd,
             time: lastApptEnd,
-            duration: duration,
-            available: true
+            duration: duration
           });
         }
       }
@@ -102,10 +98,10 @@ export const useTimeSlotsCalculation = (getAppointmentsForDate: (date: Date) => 
     const todaySlots = findGapsInDay(today, todayAppointments);
     const tomorrowSlots = findGapsInDay(tomorrow, tomorrowAppointments);
     const allSlots = [...todaySlots, ...tomorrowSlots].sort((a, b) => {
-      if (Math.abs(a.duration! - avgServiceDuration) !== Math.abs(b.duration! - avgServiceDuration)) {
-        return Math.abs(a.duration! - avgServiceDuration) - Math.abs(b.duration! - avgServiceDuration);
+      if (Math.abs(a.duration - avgServiceDuration) !== Math.abs(b.duration - avgServiceDuration)) {
+        return Math.abs(a.duration - avgServiceDuration) - Math.abs(b.duration - avgServiceDuration);
       }
-      return a.date.getTime() - b.date.getTime();
+      return a.time.getTime() - b.time.getTime();
     });
     setSuggestedSlots(allSlots.slice(0, 3));
   }, [getAppointmentsForDate]);

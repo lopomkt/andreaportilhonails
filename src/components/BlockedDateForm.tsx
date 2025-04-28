@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,45 +21,20 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parse, isAfter } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useData } from "@/context/DataProvider";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const timeSlots = Array.from({ length: 25 }).map((_, i) => {
-  const hour = Math.floor(i / 2).toString().padStart(2, '0');
-  const minute = i % 2 === 0 ? '00' : '30';
-  return `${hour}:${minute}`;
-});
 
 const FormSchema = z.object({
   date: z.date({
     required_error: "A data é obrigatória.",
   }),
-  startTime: z.string({
-    required_error: "O horário de início é obrigatório.",
-  }),
-  endTime: z.string({
-    required_error: "O horário de término é obrigatório.",
-  }),
   reason: z.string().optional(),
   description: z.string().optional(),
-  allDay: z.boolean().default(false),
-}).refine((data) => {
-  if (data.allDay) return true;
-  
-  // Compare start and end times to make sure end is after start
-  const [startHour, startMinute] = data.startTime.split(':').map(Number);
-  const [endHour, endMinute] = data.endTime.split(':').map(Number);
-  
-  return (endHour > startHour) || 
-         (endHour === startHour && endMinute > startMinute);
-}, {
-  message: "O horário de término deve ser maior que o horário de início",
-  path: ["endTime"],
+  allDay: z.boolean().default(true),
 });
 
 export function BlockedDateForm({ 
@@ -68,41 +44,31 @@ export function BlockedDateForm({
   onSuccess?: () => void;
   initialDate?: Date;
 }) {
-  const { addBlockedDate } = useData();
+  const { addBlockedDate, fetchBlockedDates } = useData();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       date: initialDate,
-      startTime: "08:00",
-      endTime: "09:00",
       reason: "",
       description: "",
-      allDay: false,
+      allDay: true,
     },
   });
-
-  // Watch the allDay value to adjust form logic
-  const allDay = form.watch("allDay");
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
       setIsSubmitting(true);
       
-      // Format the date and set the time components if not allDay
-      const blockedDate = new Date(data.date);
-      blockedDate.setHours(0, 0, 0, 0);
-      
       // Convert the Date object to ISO string to match the BlockedDate type
+      // Include dia_todo property to match BlockedDate type
       await addBlockedDate({
-        date: blockedDate.toISOString(),
+        date: data.date.toISOString(),
         reason: data.reason || "",
         description: data.description || "",
         allDay: data.allDay,
-        dia_todo: data.allDay,
-        valor: data.allDay ? "" : data.startTime, // Store start time in valor field
-        descricao: data.allDay ? (data.description || "") : data.endTime, // Store end time in descricao field if not all day
+        dia_todo: data.allDay, // Add this missing field
       });
       
       if (onSuccess) {
@@ -161,87 +127,6 @@ export function BlockedDateForm({
 
         <FormField
           control={form.control}
-          name="allDay"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Dia todo?</FormLabel>
-                <FormDescription>
-                  Se marcado, todo o dia será bloqueado na agenda.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
-
-        {!allDay && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="startTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Horário de Início</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o horário inicial" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="endTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Horário de Término</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o horário final" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
-
-        <FormField
-          control={form.control}
           name="reason"
           render={({ field }) => (
             <FormItem>
@@ -267,6 +152,27 @@ export function BlockedDateForm({
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="allDay"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Dia todo?</FormLabel>
+                <FormDescription>
+                  Se marcado, todo o dia será bloqueado na agenda.
+                </FormDescription>
+              </div>
             </FormItem>
           )}
         />

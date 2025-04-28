@@ -6,11 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '@/types';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
-import { useData } from '@/context/DataProvider';
 
 export function AppointmentFormWrapper({ children }: { children: React.ReactNode }) {
   const { selectedClient: initialSelectedClient } = useAppointmentsModal();
-  const { fetchClients, fetchServices } = useData();
   const [selectedClient, setSelectedClient] = useState<Client | null>(initialSelectedClient);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
@@ -19,13 +17,6 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
   useEffect(() => {
     setSelectedClient(initialSelectedClient);
   }, [initialSelectedClient]);
-
-  // Fetch fresh data when modal is shown
-  useEffect(() => {
-    // Fetch fresh data
-    fetchClients();
-    fetchServices();
-  }, [fetchClients, fetchServices]);
 
   const recursivelyModifyChildren = (children: React.ReactNode): React.ReactNode => {
     return React.Children.map(children, child => {

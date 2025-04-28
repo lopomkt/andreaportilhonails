@@ -3,22 +3,14 @@ import { supabase } from './client';
 import { BlockedDate } from '@/types';
 
 export const BlockedDateService = {
-  async create(data: { 
-    date: string; 
-    reason?: string; 
-    allDay?: boolean;
-    valor?: string; // Start time
-    descricao?: string; // End time or description
-  }): Promise<boolean> {
+  async create(data: { date: string; reason?: string; allDay?: boolean }): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('datas_bloqueadas')
         .insert({
           data: data.date,
           motivo: data.reason || null,
-          dia_todo: data.allDay || false,
-          valor: data.valor || null, // Store start time
-          descricao: data.descricao || null // Store end time or description
+          dia_todo: data.allDay || true
         });
 
       if (error) {
@@ -33,21 +25,13 @@ export const BlockedDateService = {
     }
   },
 
-  async update(id: string, data: { 
-    date?: string; 
-    reason?: string; 
-    allDay?: boolean;
-    valor?: string; // Start time
-    descricao?: string; // End time or description
-  }): Promise<boolean> {
+  async update(id: string, data: { date?: string; reason?: string; allDay?: boolean }): Promise<boolean> {
     try {
       const updateData: any = {};
       
       if (data.date) updateData.data = data.date;
       if (data.reason !== undefined) updateData.motivo = data.reason;
       if (data.allDay !== undefined) updateData.dia_todo = data.allDay;
-      if (data.valor !== undefined) updateData.valor = data.valor;
-      if (data.descricao !== undefined) updateData.descricao = data.descricao;
       
       const { error } = await supabase
         .from('datas_bloqueadas')
@@ -82,11 +66,8 @@ export const BlockedDateService = {
         id: item.id,
         date: item.data,
         reason: item.motivo || "",
-        motivo: item.motivo || "",
-        description: item.descricao || "",
         allDay: item.dia_todo,
-        dia_todo: item.dia_todo,
-        valor: item.valor || "" // Include start time
+        dia_todo: item.dia_todo
       })) || [];
     } catch (err) {
       console.error("Unexpected error fetching blocked dates:", err);

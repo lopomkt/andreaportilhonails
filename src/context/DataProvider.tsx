@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -53,10 +54,9 @@ interface DataContextType {
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
   fetchBlockedDates: () => Promise<void>;
-  fetchAppointments: () => Promise<Appointment[]>; 
-  fetchClients: () => Promise<Client[]>;
+  fetchAppointments: () => Promise<Appointment[]>; // Updated to return Promise<Appointment[]>
   addBlockedDate: (blockedDate: Omit<BlockedDate, "id">) => Promise<any>;
-  fetchServices: () => Promise<Service[]>;
+  fetchServices: () => Promise<Service[]>; // Added missing fetchServices function
 }
 
 export const DataContext = createContext<DataContextType>({
@@ -98,10 +98,9 @@ export const DataContext = createContext<DataContextType>({
   updateService: async () => ({}),
   deleteService: async () => ({}),
   fetchBlockedDates: async () => {},
-  fetchAppointments: async () => [],
-  fetchClients: async () => [],
+  fetchAppointments: async () => [], // Updated to return empty array
   addBlockedDate: async () => ({}),
-  fetchServices: async () => [],
+  fetchServices: async () => [], // Added missing fetchServices function
 });
 
 export const useData = () => {
@@ -257,7 +256,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         deleteService,
         fetchBlockedDates,
         fetchAppointments,
-        fetchClients,
         addBlockedDate,
         fetchServices,
       }}
@@ -266,3 +264,4 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     </DataContext.Provider>
   );
 };
+

@@ -17,29 +17,16 @@ export function mapDbClientToApp(dbClient: DbClient): Client {
 }
 
 export function mapAppClientToDb(client: Client): DbClient {
-  // Convert Date objects to ISO strings for database
-  const birthdate = client.birthdate 
-    ? (client.birthdate instanceof Date ? client.birthdate.toISOString() : client.birthdate) 
-    : null;
-    
-  const lastAppointment = client.lastAppointment 
-    ? (client.lastAppointment instanceof Date ? client.lastAppointment.toISOString() : client.lastAppointment)
-    : null;
-    
-  const createdAt = client.createdAt
-    ? (client.createdAt instanceof Date ? client.createdAt.toISOString() : client.createdAt)
-    : new Date().toISOString();
-
   return {
     id: client.id,
     nome: client.name,
     telefone: client.phone,
     email: client.email || null,
-    data_nascimento: birthdate,
+    data_nascimento: client.birthdate || null,
     observacoes: client.notes || null,
-    ultimo_agendamento: lastAppointment,
-    data_ultimo_agendamento: lastAppointment,
+    ultimo_agendamento: client.lastAppointment || null,
+    data_ultimo_agendamento: client.lastAppointment || null,
     valor_total: client.totalSpent || 0,
-    data_criacao: createdAt,
+    data_criacao: client.createdAt || new Date().toISOString(),
   };
 }
