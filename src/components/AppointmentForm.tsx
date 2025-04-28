@@ -223,7 +223,42 @@ export function AppointmentForm({
       });
       return;
     }
-    
+
+    try {
+  const response = await createAppointment({
+    clienteId: clientId,
+    servicoId: serviceId,
+    data: date,
+    horaFim: null, // Pode ajustar depois se quiser ter horário de fim
+    preco: price, // Cuidado: aqui é o preço do serviço! Use a variável certa
+    status: "confirmado",
+    observacoes: "",
+    motivoCancelamento: ""
+  });
+
+  if (response.success) {
+    toast({
+      title: "Sucesso",
+      description: "Agendamento criado com sucesso!",
+      variant: "success",
+    });
+    // Aqui você pode fazer o que quiser: limpar form, fechar modal, etc.
+  } else {
+    toast({
+      title: "Erro",
+      description: "Erro ao criar agendamento!",
+      variant: "destructive",
+    });
+  }
+} catch (error) {
+  console.error(error);
+  toast({
+    title: "Erro inesperado",
+    description: "Tente novamente mais tarde.",
+    variant: "destructive",
+  });
+}
+
     if (hasConflict) {
       toast({
         title: "Conflito de horário",
