@@ -245,18 +245,17 @@ export function AppointmentForm({
     
     try {
       if (appointment) {
-        // Use the updateAppointment from DataProvider for existing appointments
-        await updateAppointment(appointment.id, {
-          clientId,
-          serviceId,
-          date: appointmentDate.toISOString(),
-          endTime: endDateTime.toISOString(),
-          status,
-          notes,
-          price
+        await createAppointment({
+          clienteId: clientId,
+          servicoId: serviceId,
+          data: appointmentDate,
+          horaFim: endDateTime,
+          preco: price,
+          status: status,
+          observacoes: notes || "",
+          motivoCancelamento: appointment.cancellationReason || ""
         });
         
-        // Refresh the appointments list
         await refetchAppointments();
         
         toast({
@@ -264,7 +263,6 @@ export function AppointmentForm({
           description: "O agendamento foi atualizado com sucesso.",
         });
       } else {
-        // Save the new appointment to Supabase
         await createAppointment({
           clienteId: clientId,
           servicoId: serviceId,
@@ -276,7 +274,6 @@ export function AppointmentForm({
           motivoCancelamento: ""
         });
         
-        // Refresh the appointments list to update UI
         await refetchAppointments();
         
         toast({
