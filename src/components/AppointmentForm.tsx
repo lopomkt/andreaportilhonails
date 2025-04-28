@@ -259,6 +259,35 @@ export function AppointmentForm({
   });
 }
 
+    const { data, error } = await supabase.from('agendamentos').insert([
+  {
+    cliente_id: clientId,
+    servico_id: serviceId,
+    data: new Date(date),
+    hora_fim: new Date(dateEnd),
+    preco: servicePrice,
+    status: 'ativo',
+    observacoes: observations,
+    created_at: new Date()
+  }
+]);
+
+if (error) {
+  console.error("Erro ao salvar agendamento:", error);
+  toast({
+    title: "Erro",
+    description: "Não foi possível salvar o agendamento.",
+    variant: "destructive"
+  });
+} else {
+  toast({
+    title: "Sucesso",
+    description: "Agendamento criado com sucesso!",
+    variant: "default"
+  });
+  // Aqui talvez você queira refazer a busca dos agendamentos para atualizar o calendário.
+}
+
     if (hasConflict) {
       toast({
         title: "Conflito de horário",
