@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -48,9 +47,8 @@ export function AppointmentForm({
   const { 
     clients, 
     appointments, 
-    addAppointment, 
-    updateAppointment,
     blockedDates,
+    refetchAppointments
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
@@ -242,8 +240,8 @@ export function AppointmentForm({
     const [hours, minutes] = time.split(":").map(Number);
     appointmentDate.setHours(hours, minutes, 0, 0);
     
-    const selectedService = services.find(s => s.id === serviceId);
-    const endDateTime = addMinutes(appointmentDate, selectedService?.durationMinutes || 60);
+    const selectedServiceObj = services.find(s => s.id === serviceId);
+    const endDateTime = addMinutes(appointmentDate, selectedServiceObj?.durationMinutes || 60);
     
     try {
       if (appointment) {
@@ -258,22 +256,28 @@ export function AppointmentForm({
           price
         });
         
+        // Refresh the appointments list
+        await refetchAppointments();
+        
         toast({
           title: "Agendamento atualizado",
           description: "O agendamento foi atualizado com sucesso.",
         });
       } else {
-        // Use our specialized createAppointment for new appointments
+        // Save the new appointment to Supabase
         await createAppointment({
           clienteId: clientId,
           servicoId: serviceId,
           data: appointmentDate,
           horaFim: endDateTime,
           preco: price,
-          status: status,
-          observacoes: notes,
+          status: "confirmado",
+          observacoes: notes || "",
           motivoCancelamento: ""
         });
+        
+        // Refresh the appointments list to update UI
+        await refetchAppointments();
         
         toast({
           title: "Agendamento criado",

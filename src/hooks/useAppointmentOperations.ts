@@ -30,29 +30,37 @@ export function useAppointmentOperations() {
       // Calculate end time if not provided
       const horaFim = appointmentData.horaFim || new Date(appointmentData.data.getTime() + 60 * 60 * 1000); // Default +1 hour
 
+      // Construct the data object to insert
+      const dataToInsert = {
+        cliente_id: appointmentData.clienteId,
+        servico_id: appointmentData.servicoId,
+        data: appointmentData.data.toISOString(),
+        hora_fim: horaFim.toISOString(),
+        preco: appointmentData.preco,
+        status: dbStatus,
+        observacoes: appointmentData.observacoes || null,
+        motivo_cancelamento: appointmentData.motivoCancelamento || null
+      };
+
+      console.log("Creating appointment with data:", dataToInsert);
+
       const { data, error } = await supabase
         .from('agendamentos')
-        .insert({
-          cliente_id: appointmentData.clienteId,
-          servico_id: appointmentData.servicoId,
-          data: appointmentData.data.toISOString(),
-          hora_fim: horaFim.toISOString(),
-          preco: appointmentData.preco,
-          status: dbStatus,
-          observacoes: appointmentData.observacoes || null,
-          motivo_cancelamento: appointmentData.motivoCancelamento || null,
-        });
+        .insert(dataToInsert)
+        .select('*');
 
       if (error) {
         console.error("Erro ao criar agendamento:", error);
         toast({ 
           title: "Erro", 
-          description: "Não foi possível criar o agendamento.", 
+          description: "Não foi possível criar o agendamento: " + error.message, 
           variant: "destructive" 
         });
         return { success: false, error };
       }
 
+      console.log("Appointment created successfully:", data);
+      
       toast({ 
         title: "Sucesso", 
         description: "Agendamento criado com sucesso!" 
@@ -67,7 +75,7 @@ export function useAppointmentOperations() {
       console.error("Erro inesperado:", err);
       toast({ 
         title: "Erro", 
-        description: "Erro inesperado ao criar agendamento.", 
+        description: "Erro inesperado ao criar agendamento: " + (err.message || "Erro desconhecido"), 
         variant: "destructive" 
       });
       return { success: false, error: err };
