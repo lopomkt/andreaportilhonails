@@ -1,270 +1,63 @@
 
 import React from 'react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { format, addMinutes, differenceInMinutes } from 'date-fns';
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Appointment } from '@/types';
-import { Check, Edit, Trash2, MessageSquare } from "lucide-react";
-import { toast } from '@/hooks/use-toast';
-import { useAppointments } from '@/hooks/useAppointments';
-import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { cn } from '@/lib/utils';
+import { formatMinutesToHumanTime } from '@/lib/formatters';
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  onClick?: (appointment: Appointment) => void;
-  compact?: boolean;
+  onClick: () => void;
 }
 
-export const AppointmentCard: React.FC<AppointmentCardProps> = ({ 
-  appointment, 
-  onClick,
-  compact = false
-}) => {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const { updateAppointment, generateWhatsAppLink } = useAppointments();
-  const { openModal } = useAppointmentsModal();
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Open modal with the current appointment data
-    openModal(appointment.client, new Date(appointment.date), appointment);
-  };
+export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onClick }) => {
+  const appointmentDate = new Date(appointment.date);
+  const endTime = appointment.endTime 
+    ? new Date(appointment.endTime) 
+    : addMinutes(appointmentDate, appointment.service?.durationMinutes || 60);
   
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      // Update status to canceled instead of actually deleting
-      await updateAppointment(appointment.id, { 
-        status: 'canceled',
-        cancellationReason: 'Excluído pelo usuário'
-      });
-      
-      toast({
-        title: "Agendamento excluído",
-        description: "O agendamento foi excluído com sucesso",
-      });
-    } catch (error) {
-      console.error("Error deleting appointment:", error);
-      toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o agendamento",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  const handleConfirm = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    try {
-      await updateAppointment(appointment.id, { status: 'confirmed' });
-      
-      toast({
-        title: "Agendamento confirmado",
-        description: "O agendamento foi confirmado com sucesso",
-      });
-    } catch (error) {
-      console.error("Error confirming appointment:", error);
-      toast({
-        title: "Erro ao confirmar",
-        description: "Não foi possível confirmar o agendamento",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleWhatsApp = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    try {
-      if (!appointment.client) {
-        throw new Error("Cliente não encontrado");
-      }
-      
-      const link = await generateWhatsAppLink({
-        phone: appointment.client.phone,
-        message: `Olá ${appointment.client.name}, confirmo seu agendamento para ${format(new Date(appointment.date), 'dd/MM/yyyy')} às ${format(new Date(appointment.date), 'HH:mm')}`,
-        clientName: appointment.client.name,
-        appointmentDate: appointment.date
-      });
-      
-      window.open(link, '_blank');
-    } catch (error) {
-      console.error("Error generating WhatsApp link:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível abrir o WhatsApp",
-        variant: "destructive"
-      });
-    }
-  };
-
-  if (!appointment.client || !appointment.service) {
-    return null;
-  }
-
-  const statusColor = appointment.status === 'confirmed'
-    ? 'bg-green-100 text-green-800 border-green-300'
-    : appointment.status === 'canceled'
-      ? 'bg-red-100 text-red-800 border-red-300'
-      : 'bg-yellow-100 text-yellow-800 border-yellow-300';
-
-  const statusText = appointment.status === 'confirmed'
-    ? 'Confirmado'
-    : appointment.status === 'canceled'
-      ? 'Cancelado'
-      : 'Pendente';
-
+  const duration = differenceInMinutes(endTime, appointmentDate);
+  
   return (
-    <>
-      <div
-        className={cn(
-          "bg-white border rounded-md shadow-sm cursor-pointer",
-          statusColor,
-          compact ? "p-1" : "p-2"
-        )}
-        onClick={() => onClick?.(appointment)}
-      >
+    <Card 
+      className={cn(
+        "w-full max-w-sm cursor-pointer hover:shadow-md transition-shadow",
+        appointment.status === "confirmed" ? "border-l-4 border-l-green-500" :
+        appointment.status === "pending" ? "border-l-4 border-l-amber-500" :
+        "border-l-4 border-l-red-500"
+      )}
+      onClick={onClick}
+    >
+      <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
-            <div className={cn("font-medium", compact ? "text-xs" : "text-sm")}>
-              {appointment.client.name}
+            <h4 className="text-sm font-medium">{appointment.client?.name}</h4>
+            <p className="text-xs text-muted-foreground">{appointment.service?.name}</p>
+            <div className="flex items-center text-xs text-muted-foreground mt-1">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>
+                {format(appointmentDate, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                {' '}({formatMinutesToHumanTime(duration)})
+              </span>
             </div>
-            <div className={cn("text-muted-foreground", compact ? "text-xs" : "text-sm")}>
-              {appointment.service.name}
-            </div>
-            {!compact && (
-              <div className="flex items-center mt-1">
-                <Badge variant="outline" className={cn(statusColor)}>
-                  {statusText}
-                </Badge>
-                <span className="ml-2 text-sm font-medium">
-                  {appointment.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              </div>
-            )}
           </div>
-
-          {!compact && (
-            <div className="flex space-x-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7"
-                      onClick={handleWhatsApp}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>WhatsApp</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7"
-                      onClick={handleEdit}
-                    >
-                      <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Editar</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 hover:bg-red-100 hover:text-red-700"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Excluir</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              {appointment.status !== 'confirmed' && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 hover:bg-green-100 hover:text-green-700"
-                        onClick={handleConfirm}
-                      >
-                        <Check className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Confirmar</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          )}
+          
+          <Badge 
+            className={cn(
+              "ml-2",
+              appointment.status === "confirmed" ? "bg-green-100 text-green-800" :
+              appointment.status === "pending" ? "bg-amber-100 text-amber-800" :
+              "bg-red-100 text-red-800"
+            )}
+          >
+            {appointment.status === "confirmed" ? "Confirmado" : 
+             appointment.status === "pending" ? "Pendente" : "Cancelado"}
+          </Badge>
         </div>
-      </div>
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir agendamento</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      </CardContent>
+    </Card>
   );
 };

@@ -1,43 +1,61 @@
 
-import React, { createContext, useContext, useState } from "react";
-import { Appointment, Client } from "@/types";
+import React, { createContext, useContext, useState } from 'react';
+import { Client } from '@/types';
 
 interface AppointmentsModalContextType {
   isOpen: boolean;
   selectedClient: Client | null;
   selectedDate: Date | null;
-  selectedAppointment: Appointment | null;
-  openModal: (client?: Client | null, date?: Date, appointment?: Appointment | null) => void;
+  openModal: (client?: Client | null, date?: Date | null) => void;
   closeModal: () => void;
 }
 
-const AppointmentsModalContext = createContext<AppointmentsModalContextType>({
+const defaultContext: AppointmentsModalContextType = {
   isOpen: false,
   selectedClient: null,
   selectedDate: null,
-  selectedAppointment: null,
   openModal: () => {},
   closeModal: () => {},
-});
+};
 
-export const AppointmentsModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AppointmentsModalContext = createContext<AppointmentsModalContextType>(defaultContext);
+
+export const useAppointmentsModal = () => {
+  const context = useContext(AppointmentsModalContext);
+  if (!context) {
+    throw new Error('useAppointmentsModal must be used within an AppointmentsModalProvider');
+  }
+  return context;
+};
+
+export const AppointmentsModalProvider: React.FC<{ children: React.ReactNode }> = ({ 
+  children 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
-  const openModal = (client?: Client | null, date?: Date, appointment?: Appointment | null) => {
-    setSelectedClient(client || null);
-    setSelectedDate(date || null);
-    setSelectedAppointment(appointment || null);
-    setIsOpen(true);
+  const openModal = (client: Client | null = null, date: Date | null = null) => {
+    console.log("Opening appointment modal with:", { client: client?.name, date: date?.toISOString() });
+    
+    // Set data first before opening modal to avoid rendering issues
+    setSelectedClient(client);
+    setSelectedDate(date);
+    
+    // Open modal in next tick to ensure data is set first
+    setTimeout(() => {
+      setIsOpen(true);
+    }, 0);
   };
 
   const closeModal = () => {
     setIsOpen(false);
-    setSelectedClient(null);
-    setSelectedDate(null);
-    setSelectedAppointment(null);
+    
+    // Clear data after modal is closed to avoid stale data
+    setTimeout(() => {
+      setSelectedClient(null);
+      setSelectedDate(null);
+    }, 300); // Small delay to allow animation to complete
   };
 
   return (
@@ -46,14 +64,11 @@ export const AppointmentsModalProvider: React.FC<{ children: React.ReactNode }> 
         isOpen,
         selectedClient,
         selectedDate,
-        selectedAppointment,
         openModal,
-        closeModal,
+        closeModal
       }}
     >
       {children}
     </AppointmentsModalContext.Provider>
   );
 };
-
-export const useAppointmentsModal = () => useContext(AppointmentsModalContext);
