@@ -54,9 +54,10 @@ interface DataContextType {
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
   fetchBlockedDates: () => Promise<void>;
-  fetchAppointments: () => Promise<Appointment[]>; // Updated to return Promise<Appointment[]>
+  fetchAppointments: () => Promise<Appointment[]>; 
+  fetchClients: () => Promise<Client[]>;
   addBlockedDate: (blockedDate: Omit<BlockedDate, "id">) => Promise<any>;
-  fetchServices: () => Promise<Service[]>; // Added missing fetchServices function
+  fetchServices: () => Promise<Service[]>;
 }
 
 export const DataContext = createContext<DataContextType>({
@@ -98,9 +99,10 @@ export const DataContext = createContext<DataContextType>({
   updateService: async () => ({}),
   deleteService: async () => ({}),
   fetchBlockedDates: async () => {},
-  fetchAppointments: async () => [], // Updated to return empty array
+  fetchAppointments: async () => [],
+  fetchClients: async () => [],
   addBlockedDate: async () => ({}),
-  fetchServices: async () => [], // Added missing fetchServices function
+  fetchServices: async () => [],
 });
 
 export const useData = () => {
