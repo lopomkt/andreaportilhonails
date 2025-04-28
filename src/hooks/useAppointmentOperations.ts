@@ -4,6 +4,7 @@ import { useDataContext } from './useDataContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment } from '@/types';
+import { mapAppStatusToDbStatus } from '@/integrations/supabase/mappers/appointmentMapper';
 
 export function useAppointmentOperations() {
   const { appointments, refetchAppointments } = useDataContext();
@@ -21,18 +22,23 @@ export function useAppointmentOperations() {
     motivoCancelamento?: string;
   }) => {
     try {
+      // Convert the application status to database status
+      const dbStatus = appointmentData.status 
+        ? mapAppStatusToDbStatus(appointmentData.status as any) 
+        : 'confirmado';
+
       const { data, error } = await supabase
         .from('agendamentos')
-        .insert([{
+        .insert({
           cliente_id: appointmentData.clienteId,
           servico_id: appointmentData.servicoId,
           data: appointmentData.data.toISOString(),
           hora_fim: appointmentData.horaFim ? appointmentData.horaFim.toISOString() : null,
           preco: appointmentData.preco,
-          status: appointmentData.status || 'confirmado',
+          status: dbStatus,
           observacoes: appointmentData.observacoes || null,
           motivo_cancelamento: appointmentData.motivoCancelamento || null,
-        }]);
+        });
 
       if (error) {
         console.error("Erro ao criar agendamento:", error);
