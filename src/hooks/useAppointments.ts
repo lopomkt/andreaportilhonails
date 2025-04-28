@@ -84,13 +84,14 @@ export function useAppointments() {
         status: dbAppointmentData.status || 'pendente',
         hora_fim: hora_fim,
         motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
-        observacoes: dbAppointmentData.observacoes || null,
-        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
+        observacoes: dbAppointmentData.observacoes || null
       };
+      
+      console.log("Creating appointment with data:", dataToInsert);
       
       const { data: responseData, error } = await supabase
         .from('agendamentos')
-        .insert(dataToInsert as any) // Type assertion to bypass Supabase's strict typing
+        .insert(dataToInsert)
         .select(`
           *,
           clientes(*),
@@ -99,6 +100,7 @@ export function useAppointments() {
         .single();
         
       if (error) {
+        console.error("Error from Supabase:", error);
         throw error;
       }
       
@@ -117,6 +119,7 @@ export function useAppointments() {
       return { error: 'Falha ao criar agendamento' };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao criar agendamento';
+      console.error("Error creating appointment:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -146,7 +149,6 @@ export function useAppointments() {
       if (dbAppointmentData.hora_fim !== undefined) updateData.hora_fim = dbAppointmentData.hora_fim;
       if (dbAppointmentData.motivo_cancelamento !== undefined) updateData.motivo_cancelamento = dbAppointmentData.motivo_cancelamento;
       if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
-      if (dbAppointmentData.status_confirmacao !== undefined) updateData.status_confirmacao = dbAppointmentData.status_confirmacao;
       
       const { data, error } = await supabase
         .from('agendamentos')

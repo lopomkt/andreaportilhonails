@@ -29,6 +29,30 @@ export default function CalendarPage() {
       : "week";
   });
   
+  // Load calendar data on initial render and when view changes
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        await Promise.all([
+          fetchBlockedDates(),
+          fetchAppointments()
+        ]);
+      } catch (error) {
+        console.error("Error loading calendar data:", error);
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar dados do calendário",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [fetchBlockedDates, fetchAppointments, toast]);
+  
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const dateParam = searchParams.get('date');
@@ -37,6 +61,9 @@ export default function CalendarPage() {
     if (dateParam) {
       try {
         const parsedDate = new Date(dateParam);
+        // Important: normalize the date to avoid timezone issues
+        parsedDate.setHours(0, 0, 0, 0);
+        
         if (!isNaN(parsedDate.getTime())) {
           setCurrentDate(parsedDate);
           
@@ -52,7 +79,10 @@ export default function CalendarPage() {
   }, [location]);
 
   const handleDaySelect = (date: Date) => {
+    // Important: normalize the date to avoid timezone issues
     const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    
     setCurrentDate(selectedDate);
     
     if (calendarView === "month") {
@@ -96,6 +126,36 @@ export default function CalendarPage() {
     openModal(null, selectedDateTime);
   };
 
+  // Refresh data after blocking date
+  const handleBlockedDateSuccess = async () => {
+    setOpenBlockedDateDialog(false);
+    
+    // Show loading toast
+    toast({
+      title: "Atualizando calendário",
+      description: "Recarregando dados após bloqueio de horário",
+      duration: 2000
+    });
+    
+    // Refresh both appointments and blocked dates
+    try {
+      await fetchBlockedDates();
+      await fetchAppointments();
+      
+      toast({
+        title: "Horário bloqueado",
+        description: "O horário foi bloqueado com sucesso"
+      });
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar dados do calendário",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fade-in overflow-y-auto">
       <Card className="border-rose-100 shadow-soft">
@@ -129,18 +189,7 @@ export default function CalendarPage() {
             </DialogDescription>
           </DialogHeader>
           <BlockedDateForm 
-            onSuccess={() => {
-              setOpenBlockedDateDialog(false);
-              
-              // Refresh both appointments and blocked dates
-              fetchBlockedDates();
-              fetchAppointments(); // We don't need to await or use the return value here
-              
-              toast({
-                title: "Horário bloqueado",
-                description: "O horário foi bloqueado com sucesso"
-              });
-            }}
+            onSuccess={handleBlockedDateSuccess}
             initialDate={currentDate}
           />
         </DialogContent>

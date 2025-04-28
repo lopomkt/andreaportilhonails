@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -167,6 +166,7 @@ export function AppointmentForm({
     
     const endDateTime = addMinutes(startDateTime, service.durationMinutes);
     
+    // Check for whole day blocks
     const isDateBlocked = blockedDates.some(blockedDate => 
       isSameDay(new Date(blockedDate.date), date) && blockedDate.allDay
     );
@@ -174,6 +174,61 @@ export function AppointmentForm({
     if (isDateBlocked) {
       setHasConflict(true);
       setConflictDetails("Esta data está bloqueada para agendamentos.");
+      return;
+    }
+    
+    // Check for time-specific blocks
+    const isTimeBlocked = blockedDates.some(blockedDate => {
+      // Skip if it's a whole day block (already checked above)
+      if (blockedDate.allDay || blockedDate.dia_todo) return false;
+      
+      // Only check blocks for the same day
+      if (!isSameDay(new Date(blockedDate.date), date)) return false;
+      
+      // Check if the block has time information (stored in valor and description fields)
+      if (blockedDate.valor) {
+        try {
+          // Parse start and end times for the block
+          const blockStartStr = blockedDate.valor;
+          const blockEndStr = blockedDate.description || ""; // End time might be stored in description
+        
+          if (!blockStartStr) return false;
+          
+          const [blockStartHour, blockStartMinute] = blockStartStr.split(':').map(Number);
+          
+          let blockEndHour = blockStartHour + 1; // Default to 1 hour duration
+          let blockEndMinute = blockStartMinute;
+          
+          if (blockEndStr && blockEndStr.includes(':')) {
+            [blockEndHour, blockEndMinute] = blockEndStr.split(':').map(Number);
+          }
+          
+          // Create block start/end date objects
+          const blockStart = new Date(date);
+          blockStart.setHours(blockStartHour, blockStartMinute, 0, 0);
+          
+          const blockEnd = new Date(date);
+          blockEnd.setHours(blockEndHour, blockEndMinute, 0, 0);
+          
+          // Check for overlap
+          return (
+            (isAfter(startDateTime, blockStart) && isBefore(startDateTime, blockEnd)) ||
+            (isAfter(endDateTime, blockStart) && isBefore(endDateTime, blockEnd)) ||
+            (isBefore(startDateTime, blockStart) && isAfter(endDateTime, blockEnd)) ||
+            (startDateTime.getTime() === blockStart.getTime())
+          );
+        } catch (err) {
+          console.error("Error parsing blocked time:", err);
+          return false;
+        }
+      }
+      
+      return false;
+    });
+    
+    if (isTimeBlocked) {
+      setHasConflict(true);
+      setConflictDetails("Este horário está bloqueado e não disponível para agendamentos.");
       return;
     }
     

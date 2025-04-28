@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays } from 'date-fns';
+import { format, isSameDay, parseISO, addMinutes, differenceInMinutes, setHours, isWithinInterval, addDays, subDays, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { formatMinutesToHumanTime } from '@/lib/formatters';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
+import { useData } from '@/context/DataProvider';
 
 export interface DayViewProps {
   date: Date;
@@ -26,9 +28,15 @@ export const DayView: React.FC<DayViewProps> = ({
   onDaySelect,
   onSuggestedTimeSelect
 }) => {
-  const { appointments, blockedDates, services } = useSupabaseData();
+  const { appointments, blockedDates, services } = useData();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
+  const [timeSlots, setTimeSlots] = useState<Array<{ 
+    time: Date, 
+    appointments: Appointment[], 
+    isBlocked: boolean,
+    blockReason?: string,
+    isPartiallyBlocked?: boolean 
+  }>>([]);
   const isMobile = useIsMobile();
   const { openModal } = useAppointmentsModal();
 
@@ -36,7 +44,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   normalizedDate.setHours(0, 0, 0, 0);
 
-  // Adicionar navegação entre dias
+  // Add navigation between days
   const handlePrevDay = () => {
     if (onDaySelect) onDaySelect(subDays(normalizedDate, 1));
   };
@@ -78,15 +86,55 @@ export const DayView: React.FC<DayViewProps> = ({
         });
         
         // Check if time is blocked - normalize blocked dates too
-        const isTimeBlocked = blockedDates.some(blockedDate => {
+        const blockedDate = blockedDates.find(blockedDate => {
           const blockDate = new Date(blockedDate.date);
-          return isSameDay(blockDate, normalizedDate) && blockedDate.allDay;
+          return isSameDay(blockDate, normalizedDate);
         });
+        
+        let isBlocked = false;
+        let blockReason = '';
+        let isPartiallyBlocked = false;
+        
+        if (blockedDate) {
+          if (blockedDate.allDay || blockedDate.dia_todo) {
+            isBlocked = true;
+            blockReason = blockedDate.reason || 'Dia bloqueado';
+          } else if (blockedDate.valor) {
+            // Check for time-specific block (valor = start time, description = end time)
+            try {
+              const blockStartTime = parse(blockedDate.valor, 'HH:mm', new Date());
+              const blockStartHour = blockStartTime.getHours();
+              const blockStartMinute = blockStartTime.getMinutes();
+              
+              let blockEndTime;
+              if (blockedDate.description) {
+                blockEndTime = parse(blockedDate.description, 'HH:mm', new Date());
+              } else {
+                // Default to 1 hour if no end time specified
+                blockEndTime = new Date(blockStartTime);
+                blockEndTime.setHours(blockEndTime.getHours() + 1);
+              }
+              const blockEndHour = blockEndTime.getHours();
+              const blockEndMinute = blockEndTime.getMinutes();
+              
+              if ((hour > blockStartHour || (hour === blockStartHour && minute >= blockStartMinute)) && 
+                  (hour < blockEndHour || (hour === blockEndHour && minute < blockEndMinute))) {
+                isBlocked = true;
+                isPartiallyBlocked = true;
+                blockReason = blockedDate.reason || 'Horário bloqueado';
+              }
+            } catch (err) {
+              console.error("Error parsing blocked time:", err);
+            }
+          }
+        }
         
         slots.push({
           time: slotTime,
           appointments: slotAppointments,
-          isBlocked: isTimeBlocked
+          isBlocked,
+          blockReason,
+          isPartiallyBlocked
         });
       }
     }
@@ -178,20 +226,23 @@ interface TimeSlotProps {
   slot: { 
     time: Date; 
     appointments: Appointment[]; 
-    isBlocked: boolean 
+    isBlocked: boolean;
+    blockReason?: string;
+    isPartiallyBlocked?: boolean;
   };
   onTimeClick: (time: Date) => void;
   onAppointmentClick: (appointment: Appointment) => void;
 }
 
 const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppointmentClick }) => {
-  const { time, appointments, isBlocked } = slot;
+  const { time, appointments, isBlocked, blockReason, isPartiallyBlocked } = slot;
   
   return (
     <div 
       className={cn(
         "p-2 border rounded-md flex items-center justify-between",
         isBlocked ? "bg-gray-100" : "hover:bg-gray-50 cursor-pointer",
+        isPartiallyBlocked ? "bg-gray-50 border-red-100" : "",
         appointments.length > 0 ? "bg-nail-50" : ""
       )}
       onClick={() => !isBlocked && appointments.length === 0 && onTimeClick(time)}
@@ -202,9 +253,13 @@ const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppointmentCli
         </div>
         
         {isBlocked && (
-          <Badge variant="outline" className="bg-gray-200 text-gray-700">
+          <Badge variant="outline" className={cn(
+            "bg-gray-200 text-gray-700",
+            isPartiallyBlocked ? "bg-red-50 text-red-700 border-red-200" : ""
+          )}>
             <CalendarX className="h-3 w-3 mr-1" />
-            Bloqueado
+            {isPartiallyBlocked ? "Horário bloqueado" : "Bloqueado"} 
+            {blockReason && `: ${blockReason}`}
           </Badge>
         )}
       </div>
