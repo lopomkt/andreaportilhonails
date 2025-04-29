@@ -62,6 +62,7 @@ export function useAppointments() {
       // Validate required fields
       if (!appointment.clientId || !appointment.serviceId || !appointment.date) {
         const errorMsg = 'Erro: Campos obrigatórios não preenchidos.';
+        console.error("Missing required appointment fields:", errorMsg);
         toast({
           title: 'Campos obrigatórios',
           description: errorMsg,
@@ -70,28 +71,25 @@ export function useAppointments() {
         return { error: errorMsg, success: false };
       }
       
+      // Format date to ISO string
+      const formattedDate = appointment.date instanceof Date 
+        ? appointment.date.toISOString() 
+        : (typeof appointment.date === 'string' ? new Date(appointment.date).toISOString() : appointment.date);
+      
       // Convert app model to database model
-      const dbAppointmentData = mapAppAppointmentToDb(appointment);
-      
-      // Convert Date objects to ISO strings for Supabase
-      const data = typeof appointment.date === 'string' 
-        ? appointment.date 
-        : appointment.date.toISOString();
-      
-      const hora_fim = appointment.endTime 
-        ? (typeof appointment.endTime === 'string' 
-           ? appointment.endTime 
-           : appointment.endTime.toISOString()) 
-        : null;
+      const dbAppointmentData = mapAppAppointmentToDb({
+        ...appointment,
+        date: formattedDate
+      });
       
       // Create data object with required fields
       const dataToInsert = {
         cliente_id: dbAppointmentData.cliente_id,
         servico_id: dbAppointmentData.servico_id,
-        data: data,
+        data: dbAppointmentData.data,
         preco: dbAppointmentData.preco || 0,
         status: dbAppointmentData.status || 'confirmado',
-        hora_fim: hora_fim,
+        hora_fim: dbAppointmentData.hora_fim,
         motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
         observacoes: dbAppointmentData.observacoes || null,
         status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
@@ -110,17 +108,14 @@ export function useAppointments() {
         .single();
         
       if (error) {
-        console.error("Supabase error:", error);
-        toast({
-          title: 'Erro',
-          description: error.message || 'Erro ao criar agendamento',
-          variant: 'destructive'
-        });
-        return { error: error.message, success: false };
+        console.error("Supabase error creating appointment:", error);
+        throw error;
       }
       
       if (responseData) {
         const newAppointment = mapDbAppointmentToApp(responseData, responseData.clientes, responseData.servicos);
+        
+        // Update local state
         setAppointments(prev => [...prev, newAppointment]);
         
         // Refresh appointments list
@@ -153,6 +148,24 @@ export function useAppointments() {
   const updateAppointment = async (id: string, appointmentData: Partial<Appointment>): Promise<ServiceResponse<Appointment>> => {
     try {
       setLoading(true);
+      
+      // Validate ID
+      if (!id) {
+        const errorMsg = 'ID do agendamento não fornecido';
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
+      
+      // Format date if provided
+      if (appointmentData.date) {
+        appointmentData.date = appointmentData.date instanceof Date 
+          ? appointmentData.date.toISOString() 
+          : (typeof appointmentData.date === 'string' ? new Date(appointmentData.date).toISOString() : appointmentData.date);
+      }
       
       // Convert app model to database model
       const dbAppointmentData = mapAppAppointmentToDb(appointmentData);
@@ -188,6 +201,9 @@ export function useAppointments() {
         const updatedAppointment = mapDbAppointmentToApp(data, data.clientes, data.servicos);
         setAppointments(prev => prev.map(appointment => appointment.id === id ? updatedAppointment : appointment));
         
+        // Refresh appointments list after update
+        await fetchAppointments();
+        
         toast({
           title: 'Agendamento atualizado',
           description: 'Agendamento atualizado com sucesso'
@@ -199,6 +215,7 @@ export function useAppointments() {
       return { error: 'Falha ao atualizar agendamento', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
+      console.error("Error updating appointment:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',

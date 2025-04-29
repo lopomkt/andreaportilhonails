@@ -16,6 +16,7 @@ export function useExpenses() {
       // Making sure we use a valid table name from the database
       // Since it appears 'despesas' doesn't exist in the schema
       // We'll use an empty array for now until the table is created
+      console.log("Fetching expenses...");
       setExpenses([]);
       return [];
       
@@ -47,6 +48,7 @@ export function useExpenses() {
       */
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao buscar despesas';
+      console.error("Error fetching expenses:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -62,6 +64,17 @@ export function useExpenses() {
   const addExpense = async (expense: Omit<Expense, "id">): Promise<ServiceResponse<Expense>> => {
     try {
       setLoading(true);
+      
+      // Validate required fields
+      if (!expense.name || !expense.amount || !expense.date || !expense.category) {
+        const errorMsg = 'Erro: Campos obrigatórios não preenchidos';
+        toast({
+          title: 'Campos obrigatórios',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
       
       // Since the despesas table doesn't exist yet, we'll return a mock response
       const mockExpense: Expense = {
@@ -118,11 +131,13 @@ export function useExpenses() {
           description: 'Despesa adicionada com sucesso'
         });
         
-        return { data: newExpense };
+        return { data: newExpense, success: true };
       }
+      return { error: 'Falha ao adicionar despesa', success: false };
       */
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao adicionar despesa';
+      console.error("Error adding expense:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -133,13 +148,22 @@ export function useExpenses() {
     } finally {
       setLoading(false);
     }
-    
-    return { error: 'Falha ao adicionar despesa', success: false };
   };
 
   const updateExpense = async (expense: Expense): Promise<ServiceResponse<Expense>> => {
     try {
       setLoading(true);
+      
+      // Validate required fields
+      if (!expense.id || !expense.name || !expense.amount || !expense.date || !expense.category) {
+        const errorMsg = 'Erro: Campos obrigatórios não preenchidos';
+        toast({
+          title: 'Campos obrigatórios',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
       
       // Since the despesas table doesn't exist yet, we'll return a mock response
       // and update the local state
@@ -194,11 +218,14 @@ export function useExpenses() {
           description: 'Despesa atualizada com sucesso'
         });
         
-        return { data: updatedExpense };
+        return { data: updatedExpense, success: true };
       }
+      
+      return { error: 'Falha ao atualizar despesa', success: false };
       */
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao atualizar despesa';
+      console.error("Error updating expense:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -209,13 +236,22 @@ export function useExpenses() {
     } finally {
       setLoading(false);
     }
-    
-    return { error: 'Falha ao atualizar despesa', success: false };
   };
 
   const deleteExpense = async (id: string): Promise<ServiceResponse<boolean>> => {
     try {
       setLoading(true);
+      
+      // Validate required fields
+      if (!id) {
+        const errorMsg = 'Erro: ID da despesa não fornecido';
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
       
       // Since the despesas table doesn't exist, we'll mock the deletion
       setExpenses(prev => prev.filter(expense => expense.id !== id));
@@ -244,9 +280,12 @@ export function useExpenses() {
         title: 'Despesa excluída',
         description: 'Despesa excluída com sucesso'
       });
+      
+      return { data: true, success: true };
       */
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao excluir despesa';
+      console.error("Error deleting expense:", errorMessage);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -257,8 +296,6 @@ export function useExpenses() {
     } finally {
       setLoading(false);
     }
-    
-    return { data: true, success: true };
   };
 
   return {

@@ -5,24 +5,29 @@ import { mapDbClientToApp, mapAppClientToDb } from '@/integrations/supabase/mapp
 
 export async function fetchClientsFromApi(): Promise<Client[]> {
   console.log("Fetching clients from API...");
-  const { data, error } = await supabase
-    .from('clientes')
-    .select('*')
-    .order('nome', { ascending: true });
-  
-  if (error) {
-    console.error("Error fetching clients:", error);
-    throw error;
-  }
+  try {
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .order('nome', { ascending: true });
+    
+    if (error) {
+      console.error("Error fetching clients:", error);
+      throw error;
+    }
 
-  if (!data) {
-    console.warn("No data returned from API");
+    if (!data) {
+      console.warn("No data returned from API");
+      return [];
+    }
+
+    const mappedClients = data.map(mapDbClientToApp);
+    console.log("Fetched and mapped clients:", mappedClients);
+    return mappedClients;
+  } catch (err) {
+    console.error("Unexpected error fetching clients:", err);
     return [];
   }
-
-  const mappedClients = data.map(mapDbClientToApp);
-  console.log("Fetched and mapped clients:", mappedClients);
-  return mappedClients;
 }
 
 export async function createClientInApi(clientData: Partial<Client>): Promise<ServiceResponse<Client>> {
@@ -76,6 +81,10 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
 export async function updateClientInApi(clientId: string, clientData: Partial<Client>): Promise<ServiceResponse<Client>> {
   console.log("Updating client:", clientId, "with data:", clientData);
   
+  if (!clientId) {
+    return { error: 'ID do cliente não fornecido', success: false };
+  }
+  
   // Ensure required fields are present to avoid TypeScript errors
   const updateData = mapAppClientToDb({
     id: clientId,
@@ -91,41 +100,55 @@ export async function updateClientInApi(clientId: string, clientData: Partial<Cl
   
   delete updateData.id;
   
-  const { data, error } = await supabase
-    .from('clientes')
-    .update(updateData)
-    .eq('id', clientId)
-    .select('*')
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('clientes')
+      .update(updateData)
+      .eq('id', clientId)
+      .select('*')
+      .single();
+      
+    if (error) {
+      console.error('Error updating client:', error);
+      return { error: error.message, success: false };
+    }
     
-  if (error) {
-    console.error('Error updating client:', error);
-    return { error: error.message, success: false };
+    if (!data) {
+      console.error('No data returned after client update');
+      return { error: 'Falha ao atualizar cliente', success: false };
+    }
+    
+    console.log("Client updated successfully:", data);
+    const updatedClient = mapDbClientToApp(data);
+    return { data: updatedClient, success: true };
+  } catch (err: any) {
+    console.error('Error updating client:', err);
+    return { error: err.message || 'Erro ao atualizar cliente', success: false };
   }
-  
-  if (!data) {
-    console.error('No data returned after client update');
-    return { error: 'Falha ao atualizar cliente', success: false };
-  }
-  
-  console.log("Client updated successfully:", data);
-  const updatedClient = mapDbClientToApp(data);
-  return { data: updatedClient, success: true };
 }
 
 export async function deleteClientInApi(clientId: string): Promise<ServiceResponse<boolean>> {
   console.log("Deleting client:", clientId);
   
-  const { error } = await supabase
-    .from('clientes')
-    .delete()
-    .eq('id', clientId);
-    
-  if (error) {
-    console.error('Error deleting client:', error);
-    return { error: error.message, success: false };
+  if (!clientId) {
+    return { error: 'ID do cliente não fornecido', success: false };
   }
   
-  console.log("Client deleted successfully");
-  return { data: true, success: true };
+  try {
+    const { error } = await supabase
+      .from('clientes')
+      .delete()
+      .eq('id', clientId);
+      
+    if (error) {
+      console.error('Error deleting client:', error);
+      return { error: error.message, success: false };
+    }
+    
+    console.log("Client deleted successfully");
+    return { data: true, success: true };
+  } catch (err: any) {
+    console.error('Unexpected error deleting client:', err);
+    return { error: err.message || 'Erro ao excluir cliente', success: false };
+  }
 }

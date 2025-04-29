@@ -63,7 +63,17 @@ export function useServices() {
     try {
       setLoading(true);
       
-      const dbServiceData = mapAppServiceToDb(service);
+      // Validate required fields
+      if (!service.name || service.price === undefined || !service.durationMinutes) {
+        const errorMsg = 'Nome, preço e duração são obrigatórios';
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
+      
       const { data, error } = await supabase
         .from('servicos')
         .insert({
@@ -94,6 +104,7 @@ export function useServices() {
       return { error: 'Falha ao adicionar serviço', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao adicionar serviço';
+      console.error("Error adding service:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -109,6 +120,19 @@ export function useServices() {
   const updateService = async (id: string, serviceData: Partial<Service>): Promise<ServiceResponse<Service>> => {
     try {
       setLoading(true);
+      
+      // Validate required fields if they're being updated
+      if ((serviceData.name !== undefined && !serviceData.name) || 
+          (serviceData.price !== undefined && serviceData.price < 0) ||
+          (serviceData.durationMinutes !== undefined && serviceData.durationMinutes <= 0)) {
+        const errorMsg = 'Dados inválidos para atualização';
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
       
       const dbServiceData = mapAppServiceToDb(serviceData);
       const { data, error } = await supabase
@@ -137,6 +161,7 @@ export function useServices() {
       return { error: 'Falha ao atualizar serviço', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao atualizar serviço';
+      console.error("Error updating service:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',
@@ -151,6 +176,16 @@ export function useServices() {
 
   const deleteService = async (id: string): Promise<ServiceResponse<boolean>> => {
     try {
+      if (!id) {
+        const errorMsg = 'ID do serviço não fornecido';
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+        return { error: errorMsg, success: false };
+      }
+      
       setLoading(true);
       const { error } = await supabase
         .from('servicos')
@@ -171,6 +206,7 @@ export function useServices() {
       return { data: true, success: true };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao excluir serviço';
+      console.error("Error deleting service:", err);
       setError(errorMessage);
       toast({
         title: 'Erro',

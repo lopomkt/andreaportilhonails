@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Loader2, Phone } from 'lucide-react';
+import { Plus, Search, Loader2, Phone, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ClientForm from "@/components/ClientForm";
@@ -30,6 +31,7 @@ export function ClientAutocomplete({
   const [searchResults, setSearchResults] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const { toast } = useToast();
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +45,7 @@ export function ClientAutocomplete({
   
   const fetchClients = async (query: string = '') => {
     setIsLoading(true);
+    setFetchError(null);
     
     try {
       let queryBuilder = supabase
@@ -58,6 +61,13 @@ export function ClientAutocomplete({
       
       if (error) {
         console.error('Error fetching clients:', error);
+        setFetchError(error.message);
+        toast({
+          title: 'Erro ao buscar clientes',
+          description: error.message,
+          variant: 'destructive'
+        });
+        setSearchResults([]);
         return;
       }
       
@@ -74,9 +84,18 @@ export function ClientAutocomplete({
           createdAt: item.data_criacao || null
         }));
         setSearchResults(mappedClients);
+      } else {
+        setSearchResults([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Unexpected error fetching clients:', error);
+      setFetchError(error.message || 'Erro desconhecido ao buscar clientes');
+      toast({
+        title: 'Erro',
+        description: 'Erro ao buscar clientes. Tente novamente.',
+        variant: 'destructive'
+      });
+      setSearchResults([]);
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +110,7 @@ export function ClientAutocomplete({
     
     if (query.length === 0) {
       setIsOpen(false);
+      setSearchResults([]);
       return;
     }
     
@@ -101,9 +121,17 @@ export function ClientAutocomplete({
   };
 
   const handleSelectClient = (client: Client) => {
-    onClientSelect(client);
-    setSearchQuery(client.name);
-    setIsOpen(false);
+    if (client && client.id) {
+      onClientSelect(client);
+      setSearchQuery(client.name);
+      setIsOpen(false);
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'Cliente inválido selecionado',
+        variant: 'destructive'
+      });
+    }
   };
   
   const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -178,7 +206,21 @@ export function ClientAutocomplete({
           ref={resultsRef}
           className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-md max-h-60 overflow-y-auto"
         >
-          {searchResults.length > 0 ? (
+          {fetchError ? (
+            <div className="p-4 text-center">
+              <div className="flex items-center justify-center text-destructive mb-2">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <p className="text-sm font-medium">Erro ao buscar clientes</p>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full text-sm mt-2"
+                onClick={() => fetchClients(searchQuery)}
+              >
+                Tentar novamente
+              </Button>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="p-1">
               {searchResults.map((client) => (
                 <div
@@ -244,7 +286,7 @@ export function ClientAutocomplete({
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm 
-            onSuccess={() => handleNewClientSuccess(null)}
+            onSuccess={handleNewClientSuccess}
             onCancel={() => setShowNewClientDialog(false)}
           />
         </DialogContent>
