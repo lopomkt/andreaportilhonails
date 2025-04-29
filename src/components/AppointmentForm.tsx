@@ -267,6 +267,19 @@ export function AppointmentForm({
     return !Object.values(newErrors).some(error => error);
   };
 
+  const focusFirstInvalidField = () => {
+    if (errors.clientId) {
+      // Focus on client field (handled by setting focus on the component)
+      document.getElementById('client-autocomplete')?.focus();
+    } else if (errors.serviceId) {
+      document.getElementById('service')?.focus();
+    } else if (errors.date) {
+      document.getElementById('date')?.focus();
+    } else if (errors.time) {
+      document.getElementById('time')?.focus();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -277,6 +290,8 @@ export function AppointmentForm({
         description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive",
       });
+      
+      focusFirstInvalidField();
       return;
     }
 
@@ -291,15 +306,15 @@ export function AppointmentForm({
 
     setIsSubmitting(true);
     
-    // Combine date and time into a DateTime object
-    const appointmentDate = new Date(date);
-    const [hours, minutes] = time.split(":").map(Number);
-    appointmentDate.setHours(hours, minutes, 0, 0);
-    
-    const selectedServiceObj = services.find(s => s.id === serviceId);
-    const endDateTime = addMinutes(appointmentDate, selectedServiceObj?.durationMinutes || 60);
-    
     try {
+      // Combine date and time into a DateTime object
+      const appointmentDate = new Date(date);
+      const [hours, minutes] = time.split(":").map(Number);
+      appointmentDate.setHours(hours, minutes, 0, 0);
+      
+      const selectedServiceObj = services.find(s => s.id === serviceId);
+      const endDateTime = addMinutes(appointmentDate, selectedServiceObj?.durationMinutes || 60);
+      
       const result = await createAppointment({
         clienteId: clientId,
         servicoId: serviceId,
@@ -312,30 +327,35 @@ export function AppointmentForm({
       });
       
       if (result.success) {
-        await refetchAppointments();
-        
         toast({
-          title: "Agendamento criado",
+          title: "Agendamento realizado com sucesso!",
           description: "O agendamento foi criado com sucesso.",
         });
         
         resetForm();
         
         if (onSuccess) onSuccess();
+        closeModal();
       } else {
+        console.error("Error creating appointment:", result.error);
         toast({
-          title: "Erro ao salvar",
-          description: result.error?.message || "Ocorreu um erro ao salvar o agendamento. Tente novamente.",
+          title: "Erro ao agendar",
+          description: result.error?.message || "Erro inesperado ao agendar.",
           variant: "destructive",
         });
+        
+        // Scroll to first invalid field if validation errors exist
+        focusFirstInvalidField();
       }
     } catch (error: any) {
       console.error("Error saving appointment:", error);
       toast({
-        title: "Erro ao salvar",
-        description: error?.message || "Ocorreu um erro ao salvar o agendamento. Tente novamente.",
+        title: "Erro ao agendar",
+        description: error?.message || "Erro inesperado ao agendar.",
         variant: "destructive",
       });
+      
+      focusFirstInvalidField();
     } finally {
       setIsSubmitting(false);
     }
@@ -356,6 +376,7 @@ export function AppointmentForm({
           onClientSelect={handleClientSelect} 
           selectedClient={selectedClientState}
           className={errors.clientId ? "border-red-500" : ""}
+          autofocus={errors.clientId}
         />
         {errors.clientId && (
           <p className="text-sm text-red-500">Selecione um cliente</p>
@@ -524,7 +545,12 @@ export function AppointmentForm({
       )}
       
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={() => closeModal()}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => closeModal()}
+          disabled={isSubmitting}
+        >
           Cancelar
         </Button>
         <Button 
@@ -532,8 +558,16 @@ export function AppointmentForm({
           className="bg-primary hover:bg-primary/90"
           disabled={isSubmitting}
         >
-          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-          {appointment ? "Atualizar Agendamento" : "Criar Agendamento"}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Agendando...
+            </>
+          ) : appointment ? (
+            "Atualizar Agendamento"
+          ) : (
+            "Criar Agendamento"
+          )}
         </Button>
       </div>
     </form>

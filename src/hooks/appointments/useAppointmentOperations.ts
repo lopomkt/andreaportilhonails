@@ -59,7 +59,9 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       
       // Validate required fields
       if (!appointment.clienteId || !appointment.servicoId || !appointment.data) {
-        throw new Error('Cliente, serviço e data são obrigatórios');
+        const errorMsg = 'Cliente, serviço e data são obrigatórios';
+        console.error("Missing required appointment fields:", errorMsg);
+        return { success: false, error: { message: errorMsg } };
       }
       
       // Ensure date is in ISO format
@@ -89,7 +91,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         
       if (error) {
         console.error("Supabase error:", error);
-        throw error;
+        return { success: false, error: { message: error.message || 'Erro ao criar agendamento' } };
       }
       
       if (data) {
@@ -99,11 +101,10 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         return { success: true, data };
       }
       
-      return { success: false, error: 'Falha ao criar agendamento' };
+      return { success: false, error: { message: 'Falha ao criar agendamento' } };
     } catch (err: any) {
       console.error("Error creating appointment:", err);
-      const errorMessage = err?.message || 'Erro ao criar agendamento';
-      return { success: false, error: err };
+      return { success: false, error: { message: err?.message || 'Erro inesperado ao agendar' } };
     }
   }, [setAppointments]);
 
@@ -148,7 +149,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         return { success: true, data };
       }
       
-      return { success: false, error: 'Falha ao atualizar agendamento' };
+      return { success: false, error: { message: 'Falha ao atualizar agendamento' } };
     } catch (err: any) {
       console.error("Error updating appointment:", err);
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
@@ -157,7 +158,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         description: errorMessage,
         variant: 'destructive'
       });
-      return { success: false, error: errorMessage };
+      return { success: false, error: { message: errorMessage } };
     }
   }, [setAppointments, toast]);
 

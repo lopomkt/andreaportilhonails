@@ -42,7 +42,12 @@ export function ClientAutocomplete({
       setSearchQuery(selectedClient.name);
     }
   }, [selectedClient]);
-  
+
+  useEffect(() => {
+    if (autofocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autofocus]);
   
   const fetchClients = async (query: string = '') => {
     setIsLoading(true);
@@ -163,7 +168,6 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  // FIX: Updated the function signature to match the expected props in ClientForm component
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
@@ -176,7 +180,7 @@ export function ClientAutocomplete({
   };
 
   return (
-    <div className={cn("w-full relative", className)}>
+    <div className={cn("w-full relative", className)} id="client-autocomplete">
       <div className="flex items-center border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
         <div className="flex-1">
           <Input
