@@ -140,6 +140,11 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
           )
         );
         
+        toast({
+          title: 'Agendamento atualizado',
+          description: 'Agendamento atualizado com sucesso'
+        });
+        
         return { success: true, data };
       }
       
@@ -147,9 +152,14 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
     } catch (err: any) {
       console.error("Error updating appointment:", err);
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive'
+      });
       return { success: false, error: errorMessage };
     }
-  }, [setAppointments]);
+  }, [setAppointments, toast]);
 
   return {
     addAppointment,

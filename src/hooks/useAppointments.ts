@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Appointment, ServiceResponse, WhatsAppMessageData } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,13 +61,13 @@ export function useAppointments() {
       
       // Validate required fields
       if (!appointment.clientId || !appointment.serviceId || !appointment.date) {
-        const errorMsg = 'Cliente, serviço e data são obrigatórios';
+        const errorMsg = 'Erro: Campos obrigatórios não preenchidos.';
         toast({
           title: 'Campos obrigatórios',
           description: errorMsg,
           variant: 'destructive'
         });
-        return { error: errorMsg };
+        return { error: errorMsg, success: false };
       }
       
       // Convert app model to database model
@@ -115,7 +116,7 @@ export function useAppointments() {
           description: error.message || 'Erro ao criar agendamento',
           variant: 'destructive'
         });
-        return { error: error.message };
+        return { error: error.message, success: false };
       }
       
       if (responseData) {
@@ -126,14 +127,14 @@ export function useAppointments() {
         await fetchAppointments();
         
         toast({
-          title: 'Agendamento criado',
+          title: 'Agendamento realizado com sucesso!',
           description: 'Agendamento cadastrado com sucesso'
         });
         
-        return { data: newAppointment };
+        return { data: newAppointment, success: true };
       }
       
-      return { error: 'Falha ao criar agendamento' };
+      return { error: 'Falha ao criar agendamento', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao criar agendamento';
       console.error("Error creating appointment:", err);
@@ -143,7 +144,7 @@ export function useAppointments() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
@@ -192,10 +193,10 @@ export function useAppointments() {
           description: 'Agendamento atualizado com sucesso'
         });
         
-        return { data: updatedAppointment };
+        return { data: updatedAppointment, success: true };
       }
       
-      return { error: 'Falha ao atualizar agendamento' };
+      return { error: 'Falha ao atualizar agendamento', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao atualizar agendamento';
       setError(errorMessage);
@@ -204,7 +205,7 @@ export function useAppointments() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
@@ -262,3 +263,5 @@ export function useAppointments() {
     generateWhatsAppLink
   };
 }
+
+export default useAppointments;
