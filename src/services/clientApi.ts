@@ -30,7 +30,7 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
   
   if (!clientData.name || !clientData.phone) {
     console.error("Missing required fields");
-    return { error: 'Nome e telefone são obrigatórios' };
+    return { error: 'Nome e telefone são obrigatórios', success: false };
   }
   
   const dataToInsert = mapAppClientToDb({
@@ -56,20 +56,20 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
       
     if (error) {
       console.error('Error creating client:', error);
-      return { error: error.message };
+      return { error: error.message, success: false };
     }
     
     if (!data) {
       console.error('No data returned after client creation');
-      return { error: 'Falha ao criar cliente: Nenhum dado retornado' };
+      return { error: 'Falha ao criar cliente: Nenhum dado retornado', success: false };
     }
     
     console.log("Client created successfully:", data);
     const newClient = mapDbClientToApp(data);
-    return { data: newClient };
+    return { data: newClient, success: true };
   } catch (err: any) {
     console.error('Unexpected error creating client:', err);
-    return { error: err.message || 'Erro inesperado ao criar cliente' };
+    return { error: err.message || 'Erro inesperado ao criar cliente', success: false };
   }
 }
 
@@ -100,17 +100,17 @@ export async function updateClientInApi(clientId: string, clientData: Partial<Cl
     
   if (error) {
     console.error('Error updating client:', error);
-    return { error: error.message };
+    return { error: error.message, success: false };
   }
   
   if (!data) {
     console.error('No data returned after client update');
-    return { error: 'Falha ao atualizar cliente' };
+    return { error: 'Falha ao atualizar cliente', success: false };
   }
   
   console.log("Client updated successfully:", data);
   const updatedClient = mapDbClientToApp(data);
-  return { data: updatedClient };
+  return { data: updatedClient, success: true };
 }
 
 export async function deleteClientInApi(clientId: string): Promise<ServiceResponse<boolean>> {
@@ -123,9 +123,9 @@ export async function deleteClientInApi(clientId: string): Promise<ServiceRespon
     
   if (error) {
     console.error('Error deleting client:', error);
-    return { error: error.message };
+    return { error: error.message, success: false };
   }
   
   console.log("Client deleted successfully");
-  return { data: true };
+  return { data: true, success: true };
 }

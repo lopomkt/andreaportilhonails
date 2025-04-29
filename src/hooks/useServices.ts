@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Service, Appointment, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,10 +88,10 @@ export function useServices() {
           description: 'Serviço adicionado com sucesso'
         });
         
-        return { data: newService };
+        return { data: newService, success: true };
       }
       
-      return { error: 'Falha ao adicionar serviço' };
+      return { error: 'Falha ao adicionar serviço', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao adicionar serviço';
       setError(errorMessage);
@@ -99,7 +100,7 @@ export function useServices() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
@@ -130,10 +131,10 @@ export function useServices() {
           description: 'Serviço atualizado com sucesso'
         });
         
-        return { data: updatedService };
+        return { data: updatedService, success: true };
       }
       
-      return { error: 'Falha ao atualizar serviço' };
+      return { error: 'Falha ao atualizar serviço', success: false };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao atualizar serviço';
       setError(errorMessage);
@@ -142,7 +143,7 @@ export function useServices() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
@@ -167,7 +168,7 @@ export function useServices() {
         description: 'Serviço excluído com sucesso'
       });
       
-      return { data: true };
+      return { data: true, success: true };
     } catch (err: any) {
       const errorMessage = err?.message || 'Erro ao excluir serviço';
       setError(errorMessage);
@@ -176,7 +177,7 @@ export function useServices() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }

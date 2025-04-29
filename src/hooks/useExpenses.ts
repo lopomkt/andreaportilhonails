@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Expense, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,7 +79,7 @@ export function useExpenses() {
         description: 'Despesa adicionada com sucesso'
       });
       
-      return { data: mockExpense };
+      return { data: mockExpense, success: true };
       
       /* 
       // This code will be used once the 'despesas' table is created
@@ -128,12 +129,12 @@ export function useExpenses() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
     
-    return { error: 'Falha ao adicionar despesa' };
+    return { error: 'Falha ao adicionar despesa', success: false };
   };
 
   const updateExpense = async (expense: Expense): Promise<ServiceResponse<Expense>> => {
@@ -151,7 +152,7 @@ export function useExpenses() {
         description: 'Despesa atualizada com sucesso'
       });
       
-      return { data: expense };
+      return { data: expense, success: true };
       
       /* 
       // This code will be used once the 'despesas' table is created
@@ -204,12 +205,12 @@ export function useExpenses() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
     
-    return { error: 'Falha ao atualizar despesa' };
+    return { error: 'Falha ao atualizar despesa', success: false };
   };
 
   const deleteExpense = async (id: string): Promise<ServiceResponse<boolean>> => {
@@ -224,7 +225,7 @@ export function useExpenses() {
         description: 'Despesa excluída com sucesso'
       });
       
-      return { data: true };
+      return { data: true, success: true };
       
       /* 
       // This code will be used once the 'despesas' table is created
@@ -252,12 +253,12 @@ export function useExpenses() {
         description: errorMessage,
         variant: 'destructive'
       });
-      return { error: errorMessage };
+      return { error: errorMessage, success: false };
     } finally {
       setLoading(false);
     }
     
-    return { data: true };
+    return { data: true, success: true };
   };
 
   return {
