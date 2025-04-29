@@ -48,6 +48,11 @@ export function useAppointments() {
 
   const createAppointment = async (appointment: any) => {
     console.log("useAppointments.createAppointment called with:", appointment);
+    // Add status_confirmacao if not provided
+    if (!appointment.statusConfirmacao) {
+      appointment.statusConfirmacao = 'pendente';
+    }
+    
     const result = await baseCreateAppointment(appointment);
     console.log("useAppointments.createAppointment result:", result);
     if (result.success) {

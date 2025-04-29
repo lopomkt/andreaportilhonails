@@ -313,10 +313,12 @@ export function AppointmentForm({
         preco: price,
         status: status || "confirmado",
         observacoes: notes || "",
-        motivoCancelamento: appointment?.cancellationReason || ""
+        motivoCancelamento: appointment?.cancellationReason || "",
+        statusConfirmacao: "pendente"
       });
       
       console.log("Resultado do agendamento:", result);
+      console.log("Resultado Final:", result);
       
       if (result.success) {
         toast({
@@ -328,6 +330,7 @@ export function AppointmentForm({
         
         if (onSuccess) onSuccess();
         closeModal();
+        await refetchAppointments();
       } else {
         console.error("Error creating appointment:", result.error);
         toast({
@@ -339,7 +342,7 @@ export function AppointmentForm({
         focusFirstInvalidField();
       }
     } catch (error: any) {
-      console.error("Error saving appointment:", error);
+      console.error("Erro inesperado:", error);
       toast({
         title: "Erro ao agendar",
         description: error?.message || "Erro inesperado ao agendar.",

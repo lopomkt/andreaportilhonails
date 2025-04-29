@@ -21,6 +21,7 @@ export type Database = {
           preco: number
           servico_id: string
           status: Database["public"]["Enums"]["status_agendamento"]
+          status_confirmacao: string | null
         }
         Insert: {
           cliente_id: string
@@ -33,6 +34,7 @@ export type Database = {
           preco?: number
           servico_id: string
           status?: Database["public"]["Enums"]["status_agendamento"]
+          status_confirmacao?: string | null
         }
         Update: {
           cliente_id?: string
@@ -45,6 +47,7 @@ export type Database = {
           preco?: number
           servico_id?: string
           status?: Database["public"]["Enums"]["status_agendamento"]
+          status_confirmacao?: string | null
         }
         Relationships: [
           {
