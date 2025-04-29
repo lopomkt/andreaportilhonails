@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { Button } from './ui/button';
@@ -11,7 +10,7 @@ import { Trash2 } from 'lucide-react';
 
 export interface ClientFormProps {
   client?: Client;
-  onSuccess: () => void;
+  onSuccess: (client: Client | null) => void;
   onCancel: () => void;
   onDelete?: () => void;
 }
@@ -26,7 +25,6 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, on
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Populate form if editing an existing client
   useEffect(() => {
     if (client) {
       setName(client.name || '');
@@ -77,38 +75,37 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, on
       };
       
       if (client) {
-        // Update existing client
         console.log("Updating client:", client.id, clientData);
         const result = await updateClient(client.id, clientData);
         if (result.error) {
           console.error("Update client failed:", result.error);
           throw new Error(result.error);
         }
+        const updatedClient = { ...client, ...clientData };
+        onSuccess(updatedClient);
       } else {
-        // Create new client
         console.log("Creating new client:", clientData);
         const result = await createClient(clientData);
         if (result.error) {
           console.error("Create client failed:", result.error);
           throw new Error(result.error);
         }
+        onSuccess(result.data || null);
       }
       
       console.log("Client saved successfully");
-      onSuccess();
     } catch (error: any) {
       console.error('Error saving client:', error);
       setErrors({ submit: error.message || 'Falha ao salvar cliente' });
+      onSuccess(null);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const formatPhoneInput = (value: string) => {
-    // Remove non-numeric characters
     const numericValue = value.replace(/\D/g, '');
     
-    // Format as (XX) XXXXX-XXXX or (XX) XXXX-XXXX depending on length
     if (numericValue.length <= 10) {
       if (numericValue.length <= 2) return numericValue;
       if (numericValue.length <= 6) return `(${numericValue.slice(0, 2)}) ${numericValue.slice(2)}`;

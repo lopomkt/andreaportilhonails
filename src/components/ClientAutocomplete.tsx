@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,6 +25,7 @@ export function ClientAutocomplete({
   placeholder = 'Buscar cliente por nome ou telefone...',
   className
 }: ClientAutocompleteProps) {
+  
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Client[]>([]);
@@ -42,6 +42,7 @@ export function ClientAutocomplete({
       setSearchQuery(selectedClient.name);
     }
   }, [selectedClient]);
+  
   
   const fetchClients = async (query: string = '') => {
     setIsLoading(true);
@@ -162,6 +163,7 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
+  // FIX: Updated the function signature to match the expected props in ClientForm component
   const handleNewClientSuccess = (newClient: Client | null) => {
     setShowNewClientDialog(false);
     if (newClient) {
