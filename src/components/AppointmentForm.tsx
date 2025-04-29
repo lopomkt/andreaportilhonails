@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -69,7 +68,6 @@ export function AppointmentForm({
     selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
   );
   
-  // Track validation errors
   const [errors, setErrors] = useState({
     clientId: false,
     serviceId: false,
@@ -83,13 +81,10 @@ export function AppointmentForm({
     const endTime = 19; // 7:00 PM (19:00)
     
     for (let hour = startTime; hour < endTime; hour++) {
-      // Add full hour
       timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-      // Add half hour
       timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
     }
     
-    // Add the last hour (19:00) without minutes
     timeSlots.push(`${endTime.toString().padStart(2, '0')}:00`);
     
     return timeSlots;
@@ -107,12 +102,10 @@ export function AppointmentForm({
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
-    // If current time is outside working hours (7:00-19:00), default to 7:00
     if (currentHour < 7 || currentHour >= 19) {
       return "07:00";
     }
     
-    // Round to nearest 30 minutes
     const roundedMinutes = Math.round(currentMinute / 30) * 30;
     const roundedHour = roundedMinutes === 60 ? currentHour + 1 : currentHour;
     const minutes = roundedMinutes === 60 ? "00" : roundedMinutes.toString().padStart(2, "0");
@@ -159,7 +152,6 @@ export function AppointmentForm({
     }
   }, [serviceId, services]);
 
-  // Reset validation errors when fields change
   useEffect(() => {
     if (clientId) setErrors(prev => ({...prev, clientId: false}));
   }, [clientId]);
@@ -269,7 +261,6 @@ export function AppointmentForm({
 
   const focusFirstInvalidField = () => {
     if (errors.clientId) {
-      // Focus on client field (handled by setting focus on the component)
       document.getElementById('client-autocomplete')?.focus();
     } else if (errors.serviceId) {
       document.getElementById('service')?.focus();
@@ -282,8 +273,8 @@ export function AppointmentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Chamou handleSubmit");
     
-    // Validate all required fields
     if (!validateForm()) {
       toast({
         title: "Campos obrigatórios",
@@ -307,7 +298,6 @@ export function AppointmentForm({
     setIsSubmitting(true);
     
     try {
-      // Combine date and time into a DateTime object
       const appointmentDate = new Date(date);
       const [hours, minutes] = time.split(":").map(Number);
       appointmentDate.setHours(hours, minutes, 0, 0);
@@ -326,9 +316,11 @@ export function AppointmentForm({
         motivoCancelamento: appointment?.cancellationReason || ""
       });
       
+      console.log("Resultado do agendamento:", result);
+      
       if (result.success) {
         toast({
-          title: "Agendamento realizado com sucesso!",
+          title: "Agendamento criado com sucesso!",
           description: "O agendamento foi criado com sucesso.",
         });
         
@@ -340,11 +332,10 @@ export function AppointmentForm({
         console.error("Error creating appointment:", result.error);
         toast({
           title: "Erro ao agendar",
-          description: result.error?.message || "Erro inesperado ao agendar.",
+          description: result.error?.message || "Erro desconhecido ao agendar",
           variant: "destructive",
         });
         
-        // Scroll to first invalid field if validation errors exist
         focusFirstInvalidField();
       }
     } catch (error: any) {

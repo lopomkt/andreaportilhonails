@@ -55,7 +55,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
 
   const createAppointment = useCallback(async (appointment: any) => {
     try {
-      console.log("Creating appointment with data:", appointment);
+      console.log("Enviando agendamento:", appointment);
       
       // Validate required fields
       if (!appointment.clienteId || !appointment.servicoId || !appointment.data) {
@@ -88,6 +88,8 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
           servicos(*)
         `)
         .single();
+      
+      console.log("Resposta do Supabase:", { data, error });
         
       if (error) {
         console.error("Supabase error:", error);
@@ -103,7 +105,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       
       return { success: false, error: { message: 'Falha ao criar agendamento' } };
     } catch (err: any) {
-      console.error("Error creating appointment:", err);
+      console.error("Erro inesperado em addAppointment:", err);
       return { success: false, error: { message: err?.message || 'Erro inesperado ao agendar' } };
     }
   }, [setAppointments]);

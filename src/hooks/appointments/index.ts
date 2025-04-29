@@ -28,8 +28,11 @@ export function useAppointments() {
 
   // Wrap the operations to ensure automatic data refresh
   const addAppointment = async (appointment: Omit<any, "id">) => {
+    console.log("useAppointments.addAppointment called with:", appointment);
     const result = await baseAddAppointment(appointment);
+    console.log("useAppointments.addAppointment result:", result);
     if (result.success) {
+      console.log("Fetching appointments after successful add");
       await fetchAppointments();
     }
     return result;
@@ -44,8 +47,11 @@ export function useAppointments() {
   };
 
   const createAppointment = async (appointment: any) => {
+    console.log("useAppointments.createAppointment called with:", appointment);
     const result = await baseCreateAppointment(appointment);
+    console.log("useAppointments.createAppointment result:", result);
     if (result.success) {
+      console.log("Fetching appointments after successful creation");
       await fetchAppointments();
     }
     return result;
