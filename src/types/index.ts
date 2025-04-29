@@ -1,3 +1,4 @@
+
 // Types related to appointments
 export type AppointmentStatus = 'pending' | 'confirmed' | 'canceled';
 export type ConfirmationStatus = 'not_confirmed' | 'confirmed' | 'canceled';
@@ -115,4 +116,5 @@ export interface RefetchFunction {
 export interface ServiceResponse<T> {
   data?: T;
   error?: any;
+  success: boolean;
 }
