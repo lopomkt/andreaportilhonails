@@ -72,7 +72,7 @@ export const DayView: React.FC<DayViewProps> = ({
           <TimeSlot 
             key={index} 
             slot={slot} 
-            onAppointmentClick={setSelectedAppointment} 
+            onAppointmentClick={(appointment) => openModal(appointment)} 
           />
         ))}
       </div>
