@@ -75,5 +75,19 @@ export const DayView: React.FC<DayViewProps> = ({
         ))}
       </div>
     </div>
+
+  <div className="flex justify-between items-center mb-4">
+  <Button variant="ghost" onClick={() => onDaySelect(addDays(date, -1))}>
+    ← Dia anterior
+  </Button>
+
+  <h2 className="text-lg font-bold">{format(date, "EEEE, dd MMMM", { locale: ptBR })}</h2>
+
+  <Button variant="ghost" onClick={() => onDaySelect(addDays(date, 1))}>
+    Próximo dia →
+  </Button>
+</div>
+
+
   );
 };

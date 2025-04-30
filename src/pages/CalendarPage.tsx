@@ -75,6 +75,12 @@ export default function CalendarPage() {
   const handleDaySelect = (date: Date) => {
     const selectedDate = new Date(date);
     setCurrentDate(selectedDate);
+    refetchAppointments(); // ⚠️ Isso força os agendamentos a recarregarem
+
+    useEffect(() => {
+  refetchAppointments();
+}, [currentDate]);
+
     
     if (calendarView === "month") {
       setCalendarView("day");
