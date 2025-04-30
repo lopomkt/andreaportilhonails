@@ -17,7 +17,7 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useServices } from "@/context/ServiceContext";
-import { useAppointments } from "@/hooks/appointments";
+import { Appointments } from "@/hooks/appointments";
 import { useAppointments } from "@/hooks/useAppointments";
 
 interface AppointmentFormProps {
@@ -35,8 +35,6 @@ interface AppointmentFormProps {
 const isEditMode = !!appointment;
 
 const { updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
-
-export const AppointmentForm: React.FC<AppointmentFormProps> = ({ appointment, date }) => {
 
 export function AppointmentForm({ 
   onSuccess, 
