@@ -19,13 +19,13 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 export default function Dashboard() {
   const {
-    dashboardStats,
     getAppointmentsForDate,
     appointments,
     clients
   } = useData();
-
-  const { dashboardStats, revenueData, monthlyRevenueData } = useDashboardStats();
+  
+  // Get dashboardStats from the dedicated hook instead
+  const { dashboardStats, revenueData } = useDashboardStats();
   
   const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();
