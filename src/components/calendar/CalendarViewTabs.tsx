@@ -58,7 +58,7 @@ export function CalendarViewTabs({
           />
         </TabsContent>
         <TabsContent value="week" className="m-0">
-          <WeekView date={currentDate} onDaySelect={onDaySelect} />
+         <WeekGrid month={currentDate} onDaySelect={onDaySelect} />
         </TabsContent>
         <TabsContent value="month" className="m-0">
           <MonthView date={currentDate} onDaySelect={onDaySelect} />
