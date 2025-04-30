@@ -57,7 +57,6 @@ export function AppointmentForm({
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
-  const { createAppointment } = useAppointments();
   const { toast } = useToast();
   
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
