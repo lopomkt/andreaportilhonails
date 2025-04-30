@@ -1,9 +1,9 @@
 
 import { Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DayView } from "@/components/calendar/DayView";
-import { WeekView } from "@/components/calendar/WeekView";
-import { MonthView } from "@/components/calendar/MonthView";
+import { DayView } from "@/components/calendar/day/DayView";
+import { WeekView } from "@/components/calendar/week/WeekView";
+import { MonthView } from "@/components/calendar/month/MonthView";
 
 interface CalendarViewTabsProps {
   calendarView: "day" | "week" | "month";
