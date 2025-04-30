@@ -32,22 +32,24 @@ interface AppointmentFormProps {
   initialDate?: Date;
   initialTime?: string; 
 }
-const isEditMode = !!appointment;
 
 const { updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
 
-export function AppointmentForm({ 
-  onSuccess, 
-  appointment, 
-  serviceId: initialServiceId, 
+export function AppointmentForm({
+  onSuccess,
+  appointment,
+  serviceId: initialServiceId,
   clientId: initialClientId,
   date: propDate,
   notes: initialNotes,
   price: initialPrice,
   status: initialStatus,
   initialDate,
-  initialTime 
+  initialTime,
 }: AppointmentFormProps) {
+
+  const isEditMode = !!appointment;
+  
   const { 
     clients, 
     appointments, 
