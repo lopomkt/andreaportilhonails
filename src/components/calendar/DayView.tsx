@@ -214,7 +214,7 @@ const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onTimeClick, onAppointmentCli
           <AppointmentCard 
             key={idx} 
             appointment={appointment} 
-            onClick={() => onAppointmentClick(appointment)} 
+            onClick={() => openModal(appointment)}
           />
         ))}
         
