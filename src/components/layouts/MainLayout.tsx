@@ -15,17 +15,14 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed
+  const [isCollapsed, setIsCollapsed] = useState(false); // Alterado para false para manter a barra lateral sempre visível
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const location = useLocation();
 
-  // Collapse sidebar when route changes (when a menu item is clicked)
+  // Removemos o colapso automático da sidebar quando a rota muda
+  // Mantemos apenas o fechamento do menu móvel
   useEffect(() => {
     setIsMobileNavOpen(false); // Close mobile nav when route changes
-    
-    // Auto-collapse the sidebar when navigating
-    setIsCollapsed(true);
-    
   }, [location.pathname]);
 
   return (
@@ -43,22 +40,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <aside
                   className={cn(
                     "hidden lg:flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
-                    isCollapsed ? "w-[60px]" : "w-[240px]"
+                    "w-[240px]" // Sempre expandida, removido o toggle baseado em isCollapsed
                   )}
                 >
-                  <div className="py-4 px-2 flex justify-end">
-                    <button
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                      className="p-1.5 rounded-lg hover:bg-accent"
-                    >
-                      {isCollapsed ? (
-                        <PanelRight className="h-4 w-4" />
-                      ) : (
-                        <PanelLeft className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  <SidebarNav isCollapsed={isCollapsed} />
+                  <SidebarNav isCollapsed={false} />
                 </aside>
 
                 {/* Main content */}
