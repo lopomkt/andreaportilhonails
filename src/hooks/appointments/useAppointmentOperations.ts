@@ -66,7 +66,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       
       // Prepare data for new appointments table format
       const formattedData = {
-        cliente_id: appointment.clientId,
+        cliente_id: appointment.clienteId,
         servico_id: appointment.servicoId,
         data_inicio: appointment.data instanceof Date ? appointment.data.toISOString() : appointment.data,
         data_fim: appointment.horaFim instanceof Date ? appointment.horaFim.toISOString() : appointment.horaFim,
