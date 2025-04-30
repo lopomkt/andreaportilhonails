@@ -1,5 +1,6 @@
+
 import { startOfMonth, endOfMonth, startOfWeek, addWeeks, isBefore } from "date-fns";
-import { WeekView } from "./week/WeekView";
+import { WeekView } from "./WeekView";
 
 interface WeekGridProps {
   month: Date;

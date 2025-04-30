@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DayView } from "@/components/calendar/day/DayView";
 import { WeekView } from "@/components/calendar/week/WeekView";
 import { MonthView } from "@/components/calendar/month/MonthView";
+import { WeekGrid } from "@/components/calendar/week/WeekGrid"; // Added the import for WeekGrid
 
 interface CalendarViewTabsProps {
   calendarView: "day" | "week" | "month";
@@ -58,7 +59,7 @@ export function CalendarViewTabs({
           />
         </TabsContent>
         <TabsContent value="week" className="m-0">
-         <WeekGrid month={currentDate} onDaySelect={onDaySelect} />
+          <WeekGrid month={currentDate} onDaySelect={onDaySelect} />
         </TabsContent>
         <TabsContent value="month" className="m-0">
           <MonthView date={currentDate} onDaySelect={onDaySelect} />
