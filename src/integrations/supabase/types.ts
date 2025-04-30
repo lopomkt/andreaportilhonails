@@ -9,63 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      agendamentos: {
-        Row: {
-          cliente_id: string
-          created_at1: string | null
-          data: string
-          hora_fim: string | null
-          id: string
-          motivo_cancelamento: string | null
-          observacoes: string | null
-          preco: number
-          servico_id: string
-          status: Database["public"]["Enums"]["status_agendamento"]
-          status_confirmacao: string | null
-        }
-        Insert: {
-          cliente_id: string
-          created_at1?: string | null
-          data: string
-          hora_fim?: string | null
-          id?: string
-          motivo_cancelamento?: string | null
-          observacoes?: string | null
-          preco?: number
-          servico_id: string
-          status?: Database["public"]["Enums"]["status_agendamento"]
-          status_confirmacao?: string | null
-        }
-        Update: {
-          cliente_id?: string
-          created_at1?: string | null
-          data?: string
-          hora_fim?: string | null
-          id?: string
-          motivo_cancelamento?: string | null
-          observacoes?: string | null
-          preco?: number
-          servico_id?: string
-          status?: Database["public"]["Enums"]["status_agendamento"]
-          status_confirmacao?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agendamentos_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agendamentos_servico_id_fkey"
-            columns: ["servico_id"]
-            isOneToOne: false
-            referencedRelation: "servicos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       agendamentos_novo: {
         Row: {
           cliente_id: string

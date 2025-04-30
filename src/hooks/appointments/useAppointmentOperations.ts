@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Appointment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       const dbAppointmentData = mapAppAppointmentToDb(appointment);
       
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .insert(dbAppointmentData as any)
         .select(`
           *,
@@ -122,7 +123,7 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
       const dbAppointmentData = mapAppAppointmentToDb(appointmentData);
       
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .update(dbAppointmentData)
         .eq('id', id)
         .select(`

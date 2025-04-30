@@ -34,8 +34,8 @@ export function useAppointmentOperations() {
       const dataToInsert = {
         cliente_id: appointmentData.clienteId,
         servico_id: appointmentData.servicoId,
-        data: appointmentData.data.toISOString(),
-        hora_fim: horaFim.toISOString(),
+        data_inicio: appointmentData.data.toISOString(),
+        data_fim: horaFim.toISOString(),
         preco: appointmentData.preco,
         status: dbStatus,
         observacoes: appointmentData.observacoes || null,
@@ -45,7 +45,7 @@ export function useAppointmentOperations() {
       console.log("Creating appointment with data:", dataToInsert);
 
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .insert(dataToInsert)
         .select('*');
 

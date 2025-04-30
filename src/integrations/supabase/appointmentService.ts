@@ -1,3 +1,4 @@
+
 import { supabase } from './client';
 import { Appointment, AppointmentStatus, BlockedDate, Client, Service, WhatsAppMessageData } from '@/types';
 import {
@@ -27,13 +28,13 @@ export const appointmentService = {
   async getAll(): Promise<Appointment[]> {
     try {
       const { data: appointments, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .select(`
           *,
           clientes (*),
           servicos (*)
         `)
-        .order('data', { ascending: true });
+        .order('data_inicio', { ascending: true });
 
       if (error) {
         console.error('Error fetching appointments:', error);
@@ -58,15 +59,15 @@ export const appointmentService = {
       endDate.setHours(23, 59, 59, 999);
 
       const { data: appointments, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .select(`
           *,
           clientes (*),
           servicos (*)
         `)
-        .gte('data', startDate.toISOString())
-        .lte('data', endDate.toISOString())
-        .order('data', { ascending: true });
+        .gte('data_inicio', startDate.toISOString())
+        .lte('data_inicio', endDate.toISOString())
+        .order('data_inicio', { ascending: true });
 
       if (error) {
         console.error('Error fetching appointments by date:', error);
@@ -99,8 +100,8 @@ export const appointmentService = {
       const insertData: DbAppointmentInsert = {
         cliente_id: appointment.clientId,
         servico_id: appointment.serviceId,
-        data: appointmentDateString,
-        hora_fim: endTimeString,
+        data_inicio: appointmentDateString,
+        data_fim: endTimeString,
         preco: appointment.price,
         status: appointment.status ? mapAppStatusToDbStatus(appointment.status) : 'pendente',
         observacoes: appointment.notes,
@@ -109,7 +110,7 @@ export const appointmentService = {
       };
 
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .insert(insertData as any)
         .select(`
           *,
@@ -154,11 +155,11 @@ export const appointmentService = {
         }
         
         endTime.setMinutes(endTime.getMinutes() + duration);
-        dbUpdates.hora_fim = endTime.toISOString();
+        dbUpdates.data_fim = endTime.toISOString();
       }
       
       const { error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .update(dbUpdates as any)
         .eq('id', id);
 
@@ -185,7 +186,7 @@ export const appointmentService = {
       }
 
       const { error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .update(updates)
         .eq('id', id);
 
@@ -204,7 +205,7 @@ export const appointmentService = {
   async delete(id: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .delete()
         .eq('id', id);
 

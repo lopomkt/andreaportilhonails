@@ -30,8 +30,8 @@ export function mapDbAppointmentToApp(
     id: dbAppointment.id,
     clientId: dbAppointment.cliente_id,
     serviceId: dbAppointment.servico_id,
-    date: dbAppointment.data,
-    endTime: dbAppointment.hora_fim || undefined,
+    date: dbAppointment.data_inicio,
+    endTime: dbAppointment.data_fim || undefined,
     price: dbAppointment.preco || 0,
     status,
     cancellationReason: dbAppointment.motivo_cancelamento || undefined,
@@ -48,14 +48,14 @@ export function mapAppAppointmentToDb(appointment: Partial<Appointment>): Partia
   if (appointment.clientId !== undefined) dbAppointment.cliente_id = appointment.clientId;
   if (appointment.serviceId !== undefined) dbAppointment.servico_id = appointment.serviceId;
   if (appointment.date !== undefined) {
-    dbAppointment.data = typeof appointment.date === 'string' 
+    dbAppointment.data_inicio = typeof appointment.date === 'string' 
       ? appointment.date 
       : appointment.date instanceof Date 
         ? appointment.date.toISOString() 
         : String(appointment.date);
   }
   if (appointment.endTime !== undefined) {
-    dbAppointment.hora_fim = typeof appointment.endTime === 'string' 
+    dbAppointment.data_fim = typeof appointment.endTime === 'string' 
       ? appointment.endTime 
       : appointment.endTime instanceof Date 
         ? appointment.endTime.toISOString() 
