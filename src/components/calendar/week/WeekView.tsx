@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useDataContext } from "@/context/DataProvider";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,44 +18,48 @@ export const WeekView: React.FC<WeekViewProps> = ({
   date,
   onDaySelect
 }) => {
-  const { appointments } = useSupabaseData();
+  const { appointments } = useDataContext();
   const isMobile = useIsMobile();
 
-  const getWeekStats = (weekStart: Date) => {
-    const weekEnd = endOfWeek(weekStart, { locale: ptBR });
-    const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
-    
-    let totalAppointments = 0;
-    let totalConfirmed = 0;
-    let totalCanceled = 0;
-    let totalRevenue = 0;
-    let expectedRevenue = 0;
-    
-    daysInWeek.forEach(day => {
-      const dayAppointments = appointments.filter(appt => isSameDay(new Date(appt.date), day));
-      totalAppointments += dayAppointments.length;
-      
-      dayAppointments.forEach(appt => {
-        if (appt.status === 'confirmed') {
-          totalConfirmed++;
-          totalRevenue += appt.price;
-        } else if (appt.status === 'canceled') {
-          totalCanceled++;
-        }
-        expectedRevenue += appt.price;
-      });
+const getWeekStats = (weekStart: Date) => {
+  const weekEnd = endOfWeek(weekStart, { locale: ptBR });
+  const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  let totalAppointments = 0;
+  let totalConfirmed = 0;
+  let totalCanceled = 0;
+  let totalRevenue = 0;
+  let expectedRevenue = 0;
+
+  daysInWeek.forEach(day => {
+    const dayAppointments = appointments.filter(appt =>
+      isSameDay(new Date(appt.data_inicio), day)
+    );
+
+    totalAppointments += dayAppointments.length;
+
+    dayAppointments.forEach(appt => {
+      if (appt.status === 'confirmed') {
+        totalConfirmed++;
+        totalRevenue += appt.preco || 0;
+      } else if (appt.status === 'canceled') {
+        totalCanceled++;
+      }
+      expectedRevenue += appt.preco || 0;
     });
-    
-    return {
-      totalAppointments,
-      totalConfirmed,
-      totalCanceled,
-      totalRevenue,
-      expectedRevenue,
-      startDate: weekStart,
-      endDate: weekEnd
-    };
+  });
+
+  return {
+    totalAppointments,
+    totalConfirmed,
+    totalCanceled,
+    totalRevenue,
+    expectedRevenue,
+    startDate: weekStart,
+    endDate: weekEnd
   };
+};
+
 
   const weekStats = getWeekStats(startOfWeek(date, { locale: ptBR }));
   const weekNumber = getWeekOfMonth(date, { locale: ptBR });
