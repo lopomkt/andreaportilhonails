@@ -31,7 +31,11 @@ export function useAppointments() {
       
       if (data) {
         const mappedAppointments: Appointment[] = data.map(item => {
-          return mapDbAppointmentToApp(item, item.clientes, item.servicos);
+          // Safely handle potentially missing relations
+          const clientData = item.clientes && !('error' in item.clientes) ? item.clientes : null;
+          const serviceData = item.servicos && !('error' in item.servicos) ? item.servicos : null;
+          
+          return mapDbAppointmentToApp(item, clientData, serviceData);
         });
         
         console.log(`useAppointments: Fetched ${mappedAppointments.length} appointments`);
@@ -90,16 +94,16 @@ export function useAppointments() {
         preco: dbAppointmentData.preco || 0,
         status: dbAppointmentData.status || 'pendente',
         data_fim: dbAppointmentData.data_fim,
-        motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
         observacoes: dbAppointmentData.observacoes || null,
-        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
+        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed',
+        motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null
       };
       
       console.log("Inserting appointment data:", dataToInsert);
       
       const { data: responseData, error } = await supabase
         .from('agendamentos_novo')
-        .insert(dataToInsert as any)
+        .insert(dataToInsert)
         .select(`
           *,
           clientes(*),
@@ -113,7 +117,13 @@ export function useAppointments() {
       }
       
       if (responseData) {
-        const newAppointment = mapDbAppointmentToApp(responseData, responseData.clientes, responseData.servicos);
+        // Safely handle potentially missing relations
+        const clientData = responseData.clientes && !('error' in responseData.clientes) 
+          ? responseData.clientes : null;
+        const serviceData = responseData.servicos && !('error' in responseData.servicos) 
+          ? responseData.servicos : null;
+          
+        const newAppointment = mapDbAppointmentToApp(responseData, clientData, serviceData);
         
         // Update local state
         setAppointments(prev => [...prev, newAppointment]);
@@ -198,7 +208,11 @@ export function useAppointments() {
       }
       
       if (data) {
-        const updatedAppointment = mapDbAppointmentToApp(data, data.clientes, data.servicos);
+        // Safely handle potentially missing relations
+        const clientData = data.clientes && !('error' in data.clientes) ? data.clientes : null;
+        const serviceData = data.servicos && !('error' in data.servicos) ? data.servicos : null;
+        
+        const updatedAppointment = mapDbAppointmentToApp(data, clientData, serviceData);
         setAppointments(prev => prev.map(appointment => appointment.id === id ? updatedAppointment : appointment));
         
         // Refresh appointments list after update

@@ -30,10 +30,12 @@ export function useAppointmentsData() {
       if (data) {
         // Map the DB structure to app structure, handling the new column names
         const mappedAppointments = data.map(item => {
-          // Extract data from the new structure but map to our app model
-          const appAppointment = mapDbAppointmentToApp(item, item.clientes, item.servicos);
+          // Safely handle potentially missing relations
+          const clientData = item.clientes && !('error' in item.clientes) ? item.clientes : null;
+          const serviceData = item.servicos && !('error' in item.servicos) ? item.servicos : null;
           
-          return appAppointment;
+          // Extract data from the new structure but map to our app model
+          return mapDbAppointmentToApp(item, clientData, serviceData);
         });
         
         console.log(`Fetched ${mappedAppointments.length} appointments from agendamentos_novo`);

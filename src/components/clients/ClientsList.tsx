@@ -60,10 +60,10 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
         if (client.lastAppointment) {
           try {
             const { data, error } = await supabase
-              .from('agendamentos_novo')
-              .select('servico_id')
-              .eq('cliente_id', client.id)
-              .order('data_inicio', { ascending: false })
+              .from('agendamentos_novo') // Changed from 'agendamentos' to 'agendamentos_novo'
+              .select('servico_id') // Using new field name
+              .eq('cliente_id', client.id) // Using new field name
+              .order('data_inicio', { ascending: false }) // Using new field name
               .limit(1)
               .single();
             
@@ -141,15 +141,15 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('agendamentos_novo')
+        .from('agendamentos_novo') // Changed from 'agendamentos' to 'agendamentos_novo'
         .select(`
           id,
-          data_inicio,
+          data_inicio, 
           preco,
           servico_id
         `)
-        .eq('cliente_id', selectedClient.id)
-        .order('data_inicio', { ascending: false });
+        .eq('cliente_id', selectedClient.id) // Using new field name
+        .order('data_inicio', { ascending: false }); // Using new field name
       
       if (error) {
         throw new Error(error.message);

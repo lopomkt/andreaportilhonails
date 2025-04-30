@@ -41,8 +41,12 @@ export const appointmentService = {
         return [];
       }
 
-      return (appointments as AppointmentWithRelations[]).map(appt => {
-        return mapDbAppointmentToApp(appt, appt.clientes, appt.servicos);
+      return (appointments as any[]).map(appt => {
+        // Safely handle potentially missing relations
+        const clientData = appt.clientes && !('error' in appt.clientes) ? appt.clientes : null;
+        const serviceData = appt.servicos && !('error' in appt.servicos) ? appt.servicos : null;
+        
+        return mapDbAppointmentToApp(appt, clientData, serviceData);
       });
     } catch (error) {
       console.error('Unexpected error fetching appointments:', error);
@@ -74,8 +78,12 @@ export const appointmentService = {
         return [];
       }
 
-      return (appointments as AppointmentWithRelations[]).map(appt => {
-        return mapDbAppointmentToApp(appt, appt.clientes, appt.servicos);
+      return (appointments as any[]).map(appt => {
+        // Safely handle potentially missing relations
+        const clientData = appt.clientes && !('error' in appt.clientes) ? appt.clientes : null;
+        const serviceData = appt.servicos && !('error' in appt.servicos) ? appt.servicos : null;
+        
+        return mapDbAppointmentToApp(appt, clientData, serviceData);
       });
     } catch (error) {
       console.error('Unexpected error fetching appointments by date:', error);
@@ -105,8 +113,8 @@ export const appointmentService = {
         preco: appointment.price,
         status: appointment.status ? mapAppStatusToDbStatus(appointment.status) : 'pendente',
         observacoes: appointment.notes,
-        motivo_cancelamento: appointment.cancellationReason,
-        status_confirmacao: appointment.confirmationStatus
+        status_confirmacao: appointment.confirmationStatus,
+        motivo_cancelamento: appointment.cancellationReason
       };
 
       const { data, error } = await supabase
@@ -124,8 +132,11 @@ export const appointmentService = {
         return null;
       }
 
-      const result = data as AppointmentWithRelations;
-      return mapDbAppointmentToApp(result, result.clientes, result.servicos);
+      // Safely handle potentially missing relations
+      const clientData = data.clientes && !('error' in data.clientes) ? data.clientes : null;
+      const serviceData = data.servicos && !('error' in data.servicos) ? data.servicos : null;
+      
+      return mapDbAppointmentToApp(data as DbAppointment, clientData, serviceData);
     } catch (error) {
       console.error('Unexpected error creating appointment:', error);
       return null;

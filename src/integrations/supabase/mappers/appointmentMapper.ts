@@ -6,11 +6,12 @@ import { mapDbServiceToApp } from './serviceMapper';
 
 export function mapDbAppointmentToApp(
   dbAppointment: DbAppointment, 
-  dbClient?: DbClient, 
-  dbService?: DbService
+  dbClient?: DbClient | null, 
+  dbService?: DbService | null
 ): Appointment {
-  let client = dbClient ? mapDbClientToApp(dbClient) : undefined;
-  let service = dbService ? mapDbServiceToApp(dbService) : undefined;
+  // Safely handle client/service data that might be error objects from Supabase
+  let client = dbClient && !('error' in dbClient) ? mapDbClientToApp(dbClient) : undefined;
+  let service = dbService && !('error' in dbService) ? mapDbServiceToApp(dbService) : undefined;
 
   let status: AppointmentStatus = 'pending';
   if (dbAppointment.status === 'confirmado') {
