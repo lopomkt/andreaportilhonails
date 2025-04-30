@@ -63,7 +63,10 @@ export function AppointmentForm({
   );
   
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
-  const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "confirmed");
+  const isEditing = !!appointment;
+const [status, setStatus] = useState<AppointmentStatus>(
+  isEditing ? (appointment?.status || "confirmed") : "confirmed"
+);
   
   const [date, setDate] = useState<Date>(
     selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
@@ -317,7 +320,7 @@ export function AppointmentForm({
         data: appointmentDate,              // This will become data_inicio
         horaFim: endDateTime,               // This will become data_fim
         preco: price,
-        status: status || "pendente",       // Using pendente as default status
+        status: status, // status já está controlado pelo estado corretamente
         observacoes: notes || ""
       });
       
@@ -503,10 +506,13 @@ export function AppointmentForm({
             <SelectValue placeholder="Selecione um status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="confirmed">Confirmado</SelectItem>
-            <SelectItem value="canceled">Cancelado</SelectItem>
-          </SelectContent>
+  <SelectItem value="pending">Pendente</SelectItem>
+  <SelectItem value="confirmed">Confirmado</SelectItem>
+  {isEditing && (
+    <SelectItem value="canceled">Cancelado</SelectItem>
+  )}
+</SelectContent>
+
         </Select>
       </div>
       
