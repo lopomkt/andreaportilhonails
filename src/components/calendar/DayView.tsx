@@ -166,7 +166,7 @@ export const DayView: React.FC<DayViewProps> = ({
             key={index} 
             slot={slot} 
             onTimeClick={handleTimeClick}
-            onAppointmentClick={(appointment) => openModal(appointment)} 
+            onAppointmentClick={setSelectedAppointment} 
           />
         ))}
       </div>
