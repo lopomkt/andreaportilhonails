@@ -55,6 +55,8 @@ export function AppointmentForm({
   const { services, loading: servicesLoading } = useServices();
   const { createAppointment } = useAppointments();
   const { toast } = useToast();
+
+  const { refetchAppointments } = useDataContext();
   
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
@@ -324,6 +326,12 @@ export function AppointmentForm({
         status: status || "pendente",       // Using pendente as default status
         observacoes: notes || ""
       });
+      
+      if (result.success) {
+  await refetchAppointments(); // Atualiza dados do dashboard
+  closeModal();
+}
+
       
       console.log("Resultado do agendamento:", result);
       console.log("Resultado Final:", result);
