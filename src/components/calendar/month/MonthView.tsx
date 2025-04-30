@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
   onDaySelect
 }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(date);
-  const { appointments, blockedDates } = useSupabaseData();
+  const { appointments, blockedDates } = useData();
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
