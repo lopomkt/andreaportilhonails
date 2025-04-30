@@ -10,11 +10,13 @@ import { TimeSlot } from '@/components/calendar/day/TimeSlot';
 export interface DayViewProps {
   date: Date;
   onDaySelect?: (date: Date) => void;
+  onSuggestedTimeSelect?: (date: Date, time: string) => void;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   date,
-  onDaySelect
+  onDaySelect,
+  onSuggestedTimeSelect
 }) => {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
@@ -68,6 +70,7 @@ export const DayView: React.FC<DayViewProps> = ({
             key={index} 
             slot={slot} 
             onAppointmentClick={setSelectedAppointment} 
+            onSuggestedTimeSelect={onSuggestedTimeSelect}
           />
         ))}
       </div>

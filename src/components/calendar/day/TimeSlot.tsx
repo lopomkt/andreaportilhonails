@@ -17,14 +17,24 @@ interface TimeSlotProps {
     isBlocked: boolean 
   };
   onAppointmentClick: (appointment: Appointment) => void;
+  onSuggestedTimeSelect?: (date: Date, time: string) => void;
 }
 
-export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) => {
+export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, onSuggestedTimeSelect }) => {
   const { time, appointments, isBlocked } = slot;
   const { openModal } = useAppointmentsModal();
   
   const handleTimeClick = () => {
     if (!isBlocked && appointments.length === 0) {
+      openModal(undefined, time);
+    }
+  };
+
+  const handleScheduleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onSuggestedTimeSelect) {
+      onSuggestedTimeSelect(time, format(time, 'HH:mm'));
+    } else {
       openModal(undefined, time);
     }
   };
@@ -68,10 +78,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) 
                   variant="ghost" 
                   size="sm" 
                   className="text-xs"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    openModal(undefined, time); 
-                  }}
+                  onClick={handleScheduleClick}
                 >
                   <Clock className="h-3 w-3 mr-1" />
                   Agendar
