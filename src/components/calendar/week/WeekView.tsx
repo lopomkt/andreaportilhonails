@@ -33,7 +33,7 @@ const getWeekStats = (weekStart: Date) => {
 
   daysInWeek.forEach(day => {
     const dayAppointments = appointments.filter(appt =>
-      isSameDay(new Date(appt.data_inicio), day)
+      isSameDay(new Date(appt.date), day)
     );
 
     totalAppointments += dayAppointments.length;
@@ -41,11 +41,11 @@ const getWeekStats = (weekStart: Date) => {
     dayAppointments.forEach(appt => {
       if (appt.status === 'confirmed') {
         totalConfirmed++;
-        totalRevenue += appt.preco || 0;
+        totalRevenue += appt.price || 0;
       } else if (appt.status === 'canceled') {
         totalCanceled++;
       }
-      expectedRevenue += appt.preco || 0;
+      expectedRevenue += appt.price || 0;
     });
   });
 
