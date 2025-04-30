@@ -132,7 +132,7 @@ export function AppointmentForm({
   if (isEditMode && appointment) {
     setClientId(appointment.clientId);
     setServiceId(appointment.serviceId);
-    setStartDate(new Date(appointment.date));
+    setStartDate(new Date(appointment.propDate));
     setEndDate(new Date(appointment.endTime));
     setPrice(appointment.price);
     setStatus(appointment.status);
@@ -189,7 +189,7 @@ export function AppointmentForm({
       return;
     }
 
-    const startDateTime = new Date(date);
+    const startDateTime = new Date(propDate);
     const [hours, minutes] = time.split(":").map(Number);
     startDateTime.setHours(hours, minutes, 0, 0);
     
@@ -202,7 +202,7 @@ export function AppointmentForm({
     const endDateTime = addMinutes(startDateTime, service.durationMinutes);
     
     const isDateBlocked = blockedDates.some(blockedDate => 
-      isSameDay(new Date(blockedDate.date), date) && blockedDate.allDay
+      isSameDay(new Date(blockedDate.date), propDate) && blockedDate.allDay
     );
     
     if (isDateBlocked) {
@@ -265,7 +265,7 @@ export function AppointmentForm({
     const newErrors = {
       clientId: !clientId,
       serviceId: !serviceId,
-      date: !date,
+      date: !propDate,
       time: !time
     };
     
