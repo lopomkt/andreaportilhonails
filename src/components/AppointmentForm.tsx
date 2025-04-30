@@ -31,6 +31,7 @@ interface AppointmentFormProps {
   initialDate?: Date;
   initialTime?: string; 
 }
+const isEditMode = !!appointment;
 
 export function AppointmentForm({ 
   onSuccess, 
@@ -128,6 +129,18 @@ export function AppointmentForm({
     null
   );
   
+ useEffect(() => {
+  if (isEditMode && appointment) {
+    setClientId(appointment.clientId);
+    setServiceId(appointment.serviceId);
+    setStartDate(new Date(appointment.date));
+    setEndDate(new Date(appointment.endTime));
+    setPrice(appointment.price);
+    setStatus(appointment.status);
+    setNotes(appointment.observations || "");
+  }
+}, [appointment]);
+ 
   useEffect(() => {
     console.log("AppointmentForm mounted - services count:", services.length);
   }, [services]);
@@ -371,6 +384,42 @@ export function AppointmentForm({
     setSelectedClientState(client);
   };
 
+  const handleUpdate = async () => {
+  if (!appointment) return;
+  try {
+    await updateAppointment({
+      id: appointment.id,
+      clientId,
+      serviceId,
+      date: startDate,
+      endTime: endDate,
+      price,
+      status,
+      observations: notes,
+    });
+    toast.success("Agendamento atualizado com sucesso!");
+    closeModal();
+    refetchAppointments();
+  } catch (error) {
+    toast.error("Erro ao atualizar agendamento");
+    console.error(error);
+  }
+};
+
+const handleDelete = async () => {
+  if (!appointment) return;
+  try {
+    await deleteAppointment(appointment.id);
+    toast.success("Agendamento excluído!");
+    closeModal();
+    refetchAppointments();
+  } catch (error) {
+    toast.error("Erro ao excluir agendamento");
+    console.error(error);
+  }
+};
+
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -575,6 +624,20 @@ export function AppointmentForm({
           )}
         </Button>
       </div>
+
+      {isEditMode && (
+  <div className="flex justify-between mt-6">
+    <Button type="button" onClick={handleUpdate} variant="default">
+      Salvar Alterações
+    </Button>
+
+    <Button type="button" onClick={handleDelete} variant="destructive">
+      Excluir Agendamento
+    </Button>
+  </div>
+)}
+
+      
     </form>
   );
 }

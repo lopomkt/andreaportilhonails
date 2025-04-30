@@ -4,6 +4,7 @@ import { Appointment, DashboardStats, RevenueData, MonthlyRevenueData } from '@/
 import { useData } from "@/context/DataProvider";
 
 export function useDashboardStats() {
+  const { appointments } = useData();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     monthRevenue: 0,
     newClients: 0,
@@ -12,10 +13,6 @@ export function useDashboardStats() {
     todayAppointments: 0,
     weekAppointments: 0,
   });
-
-  const { appointments } = useData();
-  
-  const { dashboardStats } = useDashboardStats();
   
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
