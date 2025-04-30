@@ -63,7 +63,11 @@ export function AppointmentForm({
   );
   
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
-  const [status, setStatus] = useState<AppointmentStatus>(initialStatus || appointment?.status || "confirmed");
+  const isEditing = !!appointment;
+  const [status, setStatus] = useState<AppointmentStatus>(
+  isEditing ? (appointment?.status || "confirmed") : "confirmed"
+);
+
   
   const [date, setDate] = useState<Date>(
     selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
