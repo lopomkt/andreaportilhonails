@@ -123,11 +123,8 @@ const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) => {
       
       <div className="flex flex-wrap gap-2">
         {appointments.map((appointment, idx) => (
-          <AppointmentCard 
-            key={idx} 
-            appointment={appointment} 
-            onClick={() => openModal(appointment)} 
-          />
+          <AppointmentCard key={appointment.id} appointment={appointment} onClick={() => openModal(appointment)} />
+
         ))}
         
         {!isBlocked && appointments.length === 0 && (
