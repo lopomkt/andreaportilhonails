@@ -33,8 +33,6 @@ interface AppointmentFormProps {
   initialTime?: string; 
 }
 
-const { updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
-
 export function AppointmentForm({
   onSuccess,
   appointment,
