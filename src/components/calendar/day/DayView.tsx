@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { Appointment } from '@/types';
+import { useDataContext } from "@/context/DataProvider";
 
 export interface DayViewProps {
   date: Date;
@@ -20,10 +21,10 @@ export const DayView: React.FC<DayViewProps> = ({
   date,
   onDaySelect
 }) => {
-  const { appointments, blockedDates, services } = useSupabaseData();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
   const { openModal } = useAppointmentsModal();
+  const { appointments } = useDataContext();
   
   useEffect(() => {
     const slots = [];
@@ -39,9 +40,9 @@ export const DayView: React.FC<DayViewProps> = ({
         
         const slotAppointments = appointments.filter(appointment => {
           const appointmentDate = new Date(appointment.date);
-          const appointmentEndTime = appointment.endTime 
-            ? new Date(appointment.endTime)
-            : addMinutes(appointmentDate, appointment.service?.durationMinutes || 60);
+          const appointmentEndTime = appointment.data_fim 
+            ? new Date(appointment.data_fim)
+            : addMinutes(appointmentDate, appointment.servico?.durationMinutes || 60);
             
           return isWithinInterval(slotTime, {
             start: appointmentDate,
