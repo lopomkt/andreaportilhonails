@@ -18,6 +18,7 @@ import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useServices } from "@/context/ServiceContext";
 import { useAppointments } from "@/hooks/appointments";
+import { useAppointments } from "@/hooks/useAppointments";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -32,6 +33,10 @@ interface AppointmentFormProps {
   initialTime?: string; 
 }
 const isEditMode = !!appointment;
+
+const { updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
+
+export const AppointmentForm: React.FC<AppointmentFormProps> = ({ appointment, date }) => {
 
 export function AppointmentForm({ 
   onSuccess, 
@@ -68,10 +73,9 @@ export function AppointmentForm({
     isEditing ? (appointment?.status || "confirmed") : "confirmed"
   );
 
-  const [date, setDate] = useState<Date>(
-    selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
-  );
-  
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
   const [errors, setErrors] = useState({
     clientId: false,
     serviceId: false,
@@ -137,7 +141,7 @@ export function AppointmentForm({
     setEndDate(new Date(appointment.endTime));
     setPrice(appointment.price);
     setStatus(appointment.status);
-    setNotes(appointment.observations || "");
+    setNotes(appointment.notes || "");
   }
 }, [appointment]);
  
@@ -397,11 +401,19 @@ export function AppointmentForm({
       status,
       observations: notes,
     });
-    toast.success("Agendamento atualizado com sucesso!");
+    toast({
+  title: "Sucesso",
+  description: "Agendamento atualizado com sucesso!",
+});
+
     closeModal();
     refetchAppointments();
   } catch (error) {
-    toast.error("Erro ao atualizar agendamento");
+    toast({
+  title: "Erro",
+  description: "Erro ao atualizar agendamento",
+  variant: "destructive",
+});
     console.error(error);
   }
 };
@@ -410,11 +422,19 @@ const handleDelete = async () => {
   if (!appointment) return;
   try {
     await deleteAppointment(appointment.id);
-    toast.success("Agendamento excluído!");
+    toast({
+  title: "Agendamento Excluido",
+  description: "Agendamento excluido com sucesso!",
+});
+
     closeModal();
     refetchAppointments();
   } catch (error) {
-    toast.error("Erro ao excluir agendamento");
+    toast({
+  title: "Erro ao Excluir",
+  description: "Erro ao excluir agendamento",
+  variant: "destructive",
+});
     console.error(error);
   }
 };
