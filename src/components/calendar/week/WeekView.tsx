@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useDataContext } from "@/context/DataProvider";
+import { useData } from "@/context/DataProvider";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   date,
   onDaySelect
 }) => {
-  const { appointments } = useDataContext();
+  const { appointments } = useData();
   const isMobile = useIsMobile();
 
 const getWeekStats = (weekStart: Date) => {
