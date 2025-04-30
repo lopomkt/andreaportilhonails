@@ -51,7 +51,6 @@ export function AppointmentForm({
     clients, 
     appointments, 
     blockedDates,
-    refetchAppointments
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
