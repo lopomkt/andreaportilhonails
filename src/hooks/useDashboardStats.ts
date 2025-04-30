@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Appointment, DashboardStats, RevenueData, MonthlyRevenueData } from '@/types';
+import { useData } from "@/context/DataProvider";
 
 export function useDashboardStats(appointments: Appointment[]) {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
@@ -11,6 +12,8 @@ export function useDashboardStats(appointments: Appointment[]) {
     todayAppointments: 0,
     weekAppointments: 0,
   });
+
+  const { appointments } = useData();
   
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
