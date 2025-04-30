@@ -66,7 +66,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
           <AppointmentCard
             key={appointment.id}
             appointment={appointment}
-            onClick={() => onAppointmentClick(appointment)}
+            onClick={() => onAppointmentClick(appointment)} // Não alterar: necessário para abrir modal de edição corretamente
           />
         ))}
         
