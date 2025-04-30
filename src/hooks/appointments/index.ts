@@ -1,4 +1,3 @@
-
 import { useAppointmentsData } from './useAppointmentsData';
 import { useAppointmentOperations } from './useAppointmentOperations';
 import { useAppointmentQueries } from './useAppointmentQueries';
@@ -48,9 +47,11 @@ export function useAppointments() {
 
   const createAppointment = async (appointment: any) => {
     console.log("useAppointments.createAppointment called with:", appointment);
-    // Add status_confirmacao if not provided
-    if (!appointment.statusConfirmacao) {
-      appointment.statusConfirmacao = 'pendente';
+    
+    // Validate all required fields
+    if (!appointment.clienteId || !appointment.servicoId || !appointment.data) {
+      console.error("Missing required fields for appointment creation");
+      return { success: false, error: { message: 'Cliente, serviço e data são obrigatórios' } };
     }
     
     const result = await baseCreateAppointment(appointment);

@@ -12,7 +12,7 @@ export type Database = {
       agendamentos: {
         Row: {
           cliente_id: string
-          created_at: string | null
+          created_at1: string | null
           data: string
           hora_fim: string | null
           id: string
@@ -25,7 +25,7 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
-          created_at?: string | null
+          created_at1?: string | null
           data: string
           hora_fim?: string | null
           id?: string
@@ -38,7 +38,7 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
-          created_at?: string | null
+          created_at1?: string | null
           data?: string
           hora_fim?: string | null
           id?: string
@@ -65,6 +65,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agendamentos_novo: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          data_fim: string
+          data_inicio: string
+          id: string
+          observacoes: string | null
+          preco: number
+          servico_id: string
+          status: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          data_fim: string
+          data_inicio: string
+          id?: string
+          observacoes?: string | null
+          preco: number
+          servico_id: string
+          status?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          observacoes?: string | null
+          preco?: number
+          servico_id?: string
+          status?: string | null
+        }
+        Relationships: []
       }
       clientes: {
         Row: {

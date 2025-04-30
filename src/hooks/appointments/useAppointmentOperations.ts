@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Appointment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,23 +63,22 @@ export function useAppointmentOperations(setAppointments: React.Dispatch<React.S
         return { success: false, error: { message: errorMsg } };
       }
       
-      // Ensure date is in ISO format
+      // Prepare data for new appointments table format
       const formattedData = {
         cliente_id: appointment.clienteId,
         servico_id: appointment.servicoId,
-        data: appointment.data instanceof Date ? appointment.data.toISOString() : appointment.data,
-        hora_fim: appointment.horaFim instanceof Date ? appointment.horaFim.toISOString() : appointment.horaFim,
+        data_inicio: appointment.data instanceof Date ? appointment.data.toISOString() : appointment.data,
+        data_fim: appointment.horaFim instanceof Date ? appointment.horaFim.toISOString() : appointment.horaFim,
         preco: appointment.preco || 0,
-        status: appointment.status || 'confirmado',
-        motivo_cancelamento: appointment.motivoCancelamento || null,
-        observacoes: appointment.observacoes || null,
-        status_confirmacao: appointment.statusConfirmacao || 'not_confirmed'
+        status: appointment.status || 'pendente',
+        observacoes: appointment.observacoes || null
       };
       
       console.log("Formatted appointment data for Supabase:", formattedData);
       
+      // Insert into the new table structure
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .insert(formattedData)
         .select(`
           *,

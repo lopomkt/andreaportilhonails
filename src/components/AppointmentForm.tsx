@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -298,23 +299,26 @@ export function AppointmentForm({
     setIsSubmitting(true);
     
     try {
+      // Parse date and time into a complete DateTime object
       const appointmentDate = new Date(date);
       const [hours, minutes] = time.split(":").map(Number);
       appointmentDate.setHours(hours, minutes, 0, 0);
       
       const selectedServiceObj = services.find(s => s.id === serviceId);
-      const endDateTime = addMinutes(appointmentDate, selectedServiceObj?.durationMinutes || 60);
+      const serviceDuration = selectedServiceObj?.durationMinutes || 60;
       
+      // Calculate end time by adding service duration to start time
+      const endDateTime = addMinutes(appointmentDate, serviceDuration);
+      
+      // Build appointment object with new table structure in mind
       const result = await createAppointment({
         clienteId: clientId,
         servicoId: serviceId,
-        data: appointmentDate,
-        horaFim: endDateTime,
+        data: appointmentDate,              // This will become data_inicio
+        horaFim: endDateTime,               // This will become data_fim
         preco: price,
-        status: status || "confirmado",
-        observacoes: notes || "",
-        motivoCancelamento: appointment?.cancellationReason || "",
-        statusConfirmacao: "pendente"
+        status: status || "pendente",       // Using pendente as default status
+        observacoes: notes || ""
       });
       
       console.log("Resultado do agendamento:", result);
@@ -324,6 +328,7 @@ export function AppointmentForm({
         toast({
           title: "Agendamento criado com sucesso!",
           description: "O agendamento foi criado com sucesso.",
+          variant: "default"
         });
         
         resetForm();
