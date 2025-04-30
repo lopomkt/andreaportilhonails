@@ -23,8 +23,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) 
   const { time, appointments, isBlocked } = slot;
   const { openModal } = useAppointmentsModal();
   
-  const handleTimeClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleTimeClick = () => {
     if (!isBlocked && appointments.length === 0) {
       openModal(undefined, time);
     }
@@ -53,9 +52,9 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick }) 
       </div>
       
       <div className="flex flex-wrap gap-2">
-        {appointments.map((appointment, idx) => (
+        {appointments.map((appointment) => (
           <AppointmentCard 
-            key={idx} 
+            key={appointment.id} 
             appointment={appointment} 
             onClick={() => onAppointmentClick(appointment)} 
           />

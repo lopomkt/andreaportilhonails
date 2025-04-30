@@ -47,15 +47,13 @@ export function AppointmentForm({
   const { 
     clients, 
     appointments, 
-    blockedDates
+    blockedDates,
+    refetchAppointments
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
   const { createAppointment } = useAppointments();
   const { toast } = useToast();
-
-  // We're using the refetchAppointments from DataContext only
-  const { refetchAppointments } = useData();
   
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
