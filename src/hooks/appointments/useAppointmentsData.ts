@@ -46,11 +46,11 @@ export function useAppointmentsData() {
       
       return [];
     } catch (err: any) {
-      const errorMessage = err?.message || 'Erro ao buscar agendamentos';
+      const errorMessage = err?.message || 'Erro ao buscar agendamentos_novo';
       console.error("Error fetching appointments:", errorMessage);
       setError(errorMessage);
       toast({
-        title: 'Erro ao buscar agendamentos',
+        title: 'Erro ao buscar agendamentos_novo',
         description: errorMessage,
         variant: 'destructive'
       });
