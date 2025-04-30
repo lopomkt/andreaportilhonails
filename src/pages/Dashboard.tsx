@@ -15,6 +15,7 @@ import { CalendarRange } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 export default function Dashboard() {
   const {
@@ -23,6 +24,8 @@ export default function Dashboard() {
     appointments,
     clients
   } = useData();
+
+  const { dashboardStats, revenueData, monthlyRevenueData } = useDashboardStats();
   
   const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();
