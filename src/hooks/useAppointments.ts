@@ -12,6 +12,18 @@ export function useAppointments() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const deleteAppointment = async (id: string) => {
+  const { error } = await supabase.from("agendamentos").delete().eq("id", id);
+  if (error) throw error;
+};
+
+  const refetchAppointments = async () => {
+  const { data, error } = await supabase.from("agendamentos").select("*");
+  if (error) throw error;
+  setAppointments(data);
+};
+
+
   const fetchAppointments = useCallback(async (): Promise<Appointment[]> => {
     console.log("useAppointments: fetchAppointments called");
     setLoading(true);
@@ -283,16 +295,19 @@ export function useAppointments() {
   };
 
   return {
-    appointments,
-    loading,
-    error,
-    fetchAppointments,
-    addAppointment,
-    updateAppointment,
-    getAppointmentsForDate,
-    calculateDailyRevenue,
-    generateWhatsAppLink
-  };
+  appointments,
+  loading,
+  error,
+  fetchAppointments,
+  addAppointment, // ou use createAppointment se for o nome usado no form
+  updateAppointment,
+  deleteAppointment,       // ✅ novo
+  refetchAppointments,     // ✅ novo
+  getAppointmentsForDate,
+  calculateDailyRevenue,
+  generateWhatsAppLink,
+};
+
 }
 
 export default useAppointments;

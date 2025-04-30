@@ -47,9 +47,8 @@ export function AppointmentForm({
   initialDate,
   initialTime,
 }: AppointmentFormProps) {
-
   const isEditMode = !!appointment;
-  
+  const { createAppointment, updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
   const { 
     clients, 
     appointments, 
