@@ -508,8 +508,9 @@ export function AppointmentForm({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="confirmed">Confirmado</SelectItem>
-            <SelectItem value="canceled">Cancelado</SelectItem>
+<SelectItem value="confirmed">Confirmado</SelectItem>
+{isEditing && <SelectItem value="canceled">Cancelado</SelectItem>}
+
           </SelectContent>
         </Select>
       </div>
