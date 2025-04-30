@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataProvider';
-import { isSameDay, addMinutes, isWithinInterval } from 'date-fns';
+import { isSameDay, addMinutes, isWithinInterval, addDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { Appointment } from '@/types';
 import { TimeSlot } from '@/components/calendar/day/TimeSlot';
+import { Button } from '@/components/ui/button';
 
 export interface DayViewProps {
   date: Date;
@@ -21,6 +23,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
   const { appointments, blockedDates } = useData();
+  const { openModal } = useAppointmentsModal();
   
   useEffect(() => {
     const slots = [];
@@ -64,6 +67,18 @@ export const DayView: React.FC<DayViewProps> = ({
 
   return (
     <div className="day-view-container px-2 pt-4">
+      <div className="flex justify-between items-center mb-4">
+        <Button variant="ghost" onClick={() => onDaySelect && onDaySelect(addDays(date, -1))}>
+          ← Dia anterior
+        </Button>
+
+        <h2 className="text-lg font-bold">{format(date, "EEEE, dd MMMM", { locale: ptBR })}</h2>
+
+        <Button variant="ghost" onClick={() => onDaySelect && onDaySelect(addDays(date, 1))}>
+          Próximo dia →
+        </Button>
+      </div>
+      
       <div className="time-slots grid gap-3">
         {timeSlots.map((slot, index) => (
           <TimeSlot 
@@ -75,19 +90,5 @@ export const DayView: React.FC<DayViewProps> = ({
         ))}
       </div>
     </div>
-
-  <div className="flex justify-between items-center mb-4">
-  <Button variant="ghost" onClick={() => onDaySelect(addDays(date, -1))}>
-    ← Dia anterior
-  </Button>
-
-  <h2 className="text-lg font-bold">{format(date, "EEEE, dd MMMM", { locale: ptBR })}</h2>
-
-  <Button variant="ghost" onClick={() => onDaySelect(addDays(date, 1))}>
-    Próximo dia →
-  </Button>
-</div>
-
-
   );
 };

@@ -54,9 +54,9 @@ interface DataContextType {
   updateService: (id: string, data: Partial<Service>) => Promise<any>;
   deleteService: (id: string) => Promise<any>;
   fetchBlockedDates: () => Promise<void>;
-  fetchAppointments: () => Promise<Appointment[]>; // Updated to return Promise<Appointment[]>
+  fetchAppointments: () => Promise<Appointment[]>; 
   addBlockedDate: (blockedDate: Omit<BlockedDate, "id">) => Promise<any>;
-  fetchServices: () => Promise<Service[]>; // Added missing fetchServices function
+  fetchServices: () => Promise<Service[]>; 
 }
 
 export const DataContext = createContext<DataContextType>({
@@ -173,7 +173,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     calculateNetProfit,
     calculatedMonthlyRevenue,
     getRevenueData,
-  } = useDashboardStats(appointments);
+    updateDashboardStats
+  } = useDashboardStats();
+  
+  // Update dashboard stats when appointments change
+  useEffect(() => {
+    if (appointments.length > 0) {
+      updateDashboardStats(appointments);
+    }
+  }, [appointments, updateDashboardStats]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -221,6 +229,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     await fetchClients();
   }, [fetchClients]);
 
+  // Modified to pass appointments to the original function
+  const wrappedCalculatedMonthlyRevenue = useCallback((month?: number, year?: number) => {
+    return calculatedMonthlyRevenue(appointments, month, year);
+  }, [calculatedMonthlyRevenue, appointments]);
+
+  // Modified to pass appointments to the original function
+  const wrappedGetRevenueData = useCallback(() => {
+    return getRevenueData(appointments);
+  }, [getRevenueData, appointments]);
+
   return (
     <DataContext.Provider
       value={{
@@ -237,9 +255,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         getTopClients,
         calculateNetProfit,
         calculateDailyRevenue,
-        calculatedMonthlyRevenue,
+        calculatedMonthlyRevenue: wrappedCalculatedMonthlyRevenue,
         calculateServiceRevenue,
-        getRevenueData,
+        getRevenueData: wrappedGetRevenueData,
         generateWhatsAppLink,
         refetchAppointments,
         refetchClients,
@@ -264,4 +282,3 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     </DataContext.Provider>
   );
 };
-
