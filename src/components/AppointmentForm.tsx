@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -48,15 +47,15 @@ export function AppointmentForm({
   const { 
     clients, 
     appointments, 
-    blockedDates,
-    refetchAppointments
+    blockedDates
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
   const { createAppointment } = useAppointments();
   const { toast } = useToast();
 
-  const { refetchAppointments } = useDataContext();
+  // We're using the refetchAppointments from DataContext only
+  const { refetchAppointments } = useData();
   
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
@@ -67,10 +66,9 @@ export function AppointmentForm({
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
   const isEditing = !!appointment;
   const [status, setStatus] = useState<AppointmentStatus>(
-  isEditing ? (appointment?.status || "confirmed") : "confirmed"
-);
+    isEditing ? (appointment?.status || "confirmed") : "confirmed"
+  );
 
-  
   const [date, setDate] = useState<Date>(
     selectedDate || propDate || initialDate || (appointment ? new Date(appointment.date) : new Date())
   );
@@ -328,10 +326,9 @@ export function AppointmentForm({
       });
       
       if (result.success) {
-  await refetchAppointments(); // Atualiza dados do dashboard
-  closeModal();
-}
-
+        await refetchAppointments(); // Update dashboard data
+        closeModal();
+      }
       
       console.log("Resultado do agendamento:", result);
       console.log("Resultado Final:", result);
@@ -347,7 +344,6 @@ export function AppointmentForm({
         
         if (onSuccess) onSuccess();
         closeModal();
-        await refetchAppointments();
       } else {
         console.error("Error creating appointment:", result.error);
         toast({
@@ -516,9 +512,8 @@ export function AppointmentForm({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pendente</SelectItem>
-<SelectItem value="confirmed">Confirmado</SelectItem>
-{isEditing && <SelectItem value="canceled">Cancelado</SelectItem>}
-
+            <SelectItem value="confirmed">Confirmado</SelectItem>
+            {isEditing && <SelectItem value="canceled">Cancelado</SelectItem>}
           </SelectContent>
         </Select>
       </div>
