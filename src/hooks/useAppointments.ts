@@ -17,13 +17,13 @@ export function useAppointments() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .select(`
           *,
           clientes(*),
           servicos(*)
         `)
-        .order('data', { ascending: true });
+        .order('data_inicio', { ascending: true });
         
       if (error) {
         throw error;
@@ -86,10 +86,10 @@ export function useAppointments() {
       const dataToInsert = {
         cliente_id: dbAppointmentData.cliente_id,
         servico_id: dbAppointmentData.servico_id,
-        data: dbAppointmentData.data,
+        data_inicio: dbAppointmentData.data_inicio,
         preco: dbAppointmentData.preco || 0,
-        status: dbAppointmentData.status || 'confirmado',
-        hora_fim: dbAppointmentData.hora_fim,
+        status: dbAppointmentData.status || 'pendente',
+        data_fim: dbAppointmentData.data_fim,
         motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null,
         observacoes: dbAppointmentData.observacoes || null,
         status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
@@ -98,7 +98,7 @@ export function useAppointments() {
       console.log("Inserting appointment data:", dataToInsert);
       
       const { data: responseData, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .insert(dataToInsert as any)
         .select(`
           *,
@@ -174,16 +174,16 @@ export function useAppointments() {
       const updateData: Record<string, any> = {};
       if (dbAppointmentData.cliente_id !== undefined) updateData.cliente_id = dbAppointmentData.cliente_id;
       if (dbAppointmentData.servico_id !== undefined) updateData.servico_id = dbAppointmentData.servico_id;
-      if (dbAppointmentData.data !== undefined) updateData.data = dbAppointmentData.data;
+      if (dbAppointmentData.data_inicio !== undefined) updateData.data_inicio = dbAppointmentData.data_inicio;
       if (dbAppointmentData.preco !== undefined) updateData.preco = dbAppointmentData.preco;
       if (dbAppointmentData.status !== undefined) updateData.status = dbAppointmentData.status;
-      if (dbAppointmentData.hora_fim !== undefined) updateData.hora_fim = dbAppointmentData.hora_fim;
+      if (dbAppointmentData.data_fim !== undefined) updateData.data_fim = dbAppointmentData.data_fim;
       if (dbAppointmentData.motivo_cancelamento !== undefined) updateData.motivo_cancelamento = dbAppointmentData.motivo_cancelamento;
       if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
       if (dbAppointmentData.status_confirmacao !== undefined) updateData.status_confirmacao = dbAppointmentData.status_confirmacao;
       
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .update(updateData)
         .eq('id', id)
         .select(`

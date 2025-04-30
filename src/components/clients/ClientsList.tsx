@@ -1,3 +1,4 @@
+
 import { Client, Appointment, Service } from '@/types';
 import { ClientCard } from './ClientCard';
 import { useState, useEffect } from 'react';
@@ -59,10 +60,10 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
         if (client.lastAppointment) {
           try {
             const { data, error } = await supabase
-              .from('agendamentos')
+              .from('agendamentos_novo')
               .select('servico_id')
               .eq('cliente_id', client.id)
-              .order('data', { ascending: false })
+              .order('data_inicio', { ascending: false })
               .limit(1)
               .single();
             
@@ -140,22 +141,22 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('agendamentos')
+        .from('agendamentos_novo')
         .select(`
           id,
-          data,
+          data_inicio,
           preco,
           servico_id
         `)
         .eq('cliente_id', selectedClient.id)
-        .order('data', { ascending: false });
+        .order('data_inicio', { ascending: false });
       
       if (error) {
         throw new Error(error.message);
       }
       
       const historyWithServices = await Promise.all(
-        data.map(async (appointment) => {
+        (data || []).map(async (appointment) => {
           const { data: serviceData } = await supabase
             .from('servicos')
             .select('nome')
@@ -432,7 +433,7 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium">{format(new Date(appointment.data), "dd/MM/yyyy")}</p>
+                      <p className="font-medium">{format(new Date(appointment.data_inicio), "dd/MM/yyyy")}</p>
                       <p className="text-sm text-muted-foreground">{appointment.serviceName}</p>
                     </div>
                     <p className="font-medium">R$ {appointment.preco.toFixed(2)}</p>
