@@ -40,7 +40,9 @@ export const AppointmentsModalProvider: React.FC<{ children: React.ReactNode }> 
 
   const openModal = (clientOrAppointment: Client | Appointment | null = null, date: Date | null = null) => {
     console.log("Opening appointment modal with:", { 
-      clientOrAppointment: clientOrAppointment?.name || (clientOrAppointment as Appointment)?.client?.name || 'none', 
+      clientOrAppointment: clientOrAppointment ? 
+        ('client' in clientOrAppointment ? clientOrAppointment.client?.name : 
+         'name' in clientOrAppointment ? clientOrAppointment.name : 'none') : 'none',
       date: date?.toISOString() || 'none' 
     });
     
