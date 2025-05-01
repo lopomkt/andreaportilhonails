@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
 import { isSameDay, addMinutes, isWithinInterval, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -9,6 +9,7 @@ import { Appointment } from '@/types';
 import { TimeSlot } from '@/components/calendar/day/TimeSlot';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { EditAppointmentModal } from '@/components/EditAppointmentModal';
 
 export interface DayViewProps {
   date: Date;
@@ -21,9 +22,9 @@ export const DayView: React.FC<DayViewProps> = ({
   onDaySelect,
   onSuggestedTimeSelect
 }) => {
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [timeSlots, setTimeSlots] = useState<Array<{ time: Date, appointments: Appointment[], isBlocked: boolean }>>([]);
-  const { appointments, blockedDates } = useData();
+  const { appointments, blockedDates, refetchAppointments } = useData();
   const { openModal } = useAppointmentsModal();
   
   useEffect(() => {
@@ -67,9 +68,8 @@ export const DayView: React.FC<DayViewProps> = ({
   }, [date, appointments, blockedDates]);
 
   const handleAppointmentClick = (appointment: Appointment) => {
-    // Fix: Pass null as Client and the appointment date as the Date
-    // This way we're not trying to pass an Appointment where a Client is expected
-    openModal(null, new Date(appointment.date));
+    // Set the editing appointment to open the edit modal
+    setEditingAppointment(appointment);
   };
 
   return (
@@ -98,6 +98,15 @@ export const DayView: React.FC<DayViewProps> = ({
           />
         ))}
       </div>
+
+      {/* Render the EditAppointmentModal when an appointment is selected for editing */}
+      {editingAppointment && (
+        <EditAppointmentModal 
+          appointment={editingAppointment} 
+          onClose={() => setEditingAppointment(null)} 
+          onSuccess={refetchAppointments} 
+        />
+      )}
     </div>
   );
 };

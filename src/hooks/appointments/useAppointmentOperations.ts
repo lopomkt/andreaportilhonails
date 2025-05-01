@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useDataContext } from '../useDataContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +8,46 @@ import { mapAppStatusToDbStatus } from '@/integrations/supabase/mappers/appointm
 export function useAppointmentOperations() {
   const { appointments, refetchAppointments } = useDataContext();
   const { toast } = useToast();
+
+  // Function to delete appointment in Supabase
+  const deleteAppointment = useCallback(async (id: string) => {
+    try {
+      console.log("Deleting appointment with ID:", id);
+      
+      const { error } = await supabase
+        .from('agendamentos_novo')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error deleting appointment:", error);
+        toast({ 
+          title: "Erro", 
+          description: "Não foi possível excluir o agendamento: " + error.message, 
+          variant: "destructive" 
+        });
+        return false;
+      }
+
+      toast({ 
+        title: "Sucesso", 
+        description: "Agendamento excluído com sucesso!" 
+      });
+      
+      // Refresh the appointments list
+      await refetchAppointments();
+      
+      return true;
+    } catch (err: any) {
+      console.error("Unexpected error deleting appointment:", err);
+      toast({ 
+        title: "Erro", 
+        description: "Erro inesperado ao excluir agendamento: " + (err.message || "Erro desconhecido"), 
+        variant: "destructive" 
+      });
+      return false;
+    }
+  }, [refetchAppointments, toast]);
 
   // Function to create appointment in Supabase
   const createAppointment = useCallback(async (appointmentData: {
@@ -96,6 +135,98 @@ export function useAppointmentOperations() {
     }
   }, [refetchAppointments, toast]);
 
+  // Function to update appointment in Supabase
+  const updateAppointment = useCallback(async (id: string, data: Partial<Appointment>) => {
+    try {
+      console.log("Updating appointment:", id, data);
+      
+      // Map status from app to database format
+      let dbData: Record<string, any> = { ...data };
+      
+      if (data.status) {
+        let dbStatus;
+        if (data.status === 'pending') {
+          dbStatus = 'pendente';
+        } else if (data.status === 'confirmed') {
+          dbStatus = 'confirmado';
+        } else if (data.status === 'canceled') {
+          dbStatus = 'cancelado';
+        }
+        
+        if (dbStatus) {
+          dbData.status = dbStatus;
+          delete dbData.status; // Remove original status
+        }
+      }
+      
+      // Convert app field names to DB field names
+      const dbMappings: Record<string, string> = {
+        clientId: 'cliente_id',
+        serviceId: 'servico_id',
+        date: 'data_inicio',
+        endTime: 'data_fim',
+        price: 'preco',
+        notes: 'observacoes'
+      };
+      
+      const dbFields: Record<string, any> = {};
+      
+      // Map app fields to DB fields
+      Object.entries(dbData).forEach(([key, value]) => {
+        const dbField = dbMappings[key as keyof typeof dbMappings];
+        if (dbField) {
+          dbFields[dbField] = value;
+        } else if (key === 'status') {
+          dbFields.status = value;
+        } else {
+          // Any other fields keep as is
+          dbFields[key] = value;
+        }
+      });
+      
+      // If status is included, map it
+      if (data.status) {
+        dbFields.status = mapAppStatusToDbStatus(data.status);
+      }
+
+      console.log("Sending update with fields:", dbFields);
+      
+      const { error } = await supabase
+        .from('agendamentos_novo')
+        .update(dbFields)
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error updating appointment:", error);
+        toast({ 
+          title: "Erro", 
+          description: "Não foi possível atualizar o agendamento: " + error.message, 
+          variant: "destructive" 
+        });
+        return { success: false, error };
+      }
+
+      toast({ 
+        title: "Sucesso", 
+        description: "Agendamento atualizado com sucesso!" 
+      });
+      
+      // Refresh appointments list
+      await refetchAppointments();
+      
+      return { success: true };
+      
+    } catch (err: any) {
+      console.error("Unexpected error updating appointment:", err);
+      toast({ 
+        title: "Erro", 
+        description: "Erro inesperado ao atualizar agendamento: " + (err.message || "Erro desconhecido"), 
+        variant: "destructive" 
+      });
+      return { success: false, error: err };
+    }
+  }, [refetchAppointments, toast]);
+
   // Get appointments for a specific date
   const getAppointmentsForDate = useCallback((date: Date): Appointment[] => {
     return appointments.filter((appointment) => {
@@ -127,5 +258,7 @@ export function useAppointmentOperations() {
     calculateDailyRevenue,
     refetchAppointments: refreshAppointments,
     createAppointment,
+    updateAppointment,
+    deleteAppointment
   };
 }

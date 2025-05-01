@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -12,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { formatCurrency } from '@/lib/formatters';
+import { EditAppointmentModal } from '@/components/EditAppointmentModal';
+import { Appointment } from '@/types';
 
 interface WeekViewProps {
   date: Date;
@@ -25,7 +28,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   date,
   onDaySelect
 }) => {
-  const { appointments } = useData();
+  const { appointments, refetchAppointments } = useData();
   const isMobile = useIsMobile();
   const { openModal } = useAppointmentsModal();
   
@@ -33,6 +36,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   const [isWeekDialogOpen, setIsWeekDialogOpen] = useState<boolean>(false);
   const [selectedWeekAppointments, setSelectedWeekAppointments] = useState<any[]>([]);
   const [selectedWeekDates, setSelectedWeekDates] = useState<{ start: Date, end: Date } | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
   const getWeekStats = (weekStart: Date) => {
     const weekEnd = endOfWeek(weekStart, { locale: ptBR });
@@ -85,7 +89,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   const handleAppointmentClick = (appointment: any) => {
-    openModal(appointment);
+    // Usar o novo modal de edição
+    setEditingAppointment(appointment);
     setIsWeekDialogOpen(false);
   };
 
@@ -105,36 +110,46 @@ export const WeekView: React.FC<WeekViewProps> = ({
     onDaySelect(newDate);
   };
 
-  // Get start of selected month
-  const monthStart = startOfMonth(setMonth(new Date(), selectedMonth));
-  const monthEnd = endOfMonth(setMonth(new Date(), selectedMonth));
-  
-  // Generate all weeks in the selected month
-  const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
-  const lastWeekStart = startOfWeek(monthEnd, { locale: ptBR });
-  
-  // Calculate number of weeks between first and last week
-  const weeksCount = Math.ceil(differenceInDays(lastWeekStart, firstWeekStart) / 7) + 1;
-  
-  const weeks = [];
-  for (let i = 0; i < weeksCount; i++) {
-    const weekStart = addMonths(firstWeekStart, 0);
-    weekStart.setDate(firstWeekStart.getDate() + (i * 7));
+  // Get start of selected month for filtering
+  const filteredMonth = useMemo(() => {
+    return setMonth(new Date(), selectedMonth);
+  }, [selectedMonth]);
+
+  // Generate weeks using useMemo to optimize performance
+  const weeks = useMemo(() => {
+    const monthStart = startOfMonth(filteredMonth);
+    const monthEnd = endOfMonth(filteredMonth);
     
-    // Only add the week if at least one day is in the selected month
-    const weekEnd = endOfWeek(weekStart, { locale: ptBR });
-    const hasOverlap = datesOverlap(weekStart, weekEnd, monthStart, monthEnd);
+    // Get the first week of the month
+    const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
+    // Maximum number of weeks to cover all days in the month (6 is enough for any month)
+    const weeksNeeded = 6;
     
-    if (hasOverlap) {
-      weeks.push(weekStart);
+    const result = [];
+    for (let i = 0; i < weeksNeeded; i++) {
+      const currentWeekStart = new Date(firstWeekStart);
+      currentWeekStart.setDate(firstWeekStart.getDate() + (i * 7));
+      
+      const currentWeekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
+      
+      // Only include weeks that have at least one day in the selected month
+      if (
+        (currentWeekStart <= monthEnd && currentWeekStart >= monthStart) ||
+        (currentWeekEnd >= monthStart && currentWeekEnd <= monthEnd) ||
+        (currentWeekStart <= monthStart && currentWeekEnd >= monthEnd)
+      ) {
+        // Check if any day in this week belongs to the selected month
+        const weekDays = eachDayOfInterval({ start: currentWeekStart, end: currentWeekEnd });
+        const hasMonthDay = weekDays.some(day => isSameMonth(day, filteredMonth));
+        
+        if (hasMonthDay) {
+          result.push(currentWeekStart);
+        }
+      }
     }
-  }
-
-  function datesOverlap(start1: Date, end1: Date, start2: Date, end2: Date) {
-    return start1 <= end2 && end1 >= start2;
-  }
-
-  const weekNumber = getWeekOfMonth(date, { locale: ptBR });
+    
+    return result;
+  }, [filteredMonth]);
 
   return (
     <div className="space-y-4">
@@ -281,6 +296,15 @@ export const WeekView: React.FC<WeekViewProps> = ({
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Render the EditAppointmentModal when an appointment is selected for editing */}
+      {editingAppointment && (
+        <EditAppointmentModal 
+          appointment={editingAppointment} 
+          onClose={() => setEditingAppointment(null)} 
+          onSuccess={refetchAppointments} 
+        />
+      )}
     </div>
   );
 };

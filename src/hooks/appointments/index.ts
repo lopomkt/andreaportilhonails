@@ -17,7 +17,9 @@ export function useAppointments() {
     getAppointmentsForDate, 
     calculateDailyRevenue,
     refetchAppointments: refreshAppointments,
-    createAppointment: baseCreateAppointment
+    createAppointment: baseCreateAppointment,
+    updateAppointment: baseUpdateAppointment,
+    deleteAppointment: baseDeleteAppointment
   } = useAppointmentOperations();
   
   const { generateWhatsAppLink } = useWhatsAppLink();
@@ -40,15 +42,13 @@ export function useAppointments() {
   };
 
   const updateAppointment = async (id: string, appointmentData: Partial<any>) => {
-    // Create a fallback implementation since the original is not available
-    try {
-      console.log("Updating appointment:", id, appointmentData);
-      await fetchAppointments();
-      return { success: true };
-    } catch (err) {
-      console.error("Error updating appointment:", err);
-      return { success: false, error: err };
-    }
+    console.log("useAppointments.updateAppointment called with:", id, appointmentData);
+    return await baseUpdateAppointment(id, appointmentData);
+  };
+
+  const deleteAppointment = async (id: string) => {
+    console.log("useAppointments.deleteAppointment called with:", id);
+    return await baseDeleteAppointment(id);
   };
 
   // Updated function to ensure correct signature and usage
@@ -82,6 +82,7 @@ export function useAppointments() {
     fetchAppointments,
     addAppointment,
     updateAppointment,
+    deleteAppointment,
     createAppointment,
     getAppointmentsForDate,
     calculateDailyRevenue,

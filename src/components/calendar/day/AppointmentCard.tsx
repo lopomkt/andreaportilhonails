@@ -21,6 +21,30 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
   
   const duration = differenceInMinutes(endTime, appointmentDate);
   
+  // Traduzir o status para português
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'Confirmado';
+      case 'pending': return 'Pendente';
+      case 'canceled': return 'Cancelado';
+      default: return status;
+    }
+  };
+  
+  // Determinar as cores do badge de acordo com o status
+  const getStatusStyles = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return "bg-green-100 text-green-800";
+      case 'pending':
+        return "bg-amber-100 text-amber-800";
+      case 'canceled':
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+  
   return (
     <Card 
       className={cn(
@@ -48,13 +72,10 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
           <Badge 
             className={cn(
               "ml-2",
-              appointment.status === "confirmed" ? "bg-green-100 text-green-800" :
-              appointment.status === "pending" ? "bg-amber-100 text-amber-800" :
-              "bg-red-100 text-red-800"
+              getStatusStyles(appointment.status)
             )}
           >
-            {appointment.status === "confirmed" ? "Confirmado" : 
-             appointment.status === "pending" ? "Pendente" : "Cancelado"}
+            {getStatusLabel(appointment.status)}
           </Badge>
         </div>
       </CardContent>
