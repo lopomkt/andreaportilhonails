@@ -25,9 +25,18 @@ export function useAppointments() {
   // Wrap the operations to ensure automatic data refresh
   const addAppointment = async (appointment: Omit<any, "id">) => {
     console.log("useAppointments.addAppointment called with:", appointment);
-    // Since the original function no longer exists, we'll create a fallback here
-    // that uses the appropriate function from our operations
-    return await baseCreateAppointment(appointment);
+    // Transform the appointment data to match what baseCreateAppointment expects
+    const transformedData = {
+      clienteId: appointment.clientId || "",
+      servicoId: appointment.serviceId || "",
+      data: appointment.date ? new Date(appointment.date) : new Date(),
+      horaFim: appointment.endTime ? new Date(appointment.endTime) : new Date(),
+      preco: appointment.price || 0,
+      status: appointment.status || "pending",
+      observacoes: appointment.notes || ""
+    };
+    
+    return await baseCreateAppointment(transformedData);
   };
 
   const updateAppointment = async (id: string, appointmentData: Partial<any>) => {
