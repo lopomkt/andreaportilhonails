@@ -115,6 +115,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Using existing hooks
   const {
     clients,
     loading: clientsLoading,
@@ -167,6 +168,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     addBlockedDate,
   } = useBlockedDates();
 
+  // Use the fixed dashboardStats hook
   const {
     dashboardStats,
     revenueData,
@@ -178,7 +180,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   
   // Update dashboard stats when appointments change
   useEffect(() => {
-    if (appointments.length > 0) {
+    if (appointments && appointments.length > 0) {
       updateDashboardStats(appointments);
     }
   }, [appointments, updateDashboardStats]);

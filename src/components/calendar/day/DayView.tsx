@@ -8,6 +8,7 @@ import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { Appointment } from '@/types';
 import { TimeSlot } from '@/components/calendar/day/TimeSlot';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export interface DayViewProps {
   date: Date;
@@ -65,17 +66,23 @@ export const DayView: React.FC<DayViewProps> = ({
     setTimeSlots(slots);
   }, [date, appointments, blockedDates]);
 
+  const handleAppointmentClick = (appointment: Appointment) => {
+    openModal(appointment);
+  };
+
   return (
     <div className="day-view-container px-2 pt-4">
       <div className="flex justify-between items-center mb-4">
         <Button variant="ghost" onClick={() => onDaySelect && onDaySelect(addDays(date, -1))}>
-          ← Dia anterior
+          <ArrowLeft className="h-4 w-4 mr-1 md:mr-2" />
+          <span className="hidden md:inline">Dia anterior</span>
         </Button>
 
         <h2 className="text-lg font-bold">{format(date, "EEEE, dd MMMM", { locale: ptBR })}</h2>
 
         <Button variant="ghost" onClick={() => onDaySelect && onDaySelect(addDays(date, 1))}>
-          Próximo dia →
+          <span className="hidden md:inline">Próximo dia</span>
+          <ArrowRight className="h-4 w-4 ml-1 md:ml-2" />
         </Button>
       </div>
       
@@ -84,7 +91,7 @@ export const DayView: React.FC<DayViewProps> = ({
           <TimeSlot 
             key={index} 
             slot={slot} 
-            onAppointmentClick={(appointment) => openModal(appointment)}
+            onAppointmentClick={handleAppointmentClick}
             onSuggestedTimeSelect={onSuggestedTimeSelect}
           />
         ))}

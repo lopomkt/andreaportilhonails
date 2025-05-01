@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Appointment, ServiceResponse, WhatsAppMessageData } from '@/types';
+import { Appointment, ServiceResponse, WhatsAppMessageData, AppointmentStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbAppointmentToApp, mapAppAppointmentToDb } from '@/integrations/supabase/mappers';
 import { useToast } from '@/hooks/use-toast';
@@ -13,16 +13,20 @@ export function useAppointments() {
   const { toast } = useToast();
 
   const deleteAppointment = async (id: string) => {
-  const { error } = await supabase.from("agendamentos").delete().eq("id", id);
-  if (error) throw error;
-};
+    try {
+      const { error } = await supabase.from("agendamentos_novo").delete().eq("id", id);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error("Error deleting appointment:", err);
+      return false;
+    }
+  };
 
-  const refetchAppointments = async () => {
-  const { data, error } = await supabase.from("agendamentos").select("*");
-  if (error) throw error;
-  setAppointments(data);
-};
-
+  const refetchAppointments = useCallback(async () => {
+    console.log("refetchAppointments called");
+    return await fetchAppointments();
+  }, []);
 
   const fetchAppointments = useCallback(async (): Promise<Appointment[]> => {
     console.log("useAppointments: fetchAppointments called");
@@ -47,7 +51,21 @@ export function useAppointments() {
           const clientData = item.clientes && !('error' in item.clientes) ? item.clientes : null;
           const serviceData = item.servicos && !('error' in item.servicos) ? item.servicos : null;
           
-          return mapDbAppointmentToApp(item, clientData, serviceData);
+          // Explicitly map status values from database to AppointmentStatus enum
+          let status: AppointmentStatus = "pending";
+          if (item.status === 'confirmado') {
+            status = "confirmed";
+          } else if (item.status === 'cancelado') {
+            status = "canceled";
+          } else if (item.status === 'pendente') {
+            status = "pending";
+          }
+          
+          const appointmentData = mapDbAppointmentToApp(item, clientData, serviceData);
+          return {
+            ...appointmentData,
+            status,
+          };
         });
         
         console.log(`useAppointments: Fetched ${mappedAppointments.length} appointments`);
@@ -98,13 +116,21 @@ export function useAppointments() {
         date: formattedDate
       });
       
+      // Map status from application code to database value
+      let dbStatus = 'pendente';
+      if (appointment.status === 'confirmed') {
+        dbStatus = 'confirmado';
+      } else if (appointment.status === 'canceled') {
+        dbStatus = 'cancelado';
+      }
+      
       // Create data object with required fields
       const dataToInsert = {
         cliente_id: dbAppointmentData.cliente_id,
         servico_id: dbAppointmentData.servico_id,
         data_inicio: dbAppointmentData.data_inicio,
         preco: dbAppointmentData.preco || 0,
-        status: dbAppointmentData.status || 'pendente',
+        status: dbStatus,
         data_fim: dbAppointmentData.data_fim,
         observacoes: dbAppointmentData.observacoes || null,
         status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed',
@@ -135,7 +161,18 @@ export function useAppointments() {
         const serviceData = responseData.servicos && !('error' in responseData.servicos) 
           ? responseData.servicos : null;
           
-        const newAppointment = mapDbAppointmentToApp(responseData, clientData, serviceData);
+        // Map status from database value to application code
+        let appStatus: AppointmentStatus = "pending";
+        if (responseData.status === 'confirmado') {
+          appStatus = "confirmed"; 
+        } else if (responseData.status === 'cancelado') {
+          appStatus = "canceled";
+        }
+          
+        const newAppointment = {
+          ...mapDbAppointmentToApp(responseData, clientData, serviceData),
+          status: appStatus
+        };
         
         // Update local state
         setAppointments(prev => [...prev, newAppointment]);
@@ -192,13 +229,25 @@ export function useAppointments() {
       // Convert app model to database model
       const dbAppointmentData = mapAppAppointmentToDb(appointmentData);
       
+      // Map status from application to database format
+      let dbStatus;
+      if (appointmentData.status === 'confirmed') {
+        dbStatus = 'confirmado';
+      } else if (appointmentData.status === 'canceled') {
+        dbStatus = 'cancelado';
+      } else if (appointmentData.status === 'pending') {
+        dbStatus = 'pendente';
+      } else if (dbAppointmentData.status) {
+        dbStatus = dbAppointmentData.status;
+      }
+      
       // Only include fields that are actually provided
       const updateData: Record<string, any> = {};
       if (dbAppointmentData.cliente_id !== undefined) updateData.cliente_id = dbAppointmentData.cliente_id;
       if (dbAppointmentData.servico_id !== undefined) updateData.servico_id = dbAppointmentData.servico_id;
       if (dbAppointmentData.data_inicio !== undefined) updateData.data_inicio = dbAppointmentData.data_inicio;
       if (dbAppointmentData.preco !== undefined) updateData.preco = dbAppointmentData.preco;
-      if (dbAppointmentData.status !== undefined) updateData.status = dbAppointmentData.status;
+      if (dbStatus !== undefined) updateData.status = dbStatus;
       if (dbAppointmentData.data_fim !== undefined) updateData.data_fim = dbAppointmentData.data_fim;
       if (dbAppointmentData.motivo_cancelamento !== undefined) updateData.motivo_cancelamento = dbAppointmentData.motivo_cancelamento;
       if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
@@ -224,7 +273,19 @@ export function useAppointments() {
         const clientData = data.clientes && !('error' in data.clientes) ? data.clientes : null;
         const serviceData = data.servicos && !('error' in data.servicos) ? data.servicos : null;
         
-        const updatedAppointment = mapDbAppointmentToApp(data, clientData, serviceData);
+        // Map status from database to app status
+        let appStatus: AppointmentStatus = "pending";
+        if (data.status === 'confirmado') {
+          appStatus = "confirmed";
+        } else if (data.status === 'cancelado') {
+          appStatus = "canceled";
+        }
+        
+        const updatedAppointment = {
+          ...mapDbAppointmentToApp(data, clientData, serviceData),
+          status: appStatus
+        };
+        
         setAppointments(prev => prev.map(appointment => appointment.id === id ? updatedAppointment : appointment));
         
         // Refresh appointments list after update
@@ -266,10 +327,9 @@ export function useAppointments() {
   }, [appointments]);
 
   const calculateDailyRevenue = useCallback((date: Date) => {
-    return getAppointmentsForDate(date).reduce(
-      (total, appointment) => total + appointment.price,
-      0
-    );
+    return getAppointmentsForDate(date)
+      .filter(app => app.status === "confirmed")
+      .reduce((total, appointment) => total + appointment.price, 0);
   }, [getAppointmentsForDate]);
 
   const generateWhatsAppLink = async ({
@@ -294,20 +354,113 @@ export function useAppointments() {
     return `https://wa.me/${client.phone}?text=${encodedMessage}`;
   };
 
-  return {
-  appointments,
-  loading,
-  error,
-  fetchAppointments,
-  addAppointment, // ou use createAppointment se for o nome usado no form
-  updateAppointment,
-  deleteAppointment,       // ✅ novo
-  refetchAppointments,     // ✅ novo
-  getAppointmentsForDate,
-  calculateDailyRevenue,
-  generateWhatsAppLink,
-};
+  const createAppointment = useCallback(async (appointmentData: {
+    clienteId: string;
+    servicoId: string;
+    data: Date;
+    horaFim: Date;
+    preco: number;
+    status: string;
+    observacoes?: string;
+  }) => {
+    try {
+      console.log("Enviando agendamento:", appointmentData);
+      
+      // Validate required fields
+      if (!appointmentData.clienteId || !appointmentData.servicoId || !appointmentData.data) {
+        const errorMsg = 'Cliente, serviço e data são obrigatórios';
+        console.error("Missing required appointment fields:", errorMsg);
+        return { success: false, error: { message: errorMsg } };
+      }
+      
+      // Map status values from application to database
+      let dbStatus = 'pendente';
+      if (appointmentData.status === 'confirmed') {
+        dbStatus = 'confirmado';
+      } else if (appointmentData.status === 'canceled') {
+        dbStatus = 'cancelado';
+      } else if (appointmentData.status === 'pending') {
+        dbStatus = 'pendente';
+      }
+      
+      // Prepare data for new appointments table format
+      const formattedData = {
+        cliente_id: appointmentData.clienteId,
+        servico_id: appointmentData.servicoId,
+        data_inicio: appointmentData.data instanceof Date ? appointmentData.data.toISOString() : appointmentData.data,
+        data_fim: appointmentData.horaFim instanceof Date ? appointmentData.horaFim.toISOString() : appointmentData.horaFim,
+        preco: appointmentData.preco || 0,
+        status: dbStatus,
+        observacoes: appointmentData.observacoes || null
+      };
+      
+      console.log("Formatted appointment data for Supabase:", formattedData);
+      
+      // Insert into the new table structure
+      const { data, error } = await supabase
+        .from('agendamentos_novo')
+        .insert(formattedData)
+        .select(`
+          *,
+          clientes(*),
+          servicos(*)
+        `)
+        .single();
+      
+      console.log("Resposta do Supabase:", { data, error });
+        
+      if (error) {
+        console.error("Supabase error:", error);
+        return { success: false, error: { message: error.message || 'Erro ao criar agendamento' } };
+      }
+      
+      if (data) {
+        console.log("Appointment created successfully:", data);
+        
+        // Map status from database to application value
+        let appStatus: AppointmentStatus = "pending";
+        if (data.status === 'confirmado') {
+          appStatus = "confirmed";
+        } else if (data.status === 'cancelado') {
+          appStatus = "canceled";
+        }
+        
+        const clientData = data.clientes && !('error' in data.clientes) ? data.clientes : null;
+        const serviceData = data.servicos && !('error' in data.servicos) ? data.servicos : null;
+        
+        const newAppointment = {
+          ...mapDbAppointmentToApp(data, clientData, serviceData),
+          status: appStatus
+        };
+        
+        setAppointments(prev => [...prev, newAppointment]);
+        
+        await fetchAppointments();
+        
+        return { success: true, data: newAppointment };
+      }
+      
+      return { success: false, error: { message: 'Falha ao criar agendamento' } };
+    } catch (err: any) {
+      console.error("Erro inesperado em addAppointment:", err);
+      return { success: false, error: { message: err?.message || 'Erro inesperado ao agendar' } };
+    }
+  }, [fetchAppointments]);
 
+  return {
+    appointments,
+    loading,
+    error,
+    fetchAppointments,
+    addAppointment,
+    updateAppointment,
+    deleteAppointment,
+    refetchAppointments,
+    getAppointmentsForDate,
+    calculateDailyRevenue,
+    generateWhatsAppLink,
+    createAppointment
+  };
 }
 
 export default useAppointments;

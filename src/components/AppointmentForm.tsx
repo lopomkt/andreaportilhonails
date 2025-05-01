@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { format, addMinutes, isAfter, isBefore, isSameDay, parse } from "date-fns";
+import { format, addMinutes, isAfter, isBefore, isSameDay, parse, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Client, Service, Appointment, AppointmentStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +18,6 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useServices } from "@/context/ServiceContext";
-import { Appointments } from "@/hooks/appointments";
 import { useAppointments } from "@/hooks/useAppointments";
 
 interface AppointmentFormProps {
@@ -46,6 +46,7 @@ export function AppointmentForm({
   initialTime,
 }: AppointmentFormProps) {
   const isEditMode = !!appointment;
+  const { toast } = useToast();
   const { createAppointment, updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
   const { 
     clients, 
@@ -54,8 +55,6 @@ export function AppointmentForm({
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
-  const { toast } = useToast();
-  
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
   const [clientId, setClientId] = useState(
@@ -63,13 +62,13 @@ export function AppointmentForm({
   );
   
   const [serviceId, setServiceId] = useState(initialServiceId || appointment?.serviceId || "");
-  const isEditing = !!appointment;
-  const [status, setStatus] = useState<AppointmentStatus>(
-    isEditing ? (appointment?.status || "confirmed") : "confirmed"
+  const [date, setDate] = useState<Date | null>(
+    propDate || selectedDate || initialDate || appointment?.date ? new Date(appointment?.date || new Date()) : new Date()
   );
-
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  
+  const [status, setStatus] = useState<AppointmentStatus>(
+    initialStatus || (appointment?.status as AppointmentStatus) || "confirmed"
+  );
 
   const [errors, setErrors] = useState({
     clientId: false,
@@ -128,17 +127,16 @@ export function AppointmentForm({
     null
   );
   
- useEffect(() => {
-  if (isEditMode && appointment) {
-    setClientId(appointment.clientId);
-    setServiceId(appointment.serviceId);
-    setStartDate(new Date(appointment.propDate));
-    setEndDate(new Date(appointment.endTime));
-    setPrice(appointment.price);
-    setStatus(appointment.status);
-    setNotes(appointment.notes || "");
-  }
-}, [appointment]);
+  useEffect(() => {
+    if (isEditMode && appointment) {
+      setClientId(appointment.clientId);
+      setServiceId(appointment.serviceId);
+      setDate(new Date(appointment.date));
+      setPrice(appointment.price);
+      setStatus(appointment.status as AppointmentStatus);
+      setNotes(appointment.notes || "");
+    }
+  }, [appointment, isEditMode]);
  
   useEffect(() => {
     console.log("AppointmentForm mounted - services count:", services.length);
@@ -189,7 +187,7 @@ export function AppointmentForm({
       return;
     }
 
-    const startDateTime = new Date(propDate);
+    const startDateTime = new Date(date);
     const [hours, minutes] = time.split(":").map(Number);
     startDateTime.setHours(hours, minutes, 0, 0);
     
@@ -202,7 +200,7 @@ export function AppointmentForm({
     const endDateTime = addMinutes(startDateTime, service.durationMinutes);
     
     const isDateBlocked = blockedDates.some(blockedDate => 
-      isSameDay(new Date(blockedDate.date), propDate) && blockedDate.allDay
+      isSameDay(new Date(blockedDate.date), date) && blockedDate.allDay
     );
     
     if (isDateBlocked) {
@@ -265,7 +263,7 @@ export function AppointmentForm({
     const newErrors = {
       clientId: !clientId,
       serviceId: !serviceId,
-      date: !propDate,
+      date: !date,
       time: !time
     };
     
@@ -314,6 +312,10 @@ export function AppointmentForm({
     
     try {
       // Parse date and time into a complete DateTime object
+      if (!date) {
+        throw new Error("Data não selecionada");
+      }
+      
       const appointmentDate = new Date(date);
       const [hours, minutes] = time.split(":").map(Number);
       appointmentDate.setHours(hours, minutes, 0, 0);
@@ -331,7 +333,7 @@ export function AppointmentForm({
         data: appointmentDate,              // This will become data_inicio
         horaFim: endDateTime,               // This will become data_fim
         preco: price,
-        status: status || "pendente",       // Using pendente as default status
+        status: status, // Corrigido para usar o estado de status
         observacoes: notes || ""
       });
       
@@ -384,56 +386,82 @@ export function AppointmentForm({
   };
 
   const handleUpdate = async () => {
-  if (!appointment) return;
-  try {
-    await updateAppointment({
-      id: appointment.id,
-      clientId,
-      serviceId,
-      date: startDate,
-      endTime: endDate,
-      price,
-      status,
-      observations: notes,
-    });
-    toast({
-  title: "Sucesso",
-  description: "Agendamento atualizado com sucesso!",
-});
+    if (!appointment || !date) return;
+    try {
+      // Create appointment date object
+      const appointmentDate = new Date(date);
+      const [hours, minutes] = time.split(":").map(Number);
+      appointmentDate.setHours(hours, minutes, 0, 0);
+      
+      // Calculate end time
+      const selectedServiceObj = services.find(s => s.id === serviceId);
+      const serviceDuration = selectedServiceObj?.durationMinutes || 60;
+      const endDateTime = addMinutes(appointmentDate, serviceDuration);
+      
+      const result = await updateAppointment(appointment.id, {
+        clientId,
+        serviceId,
+        date: appointmentDate,
+        endTime: endDateTime,
+        price,
+        status,
+        notes,
+      });
+      
+      if (result && result.success) {
+        toast({
+          title: "Sucesso",
+          description: "Agendamento atualizado com sucesso!",
+        });
 
-    closeModal();
-    refetchAppointments();
-  } catch (error) {
-    toast({
-  title: "Erro",
-  description: "Erro ao atualizar agendamento",
-  variant: "destructive",
-});
-    console.error(error);
-  }
-};
+        await refetchAppointments();
+        closeModal();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Erro ao atualizar agendamento",
+          variant: "destructive",
+        });
+        console.error(result?.error || "Erro desconhecido");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar agendamento",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
+  };
 
-const handleDelete = async () => {
-  if (!appointment) return;
-  try {
-    await deleteAppointment(appointment.id);
-    toast({
-  title: "Agendamento Excluido",
-  description: "Agendamento excluido com sucesso!",
-});
+  const handleDelete = async () => {
+    if (!appointment) return;
+    try {
+      const result = await deleteAppointment(appointment.id);
+      if (result) {
+        toast({
+          title: "Agendamento Excluido",
+          description: "Agendamento excluido com sucesso!",
+        });
 
-    closeModal();
-    refetchAppointments();
-  } catch (error) {
-    toast({
-  title: "Erro ao Excluir",
-  description: "Erro ao excluir agendamento",
-  variant: "destructive",
-});
-    console.error(error);
-  }
-};
-
+        await refetchAppointments();
+        closeModal();
+      } else {
+        toast({
+          title: "Erro ao Excluir",
+          description: "Erro ao excluir agendamento",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro ao Excluir",
+        description: "Erro ao excluir agendamento",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
+  };
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -575,7 +603,7 @@ const handleDelete = async () => {
           <SelectContent>
             <SelectItem value="pending">Pendente</SelectItem>
             <SelectItem value="confirmed">Confirmado</SelectItem>
-            {isEditing && <SelectItem value="canceled">Cancelado</SelectItem>}
+            {isEditMode && <SelectItem value="canceled">Cancelado</SelectItem>}
           </SelectContent>
         </Select>
       </div>
@@ -641,18 +669,16 @@ const handleDelete = async () => {
       </div>
 
       {isEditMode && (
-  <div className="flex justify-between mt-6">
-    <Button type="button" onClick={handleUpdate} variant="default">
-      Salvar Alterações
-    </Button>
+        <div className="flex justify-between mt-6">
+          <Button type="button" onClick={handleUpdate} variant="default">
+            Salvar Alterações
+          </Button>
 
-    <Button type="button" onClick={handleDelete} variant="destructive">
-      Excluir Agendamento
-    </Button>
-  </div>
-)}
-
-      
+          <Button type="button" onClick={handleDelete} variant="destructive">
+            Excluir Agendamento
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

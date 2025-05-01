@@ -1,7 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Appointment, DashboardStats, RevenueData } from '@/types';
-import { useData } from "@/context/DataProvider";
 
 export function useDashboardStats() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
@@ -14,14 +13,6 @@ export function useDashboardStats() {
   });
   
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
-  const { appointments } = useData();
-
-  useEffect(() => {
-    // This effect will update stats based on appointments
-    if (appointments && appointments.length > 0) {
-      updateDashboardStats(appointments);
-    }
-  }, [appointments]);
 
   const updateDashboardStats = useCallback((appointments: Appointment[]) => {
     if (!appointments || appointments.length === 0) return;
@@ -72,7 +63,9 @@ export function useDashboardStats() {
     return dashboardStats.monthRevenue - expenses;
   }, [dashboardStats.monthRevenue]);
 
-  const calculatedMonthlyRevenue = useCallback((month?: number, year?: number) => {
+  const calculatedMonthlyRevenue = useCallback((appointments: Appointment[], month?: number, year?: number) => {
+    if (!appointments || appointments.length === 0) return 0;
+    
     const now = year ? new Date(year, month || 0, 1) : new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -90,9 +83,13 @@ export function useDashboardStats() {
     }, 0);
 
     return monthRevenue;
-  }, [appointments]);
+  }, []);
 
-  const getRevenueData = useCallback(() => {
+  const getRevenueData = useCallback((appointments: Appointment[]) => {
+    if (!appointments || appointments.length === 0) {
+      return [];
+    }
+    
     const now = new Date();
     const currentYear = now.getFullYear();
     const data: RevenueData[] = [];
@@ -119,7 +116,7 @@ export function useDashboardStats() {
 
     setRevenueData(data);
     return data;
-  }, [appointments]);
+  }, []);
 
   return {
     dashboardStats,
