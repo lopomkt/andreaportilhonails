@@ -329,11 +329,11 @@ export function AppointmentForm({
       // Build appointment object with new table structure in mind
       const result = await createAppointment({
         clientId: clientId,
-        servicoId: serviceId,
+        serviceId: serviceId, // Changed from servicoId to serviceId
         data: appointmentDate,              // This will become data_inicio
         horaFim: endDateTime,               // This will become data_fim
         preco: price,
-        status: status, // Corrigido para usar o estado de status
+        status: status, 
         observacoes: notes || ""
       });
       

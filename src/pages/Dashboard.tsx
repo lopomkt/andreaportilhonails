@@ -1,3 +1,4 @@
+
 import { useData } from "@/context/DataContext";
 import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, isAfter, isBefore, format } from "date-fns";
@@ -46,19 +47,6 @@ export default function Dashboard() {
     navigate(`/calendario?date=${format(new Date(), 'yyyy-MM-dd')}&view=week`);
   };
 
-  const calculateAverageClientValue = () => {
-    const now = new Date();
-    const firstDayOfMonth = startOfMonth(now);
-    const lastDayOfMonth = endOfMonth(now);
-    const confirmedAppointments = appointments.filter(appt => {
-      const apptDate = new Date(appt.date);
-      return appt.status === "confirmed" && isAfter(apptDate, firstDayOfMonth) && isBefore(apptDate, lastDayOfMonth);
-    });
-    const uniqueClientIds = new Set(confirmedAppointments.map(appt => appt.clientId));
-    const totalRevenue = confirmedAppointments.reduce((sum, appt) => sum + appt.price, 0);
-    return uniqueClientIds.size > 0 ? totalRevenue / uniqueClientIds.size : 0;
-  };
-
   const calculateProjectedRevenue = () => {
     const now = new Date();
     const lastDayOfMonth = endOfMonth(now);
@@ -69,26 +57,9 @@ export default function Dashboard() {
     return pendingAppointments.reduce((sum, appt) => sum + appt.price, 0);
   };
 
-  const calculateAverageClientsPerDay = () => {
-    const now = new Date();
-    const firstDayOfMonth = startOfMonth(now);
-    const lastDayOfMonth = endOfMonth(now);
-    const confirmedAppointments = appointments.filter(appt => {
-      const apptDate = new Date(appt.date);
-      return appt.status === "confirmed" && isAfter(apptDate, firstDayOfMonth) && isBefore(apptDate, lastDayOfMonth);
-    });
-
-    const daysWithAppointments = new Set(
-      confirmedAppointments.map(appt => format(new Date(appt.date), 'yyyy-MM-dd'))
-    ).size;
-
-    return daysWithAppointments > 0 ? Math.round(confirmedAppointments.length / daysWithAppointments) : 0;
-  };
-
   const { suggestedSlots } = useTimeSlotsCalculation(getAppointmentsForDate);
 
-  const avgClientsPerDay = calculateAverageClientsPerDay();
-  const averageClientValue = calculateAverageClientValue();
+  // Remove the duplicate declarations that were causing errors
   const projectedRevenue = calculateProjectedRevenue();
   const monthlyAppointmentsCount = appointments.filter(appt => {
     const apptDate = new Date(appt.date);

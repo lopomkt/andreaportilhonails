@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -181,7 +180,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Update dashboard stats when appointments change
   useEffect(() => {
     if (appointments && appointments.length > 0) {
-      updateDashboardStats(appointments);
+      updateDashboardStats();
     }
   }, [appointments, updateDashboardStats]);
 
