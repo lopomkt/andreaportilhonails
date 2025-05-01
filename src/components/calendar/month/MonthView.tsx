@@ -100,6 +100,14 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const goToPreviousMonth = () => setCurrentMonth(prev => addDays(prev, -30));
   const goToNextMonth = () => setCurrentMonth(prev => addDays(prev, 30));
 
+  // Handler for day cell click
+  const handleDayClick = (day: Date | null) => {
+    console.log("Day clicked:", day);
+    if (day) {
+      onDaySelect(day);
+    }
+  };
+
   return (
     <div className="space-y-4 p-4">
       <div className="flex justify-between items-center">
@@ -137,7 +145,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
               blocksCount={stats.blocksCount}
               occupancyPercentage={stats.occupancyPercentage}
               isFullDayBlocked={stats.isFullDayBlocked}
-              onClick={() => day && isCurrentMonthDay && onDaySelect(day)}
+              onClick={() => day && handleDayClick(day)}
             />
           );
         })}

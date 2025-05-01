@@ -73,25 +73,29 @@ export default function CalendarPage() {
   }, [fetchBlockedDates, fetchAppointments, toast]);
 
   const handleDaySelect = (date: Date) => {
+    console.log("handleDaySelect called with:", date);
     const selectedDate = new Date(date);
     setCurrentDate(selectedDate);
-    refetchAppointments(); // ⚠️ Isso força os agendamentos a recarregarem
-
-    useEffect(() => {
-  refetchAppointments();
-}, [currentDate]);
-
     
     if (calendarView === "month") {
       setCalendarView("day");
       localStorage.setItem('calendarViewMode', 'day');
-      
-      const searchParams = new URLSearchParams();
-      searchParams.set('date', selectedDate.toISOString().split('T')[0]);
-      searchParams.set('view', 'day');
-      navigate(`/calendario?${searchParams.toString()}`);
     }
+    
+    // Update URL with the selected date and view
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    const searchParams = new URLSearchParams();
+    searchParams.set('date', formattedDate);
+    searchParams.set('view', 'day');
+    navigate(`/calendario?${searchParams.toString()}`);
+    
+    // Force a refresh of appointments
+    refetchAppointments();
   };
+  
+  useEffect(() => {
+    refetchAppointments();
+  }, [currentDate, refetchAppointments]);
   
   const handleViewChange = (value: string) => {
     setIsLoading(true);
