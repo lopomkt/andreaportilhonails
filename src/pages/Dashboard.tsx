@@ -1,4 +1,3 @@
-
 import { useData } from "@/context/DataContext";
 import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, isAfter, isBefore, format } from "date-fns";
@@ -24,8 +23,14 @@ export default function Dashboard() {
     clients
   } = useData();
   
-  // Get dashboardStats from the dedicated hook instead
-  const { dashboardStats, revenueData } = useDashboardStats();
+  // Get dashboardStats from the dedicated hook
+  const { 
+    dashboardStats,
+    revenueData,
+    averageClientValue,
+    avgClientsPerDay,
+    todayStats
+  } = useDashboardStats();
   
   const { openModal } = useAppointmentsModal();
   const navigate = useNavigate();

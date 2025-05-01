@@ -27,7 +27,7 @@ export const RevenueStats = ({
           title="Total do Mês"
           value={`${monthlyAppointmentsCount} agendamentos`}
           icon={DollarSign}
-          description={`Faturamento: ${formatCurrency(dashboardStats.monthRevenue)}`}
+          description={`Faturamento: ${formatCurrency(dashboardStats?.monthRevenue || 0)}`}
           className="bg-white border-rose-100 shadow-soft"
           iconClassName="text-rose-500"
         />

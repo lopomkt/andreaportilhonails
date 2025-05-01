@@ -328,7 +328,7 @@ export function AppointmentForm({
       
       // Build appointment object with new table structure in mind
       const result = await createAppointment({
-        clienteId: clientId,
+        clientId: clientId,
         servicoId: serviceId,
         data: appointmentDate,              // This will become data_inicio
         horaFim: endDateTime,               // This will become data_fim
