@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, isToday } from "date-fns";
+import { format, isToday, isTomorrow } from "date-fns";
 import { formatAvailableTime } from "@/lib/formatters";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 
@@ -42,7 +42,11 @@ export const SuggestedTimeSlots = ({ slots }: SuggestedTimeSlotsProps) => {
             >
               <div>
                 <p className="font-medium flex items-center">
-                  💡 {isToday(slot.time) ? 'Hoje' : 'Amanhã'} às {format(slot.time, 'HH:mm')}
+                  💡 {isToday(slot.time) 
+                      ? 'Hoje' 
+                      : isTomorrow(slot.time) 
+                        ? 'Amanhã' 
+                        : format(slot.time, 'dd/MM')} às {format(slot.time, 'HH:mm')}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Encaixe de {formatAvailableTime(slot.duration)}

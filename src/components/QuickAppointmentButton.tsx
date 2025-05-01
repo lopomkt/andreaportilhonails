@@ -1,11 +1,12 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
+
 export function QuickAppointmentButton() {
-  const {
-    openModal
-  } = useAppointmentsModal();
+  const { openModal } = useAppointmentsModal();
+  
   React.useEffect(() => {
     // Expose the function globally for convenience
     window.openQuickAppointmentModal = (defaultDate?: Date) => {
@@ -17,7 +18,17 @@ export function QuickAppointmentButton() {
       delete window.openQuickAppointmentModal;
     };
   }, [openModal]);
-  return;
+  
+  // Return a button component instead of void
+  return (
+    <Button 
+      onClick={() => openModal()} 
+      className="bg-rose-500 hover:bg-rose-600 text-white"
+      size="sm"
+    >
+      <Plus className="h-4 w-4 mr-1" /> Agendar
+    </Button>
+  );
 }
 
 // Add the global type declaration for TypeScript

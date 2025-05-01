@@ -21,6 +21,7 @@ export const StatsCard = ({
   iconClassName,
   onClick
 }: StatsCardProps) => {
+  // If onClick is provided, make the card a button for better accessibility
   const CardComponent = onClick ? 'button' : 'div';
   
   return (

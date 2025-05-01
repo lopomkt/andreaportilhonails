@@ -97,6 +97,11 @@ export const MotivationalMessage = () => {
     };
     
     fetchMotivationalMessage();
+    
+    // Set up an interval to check for updates every hour
+    const interval = setInterval(fetchMotivationalMessage, 3600000); // 1 hour in milliseconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (!message) return null;
