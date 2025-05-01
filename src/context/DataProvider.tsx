@@ -180,7 +180,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Update dashboard stats when appointments change
   useEffect(() => {
     if (appointments && appointments.length > 0) {
-      updateDashboardStats();
+      updateDashboardStats(appointments); // Pass appointments as required
     }
   }, [appointments, updateDashboardStats]);
 
@@ -237,8 +237,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Modified to pass appointments to the original function
   const wrappedGetRevenueData = useCallback(() => {
-    return getRevenueData(appointments);
-  }, [getRevenueData, appointments]);
+    return getRevenueData(); // Remove the appointments argument
+  }, [getRevenueData]);
 
   return (
     <DataContext.Provider

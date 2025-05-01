@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -329,12 +328,12 @@ export function AppointmentForm({
       // Build appointment object with new table structure in mind
       const result = await createAppointment({
         clientId: clientId,
-        serviceId: serviceId, // Changed from servicoId to serviceId
-        data: appointmentDate,              // This will become data_inicio
-        horaFim: endDateTime,               // This will become data_fim
-        preco: price,
+        serviceId: serviceId,
+        date: appointmentDate,              // Using 'date' instead of 'data'
+        endTime: endDateTime,               // This will become data_fim
+        price: price,
         status: status, 
-        observacoes: notes || ""
+        notes: notes || ""
       });
       
       if (result.success) {
