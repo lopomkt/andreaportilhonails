@@ -1,129 +1,162 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { Appointment, DashboardStats, RevenueData } from '@/types';
+import { useState, useEffect, useMemo } from 'react';
+import { useAppointments } from '@/hooks/useAppointments';
+import { useData } from '@/context/DataProvider';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, isBefore, isAfter } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { calculateAvailableTimeSlots } from '@/lib/availabilityCalculator';
 
 export function useDashboardStats() {
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
-    monthRevenue: 0,
-    newClients: 0,
-    totalAppointments: 0,
-    inactiveClients: 0,
-    todayAppointments: 0,
-    weekAppointments: 0,
-  });
-  
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const { appointments, fetchAppointments, error, loading } = useAppointments();
+  const { clients } = useData();
+  const [isLoading, setIsLoading] = useState(false);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<any[]>([]);
 
-  const updateDashboardStats = useCallback((appointments: Appointment[]) => {
-    if (!appointments || appointments.length === 0) return;
-    
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-
-    // Count appointments
-    const confirmedAppointments = appointments.filter(app => app.status === 'confirmed');
-    const monthAppointments = confirmedAppointments.filter(
-      app => new Date(app.date) >= startOfMonth && new Date(app.date) <= now
-    );
-    const todayAppointments = confirmedAppointments.filter(
-      app => new Date(app.date).toDateString() === startOfToday.toDateString()
-    );
-    const weekAppointments = confirmedAppointments.filter(
-      app => new Date(app.date) >= startOfWeek && new Date(app.date) <= now
-    );
-
-    // Calculate revenue
-    const monthRevenue = monthAppointments.reduce((total, app) => total + app.price, 0);
-
-    // Count unique clients in the current month
-    const uniqueClients = new Set();
-    confirmedAppointments.forEach(app => {
-      uniqueClients.add(app.clientId);
-    });
-
-    // Generate mock stats since we don't have all the data available
-    const newStats: DashboardStats = {
-      monthRevenue: monthRevenue,
-      totalAppointments: confirmedAppointments.length,
-      newClients: Math.floor(uniqueClients.size * 0.2), // Simulate 20% are new
-      inactiveClients: Math.floor(uniqueClients.size * 0.15), // Simulate 15% are inactive
-      todayAppointments: todayAppointments.length,
-      weekAppointments: weekAppointments.length
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await fetchAppointments();
+      setIsLoading(false);
     };
+    loadData();
+  }, [fetchAppointments]);
 
-    setDashboardStats(newStats);
-  }, []);
-
-  const calculateNetProfit = useCallback(() => {
-    // Mock expenses calculation (30% of revenue)
-    const expenses = dashboardStats.monthRevenue * 0.3;
-    return dashboardStats.monthRevenue - expenses;
-  }, [dashboardStats.monthRevenue]);
-
-  const calculatedMonthlyRevenue = useCallback((appointments: Appointment[], month?: number, year?: number) => {
-    if (!appointments || appointments.length === 0) return 0;
-    
-    const now = year ? new Date(year, month || 0, 1) : new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    const monthRevenue = appointments.reduce((sum, appointment) => {
-      const appointmentDate = new Date(appointment.date);
-      if (
-        appointment.status === "confirmed" &&
-        appointmentDate >= monthStart &&
-        appointmentDate <= monthEnd
-      ) {
-        return sum + appointment.price;
-      }
-      return sum;
-    }, 0);
-
-    return monthRevenue;
-  }, []);
-
-  const getRevenueData = useCallback((appointments: Appointment[]) => {
-    if (!appointments || appointments.length === 0) {
-      return [];
+  useEffect(() => {
+    if (appointments.length > 0) {
+      // Calculate available time slots for today and tomorrow
+      const slots = calculateAvailableTimeSlots(appointments, [], new Date(), 7);
+      setAvailableTimeSlots(slots.slice(0, 3)); // Show only first 3 suggestions
     }
-    
+  }, [appointments]);
+
+  // Filter only confirmed appointments
+  const confirmedAppointments = useMemo(() => 
+    appointments.filter(app => app.status === "confirmed"),
+  [appointments]);
+
+  // Today's stats
+  const todayStats = useMemo(() => {
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const data: RevenueData[] = [];
+    const startDate = startOfDay(now);
+    const endDate = endOfDay(now);
+    
+    const todaysAppointments = confirmedAppointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isWithinInterval(appointmentDate, { start: startDate, end: endDate });
+    });
+    
+    const revenue = todaysAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
+    
+    return {
+      appointments: todaysAppointments,
+      count: todaysAppointments.length,
+      revenue
+    };
+  }, [confirmedAppointments]);
 
-    for (let i = 0; i < 12; i++) {
-      const monthStart = new Date(currentYear, i, 1);
-      const monthEnd = new Date(currentYear, i + 1, 0);
+  // This week's stats
+  const weekStats = useMemo(() => {
+    const now = new Date();
+    const startDate = startOfWeek(now, { locale: ptBR });
+    const endDate = endOfWeek(now, { locale: ptBR });
+    
+    const thisWeeksAppointments = confirmedAppointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isWithinInterval(appointmentDate, { start: startDate, end: endDate });
+    });
+    
+    const revenue = thisWeeksAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
+    
+    return {
+      appointments: thisWeeksAppointments,
+      count: thisWeeksAppointments.length,
+      revenue
+    };
+  }, [confirmedAppointments]);
 
-      const monthRevenue = appointments.reduce((sum, appointment) => {
-        const appointmentDate = new Date(appointment.date);
-        if (
-          appointment.status === "confirmed" &&
-          appointmentDate >= monthStart &&
-          appointmentDate <= monthEnd
-        ) {
-          return sum + appointment.price;
-        }
-        return sum;
-      }, 0);
+  // This month's stats
+  const monthStats = useMemo(() => {
+    const now = new Date();
+    const startDate = startOfMonth(now);
+    const endDate = endOfMonth(now);
+    
+    const thisMonthsAppointments = confirmedAppointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isWithinInterval(appointmentDate, { start: startDate, end: endDate });
+    });
+    
+    const revenue = thisMonthsAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
+    
+    return {
+      appointments: thisMonthsAppointments,
+      count: thisMonthsAppointments.length,
+      revenue
+    };
+  }, [confirmedAppointments]);
 
-      const monthName = monthStart.toLocaleString("default", { month: "long" });
-      data.push({ month: monthName, revenue: monthRevenue });
-    }
+  // Future stats (upcoming appointments)
+  const futureStats = useMemo(() => {
+    const now = new Date();
+    const endDate = endOfMonth(now);
+    
+    const futureAppointments = confirmedAppointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isAfter(appointmentDate, now) && isBefore(appointmentDate, endDate);
+    });
+    
+    const revenue = futureAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
+    
+    return {
+      appointments: futureAppointments,
+      count: futureAppointments.length,
+      revenue
+    };
+  }, [confirmedAppointments]);
 
-    setRevenueData(data);
-    return data;
-  }, []);
+  // Calculate average client value
+  const averageClientValue = useMemo(() => {
+    if (clients.length === 0 || confirmedAppointments.length === 0) return 0;
+    
+    const totalRevenue = confirmedAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
+    const uniqueClientIds = new Set(confirmedAppointments.map(appointment => appointment.clientId));
+    
+    return uniqueClientIds.size > 0 ? totalRevenue / uniqueClientIds.size : 0;
+  }, [clients, confirmedAppointments]);
+
+  // Average clients per day
+  const avgClientsPerDay = useMemo(() => {
+    if (confirmedAppointments.length === 0) return 0;
+    
+    // Group appointments by day
+    const dayMap = new Map();
+    
+    confirmedAppointments.forEach(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      const dateKey = appointmentDate.toISOString().split('T')[0];
+      
+      if (!dayMap.has(dateKey)) {
+        dayMap.set(dateKey, new Set());
+      }
+      
+      dayMap.get(dateKey).add(appointment.clientId);
+    });
+    
+    // Calculate average clients per day with activity
+    const totalClients = Array.from(dayMap.values()).reduce((sum, clientSet) => sum + clientSet.size, 0);
+    const daysWithClients = dayMap.size;
+    
+    return daysWithClients > 0 ? Math.round((totalClients / daysWithClients) * 10) / 10 : 0;
+  }, [confirmedAppointments]);
 
   return {
-    dashboardStats,
-    revenueData,
-    calculateNetProfit,
-    calculatedMonthlyRevenue,
-    getRevenueData,
-    updateDashboardStats
+    isLoading: isLoading || loading,
+    error,
+    todayStats,
+    weekStats,
+    monthStats,
+    futureStats,
+    availableTimeSlots,
+    averageClientValue,
+    avgClientsPerDay
   };
 }

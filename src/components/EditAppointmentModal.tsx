@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -90,8 +89,10 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
   
   // When service changes, update price
   const handleServiceChange = (serviceId: string) => {
+    console.log("Service changed to:", serviceId);
     const service = services.find(s => s.id === serviceId);
     if (service) {
+      console.log("Found service, updating price to:", service.price);
       form.setValue('price', service.price);
     }
   };
@@ -110,21 +111,24 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
   const handleUpdate = async (status: string) => {
     setIsLoading(true);
     try {
+      console.log("Updating appointment status to:", status);
       const result = await updateAppointment(appointment.id, { 
         status: status
       });
       
       if (result.success) {
+        console.log("Status update successful:", result);
         toast({
-          title: 'Agendamento atualizado',
+          title: 'Agendamento atualizado com sucesso!',
           description: `Status alterado para ${getStatusLabel(status)}`,
         });
         onSuccess();
         onClose();
       } else {
+        console.error("Status update failed:", result.error);
         toast({
           title: 'Erro',
-          description: 'Não foi possível atualizar o agendamento',
+          description: 'Erro ao atualizar agendamento: ' + (result.error || ''),
           variant: 'destructive',
         });
       }
@@ -132,7 +136,7 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
       console.error('Error updating appointment:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao atualizar o agendamento',
+        description: 'Erro ao atualizar agendamento',
         variant: 'destructive',
       });
     } finally {
@@ -156,6 +160,7 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
     try {
       // Combine date and time into a single Date object
       const dateTime = new Date(`${values.date}T${values.time}`);
+      console.log("Submitting edit with datetime:", dateTime);
       
       const result = await updateAppointment(appointment.id, {
         serviceId: values.serviceId,
@@ -165,17 +170,19 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
       });
       
       if (result.success) {
+        console.log("Edit successful:", result);
         toast({
-          title: 'Agendamento atualizado',
+          title: 'Agendamento atualizado com sucesso!',
           description: 'As alterações foram salvas com sucesso',
         });
         setIsEditing(false);
         onSuccess();
         onClose();
       } else {
+        console.error("Edit failed:", result.error);
         toast({
           title: 'Erro',
-          description: 'Não foi possível atualizar o agendamento',
+          description: 'Erro ao atualizar agendamento: ' + (result.error || ''),
           variant: 'destructive',
         });
       }
@@ -183,7 +190,7 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
       console.error('Error updating appointment details:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao salvar as alterações',
+        description: 'Erro ao atualizar agendamento',
         variant: 'destructive',
       });
     } finally {
@@ -198,19 +205,22 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
     
     setIsDeleting(true);
     try {
+      console.log("Deleting appointment:", appointment.id);
       const result = await deleteAppointment(appointment.id);
       
       if (result) {
+        console.log("Delete successful");
         toast({
-          title: 'Agendamento excluído',
+          title: 'Agendamento excluído com sucesso!',
           description: 'O agendamento foi excluído com sucesso',
         });
         onSuccess();
         onClose();
       } else {
+        console.error("Delete failed");
         toast({
           title: 'Erro',
-          description: 'Não foi possível excluir o agendamento',
+          description: 'Erro ao excluir agendamento',
           variant: 'destructive',
         });
       }
@@ -218,7 +228,7 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
       console.error('Error deleting appointment:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao excluir o agendamento',
+        description: 'Erro ao excluir agendamento',
         variant: 'destructive',
       });
     } finally {
@@ -479,4 +489,3 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
     </Dialog>
   );
 }
-

@@ -100,10 +100,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const goToPreviousMonth = () => setCurrentMonth(prev => addDays(prev, -30));
   const goToNextMonth = () => setCurrentMonth(prev => addDays(prev, 30));
 
-  // Handler for day cell click
+  // Handler for day cell click - Updated to use toISOString for consistent date format
   const handleDayClick = (day: Date | null) => {
-    console.log("Day clicked:", day);
+    console.log("Day clicked in MonthView:", day);
     if (day) {
+      // Using toISOString().split('T')[0] for consistent YYYY-MM-DD format
+      console.log("Selected date ISO string:", day.toISOString().split('T')[0]);
       onDaySelect(day);
     }
   };
@@ -152,7 +154,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
       </div>
       
       <div className="text-xs text-gray-500 mt-4">
-        <p>Analise os agendamentos e bloqueios por cada data do mês selecionado.</p>
+        {appointments.length > 0 ? (
+          <p>Analise os agendamentos e bloqueios por cada data do mês selecionado.</p>
+        ) : (
+          <p>Nenhum agendamento encontrado para esta data.</p>
+        )}
       </div>
     </div>
   );

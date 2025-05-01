@@ -1,116 +1,62 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, addHours, isAfter } from "date-fns";
+import { QuoteIcon } from "lucide-react";
+import { useData } from "@/context/DataProvider";
 
 export const MotivationalMessage = () => {
-  const [message, setMessage] = useState<string>("");
-
+  const { motivationalMessages } = useData();
+  const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0);
+  
   useEffect(() => {
-    const fetchMotivationalMessage = async () => {
-      try {
-        // Buscar informações da última mensagem vista
-        const { data: lastViewed, error: lastViewedError } = 
-          await supabase.from('ultima_mensagem_vista').select('*').eq('id', 'andrea').single();
-
-        if (lastViewedError) {
-          console.error('Error fetching last viewed message:', lastViewedError);
-          // Se não conseguir encontrar o registro, apenas exibir uma mensagem aleatória
-          const { data: randomMsg } = await supabase.from('mensagens_motivacionais')
-            .select('mensagem').order('random()').limit(1).single();
-          if (randomMsg) {
-            setMessage(randomMsg.mensagem);
-          } else {
-            setMessage("Transformando unhas, elevando autoestima!");
-          }
-          return;
-        }
-        
-        const now = new Date();
-        
-        // Verificar se o proxima_atualizacao é uma string válida antes de tentar parseISO
-        if (!lastViewed.proxima_atualizacao) {
-          console.error('proxima_atualizacao is null or invalid');
-          // Definir uma nova data de atualização
-          const newUpdateTime = addHours(now, 12).toISOString();
-          
-          const { data: randomMsg } = await supabase.from('mensagens_motivacionais')
-            .select('*').order('random()').limit(1).single();
-          
-          if (randomMsg) {
-            // Atualizar o registro com uma nova mensagem e próxima data de atualização
-            await supabase.from('ultima_mensagem_vista').update({
-              mensagem_id: randomMsg.id,
-              data_visualizacao: now.toISOString(),
-              proxima_atualizacao: newUpdateTime
-            }).eq('id', 'andrea');
-            
-            setMessage(randomMsg.mensagem);
-          }
-          return;
-        }
-        
-        // Converter string para objeto Date
-        const nextUpdateTime = parseISO(lastViewed.proxima_atualizacao);
-        
-        // Se a hora atual for maior que a próxima atualização, mostrar uma nova mensagem
-        if (isAfter(now, nextUpdateTime)) {
-          const { data: newMessage, error: messageError } = 
-            await supabase.from('mensagens_motivacionais').select('*').order('random()').limit(1).single();
-          
-          if (messageError) throw messageError;
-          
-          // Calcular a próxima atualização (12 horas a partir de agora)
-          const newUpdateTime = addHours(now, 12).toISOString();
-          
-          // Atualizar o registro
-          await supabase.from('ultima_mensagem_vista').update({
-            mensagem_id: newMessage.id,
-            data_visualizacao: now.toISOString(),
-            proxima_atualizacao: newUpdateTime
-          }).eq('id', 'andrea');
-          
-          setMessage(newMessage.mensagem);
-        } else {
-          // Exibir a mensagem atual
-          const { data: message, error: messageError } = 
-            await supabase.from('mensagens_motivacionais').select('mensagem').eq('id', lastViewed.mensagem_id).single();
-          
-          if (messageError) {
-            // Fallback se não conseguir obter a mensagem atual
-            const { data: randomMsg } = await supabase.from('mensagens_motivacionais')
-              .select('mensagem').order('random()').limit(1).single();
-            if (randomMsg) {
-              setMessage(randomMsg.mensagem);
-            } else {
-              setMessage("Transformando unhas, elevando autoestima!");
-            }
-          } else {
-            setMessage(message.mensagem);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching motivational message:', error);
-        setMessage("Transformando unhas, elevando autoestima!");
+    if (!motivationalMessages || motivationalMessages.length === 0) return;
+    
+    // Check if we need to rotate the message (12 hours have passed)
+    const lastMotivationTime = localStorage.getItem("lastMotivationTime");
+    const currentTime = Date.now();
+    const twelveHoursInMs = 12 * 60 * 60 * 1000;
+    
+    // Get stored index or use 0 as default
+    let storedIndex = parseInt(localStorage.getItem("motivationMessageIndex") || "0");
+    
+    // If 12 hours passed or no last time is stored, rotate to next message
+    if (!lastMotivationTime || (currentTime - parseInt(lastMotivationTime)) > twelveHoursInMs) {
+      // Move to the next message
+      storedIndex = (storedIndex + 1) % motivationalMessages.length;
+      
+      // Update localStorage
+      localStorage.setItem("motivationMessageIndex", storedIndex.toString());
+      localStorage.setItem("lastMotivationTime", currentTime.toString());
+    }
+    
+    setCurrentMessageIndex(storedIndex);
+    
+    // Schedule check every hour in case the user keeps the page open
+    const intervalId = setInterval(() => {
+      const newCurrentTime = Date.now();
+      const lastSetTime = localStorage.getItem("lastMotivationTime");
+      
+      if (lastSetTime && (newCurrentTime - parseInt(lastSetTime)) > twelveHoursInMs) {
+        const newIndex = (parseInt(localStorage.getItem("motivationMessageIndex") || "0") + 1) % motivationalMessages.length;
+        localStorage.setItem("motivationMessageIndex", newIndex.toString());
+        localStorage.setItem("lastMotivationTime", newCurrentTime.toString());
+        setCurrentMessageIndex(newIndex);
       }
-    };
+    }, 60 * 60 * 1000); // Check once per hour
     
-    fetchMotivationalMessage();
-    
-    // Set up an interval to check for updates every hour
-    const interval = setInterval(fetchMotivationalMessage, 3600000); // 1 hour in milliseconds
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!message) return null;
-
+    return () => clearInterval(intervalId);
+  }, [motivationalMessages]);
+  
+  if (!motivationalMessages || motivationalMessages.length === 0) {
+    return null;
+  }
+  
   return (
-    <Card className="bg-rose-50 border-rose-100 shadow-soft">
-      <CardContent className="p-6 text-center py-[16px] px-[10px]">
-        <p className="text-rose-700 text-lg font-medium italic">
-          "{message}"
+    <Card className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 shadow-md">
+      <CardContent className="p-4 flex items-center space-x-4">
+        <QuoteIcon className="h-8 w-8 flex-shrink-0 opacity-80" />
+        <p className="text-sm md:text-base italic">
+          {motivationalMessages[currentMessageIndex]?.message || 
+           "Acredite em você! O sucesso começa quando você decide tentar."}
         </p>
       </CardContent>
     </Card>

@@ -36,7 +36,7 @@ export const RevenueStats = ({
           title="Receita Prevista"
           value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"}
           icon={BadgeDollarSign}
-          description="agendamentos pendentes até o fim do mês"
+          description="agendamentos confirmados até o fim do mês"
           className="bg-white border-rose-100 shadow-soft"
           iconClassName="text-rose-500"
         />
@@ -56,7 +56,7 @@ export const RevenueStats = ({
           title="Média de Clientes por Dia"
           value={`${avgClientsPerDay} clientes`}
           icon={Users}
-          description="média diária de atendimentos"
+          description="média diária de atendimentos confirmados"
           className="bg-white border-rose-100 shadow-soft"
           iconClassName="text-rose-500"
         />

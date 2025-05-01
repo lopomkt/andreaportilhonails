@@ -27,8 +27,17 @@ export const DayView: React.FC<DayViewProps> = ({
   const { appointments, blockedDates, refetchAppointments } = useData();
   const { openModal } = useAppointmentsModal();
   
+  // Filter appointments for the current day using local time comparison
+  const dayAppointments = useMemo(() => {
+    return appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return appointmentDate.toLocaleDateString('pt-BR') === date.toLocaleDateString('pt-BR');
+    });
+  }, [appointments, date]);
+  
   useEffect(() => {
     const slots = [];
+    // Set business hours from 7:00 to 19:00
     const startHour = 7;
     const endHour = 19;
     
@@ -39,7 +48,7 @@ export const DayView: React.FC<DayViewProps> = ({
         const slotTime = new Date(date);
         slotTime.setHours(hour, minute, 0, 0);
         
-        const slotAppointments = appointments.filter(appointment => {
+        const slotAppointments = dayAppointments.filter(appointment => {
           const appointmentDate = new Date(appointment.date);
           const appointmentEndTime = appointment.endTime 
             ? new Date(appointment.endTime)
@@ -65,7 +74,7 @@ export const DayView: React.FC<DayViewProps> = ({
     }
     
     setTimeSlots(slots);
-  }, [date, appointments, blockedDates]);
+  }, [date, dayAppointments, blockedDates]);
 
   const handleAppointmentClick = (appointment: Appointment) => {
     // Set the editing appointment to open the edit modal
@@ -88,16 +97,22 @@ export const DayView: React.FC<DayViewProps> = ({
         </Button>
       </div>
       
-      <div className="time-slots grid gap-3">
-        {timeSlots.map((slot, index) => (
-          <TimeSlot 
-            key={index} 
-            slot={slot} 
-            onAppointmentClick={handleAppointmentClick}
-            onSuggestedTimeSelect={onSuggestedTimeSelect}
-          />
-        ))}
-      </div>
+      {dayAppointments.length === 0 && !timeSlots.some(slot => slot.isBlocked) ? (
+        <div className="text-center py-8 text-muted-foreground">
+          Nenhum agendamento encontrado para esta data.
+        </div>
+      ) : (
+        <div className="time-slots grid gap-3">
+          {timeSlots.map((slot, index) => (
+            <TimeSlot 
+              key={index} 
+              slot={slot} 
+              onAppointmentClick={handleAppointmentClick}
+              onSuggestedTimeSelect={onSuggestedTimeSelect}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Render the EditAppointmentModal when an appointment is selected for editing */}
       {editingAppointment && (

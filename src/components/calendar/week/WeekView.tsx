@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
@@ -151,6 +150,16 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return result;
   }, [filteredMonth]);
 
+  // Add function to handle view day from week details
+  const handleViewDay = (weekStart: Date) => {
+    console.log("Switching to day view from week:", weekStart);
+    if (onDaySelect) {
+      // Close the dialog and trigger day selection
+      setIsWeekDialogOpen(false);
+      onDaySelect(weekStart);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center pb-4">
@@ -209,7 +218,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     className="h-7 px-2 text-primary"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleOpenWeekDetails(weekStart);
+                      // Updated to call the new function
+                      handleViewDay(weekStart);
                     }}
                   >
                     <span className="text-xs mr-1">Detalhar</span>
@@ -220,15 +230,21 @@ export const WeekView: React.FC<WeekViewProps> = ({
             </CardHeader>
 
             <CardContent className={isMobile ? "p-3 pt-0" : ""}>
-              <WeekStats
-                appointments={appointments}
-                totalAppointments={weekStats.totalAppointments}
-                totalConfirmed={weekStats.totalConfirmed}
-                totalCanceled={weekStats.totalCanceled}
-                totalRevenue={weekStats.totalRevenue}
-                expectedRevenue={weekStats.expectedRevenue}
-                isMobile={isMobile}
-              />
+              {weekStats.totalAppointments > 0 ? (
+                <WeekStats
+                  appointments={appointments}
+                  totalAppointments={weekStats.totalAppointments}
+                  totalConfirmed={weekStats.totalConfirmed}
+                  totalCanceled={weekStats.totalCanceled}
+                  totalRevenue={weekStats.totalRevenue}
+                  expectedRevenue={weekStats.expectedRevenue}
+                  isMobile={isMobile}
+                />
+              ) : (
+                <div className="text-center text-sm text-muted-foreground py-2">
+                  Nenhum agendamento encontrado para esta semana.
+                </div>
+              )}
             </CardContent>
           </Card>
         );
@@ -294,6 +310,24 @@ export const WeekView: React.FC<WeekViewProps> = ({
               </div>
             )}
           </ScrollArea>
+
+          <div className="flex justify-between pt-2">
+            <Button variant="outline" onClick={() => setIsWeekDialogOpen(false)}>
+              Fechar
+            </Button>
+            
+            {selectedWeekDates && (
+              <Button 
+                variant="default" 
+                onClick={() => {
+                  setIsWeekDialogOpen(false);
+                  onDaySelect(selectedWeekDates.start);
+                }}
+              >
+                Ver dia completo
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

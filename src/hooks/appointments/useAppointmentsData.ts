@@ -15,7 +15,7 @@ export function useAppointmentsData() {
     console.log("Fetching appointments...");
     setLoading(true);
     try {
-      // Query the new appointments table
+      // Query the agendamentos_novo table with proper joins
       const { data, error } = await supabase
         .from('agendamentos_novo')
         .select(`
@@ -25,7 +25,10 @@ export function useAppointmentsData() {
         `)
         .order('data_inicio', { ascending: true });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error fetching appointments:", error);
+        throw error;
+      }
       
       if (data) {
         // Map the DB structure to app structure, handling the new column names
@@ -50,7 +53,7 @@ export function useAppointmentsData() {
       console.error("Error fetching appointments:", errorMessage);
       setError(errorMessage);
       toast({
-        title: 'Erro ao buscar agendamentos_novo',
+        title: 'Erro ao buscar agendamentos',
         description: errorMessage,
         variant: 'destructive'
       });

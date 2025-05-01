@@ -19,7 +19,23 @@ interface SuggestedTimeSlotsProps {
 export const SuggestedTimeSlots = ({ slots }: SuggestedTimeSlotsProps) => {
   const { openModal } = useAppointmentsModal();
   
-  if (slots.length === 0) return null;
+  if (slots.length === 0) {
+    return (
+      <Card className="bg-white border-rose-100 shadow-soft">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-rose-700 flex items-center text-base font-bold">
+            <Clock className="mr-2 h-4 w-4 text-rose-600" />
+            Horários Sugeridos para Agendamento
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 text-center text-muted-foreground">
+            Nenhum horário disponível para agendamento no momento.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleSlotClick = (time: Date) => {
     openModal(undefined, time);
