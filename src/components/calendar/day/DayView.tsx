@@ -67,8 +67,9 @@ export const DayView: React.FC<DayViewProps> = ({
   }, [date, appointments, blockedDates]);
 
   const handleAppointmentClick = (appointment: Appointment) => {
-    // This is the correct type - we're opening the appointment modal with the appointment
-    openModal(appointment);
+    // Fix: Pass null as Client and the appointment date as the Date
+    // This way we're not trying to pass an Appointment where a Client is expected
+    openModal(null, new Date(appointment.date));
   };
 
   return (

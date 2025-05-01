@@ -26,7 +26,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
   
   const handleTimeClick = () => {
     if (!isBlocked && appointments.length === 0) {
-      openModal(undefined, time);
+      openModal(null, time);
     }
   };
 
@@ -35,7 +35,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
     if (onSuggestedTimeSelect) {
       onSuggestedTimeSelect(time, format(time, 'HH:mm'));
     } else {
-      openModal(undefined, time);
+      openModal(null, time);
     }
   };
   
@@ -66,7 +66,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
           <AppointmentCard
             key={appointment.id}
             appointment={appointment}
-            onClick={() => onAppointmentClick(appointment)} // Não alterar: necessário para abrir modal de edição corretamente
+            onClick={() => onAppointmentClick(appointment)}
           />
         ))}
         
