@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
+import { formatCurrency } from '@/lib/formatters';
 
 interface WeekViewProps {
   date: Date;
