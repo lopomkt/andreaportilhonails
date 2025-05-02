@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Appointment, ServiceResponse, WhatsAppMessageData, AppointmentStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -502,7 +503,11 @@ export function useAppointments() {
     refetchAppointments,
     getAppointmentsForDate,
     calculateDailyRevenue,
-    generateWhatsAppLink: async () => "", // Simplified for this update
+    generateWhatsAppLink: async (data: WhatsAppMessageData) => {
+      // Implementation for WhatsApp link generation
+      const encodedMessage = encodeURIComponent(data.message || "");
+      return `https://wa.me/${data.client?.phone}?text=${encodedMessage}`;
+    },
     createAppointment: addAppointment // Alias for backward compatibility
   };
 }
