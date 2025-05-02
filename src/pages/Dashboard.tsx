@@ -1,7 +1,7 @@
 
 import { useData } from "@/context/DataContext";
-import { useState, useEffect } from "react";
-import { startOfMonth, endOfMonth, isAfter, isBefore, format } from "date-fns";
+import { useEffect } from "react";
+import { format } from "date-fns";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { MotivationalMessage } from "@/components/dashboard/MotivationalMessage";
 import { SuggestedTimeSlots } from "@/components/dashboard/SuggestedTimeSlots";
@@ -24,13 +24,16 @@ export default function Dashboard() {
     clients
   } = useData();
   
-  // Get dashboardStats from the dedicated hook
+  // Get dashboardStats from the dedicated hook with all the corrected values
   const { 
     dashboardStats,
     revenueData,
     averageClientValue,
     avgClientsPerDay,
-    todayStats
+    todayStats,
+    projectedRevenue,
+    monthlyAppointmentsCount,
+    availableTimeSlots
   } = useDashboardStats();
   
   const { openModal } = useAppointmentsModal();
@@ -46,27 +49,9 @@ export default function Dashboard() {
   const navigateToCalendarWeek = () => {
     navigate(`/calendario?date=${format(new Date(), 'yyyy-MM-dd')}&view=week`);
   };
-
-  const calculateProjectedRevenue = () => {
-    const now = new Date();
-    const lastDayOfMonth = endOfMonth(now);
-    const pendingAppointments = appointments.filter(appt => {
-      const apptDate = new Date(appt.date);
-      return appt.status === "pending" && isAfter(apptDate, now) && isBefore(apptDate, lastDayOfMonth);
-    });
-    return pendingAppointments.reduce((sum, appt) => sum + appt.price, 0);
-  };
-
+  
+  // Use the hook for calculating time slots
   const { suggestedSlots } = useTimeSlotsCalculation(getAppointmentsForDate);
-
-  // Remove the duplicate declarations that were causing errors
-  const projectedRevenue = calculateProjectedRevenue();
-  const monthlyAppointmentsCount = appointments.filter(appt => {
-    const apptDate = new Date(appt.date);
-    return appt.status === "confirmed" && 
-           isAfter(apptDate, startOfMonth(new Date())) && 
-           isBefore(apptDate, endOfMonth(new Date()));
-  }).length;
 
   return (
     <div className="space-y-6 animate-fade-in p-2 md:p-4 px-[7px] py-0 min-h-dvh flex flex-col">
@@ -94,7 +79,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {suggestedSlots.length > 0 && (
+      {suggestedSlots && suggestedSlots.length > 0 && (
         <SuggestedTimeSlots slots={suggestedSlots} />
       )}
 

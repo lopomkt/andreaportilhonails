@@ -2,14 +2,20 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useData } from '@/context/DataProvider';
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, isBefore, isAfter } from 'date-fns';
+import { 
+  startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, 
+  isWithinInterval, isBefore, isAfter, isFuture, isToday, format, addMonths 
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { calculateAvailableTimeSlots } from '@/lib/availabilityCalculator';
 import { Appointment, DashboardStats, RevenueData } from '@/types';
+import { normalizeDate } from '@/lib/dateUtils';
+import { useToast } from '@/hooks/use-toast';
 
 export function useDashboardStats() {
+  const { toast } = useToast();
   const { appointments, fetchAppointments, error, loading } = useAppointments();
-  const { clients } = useData();
+  const { clients, blockedDates } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<any[]>([]);
   
@@ -29,21 +35,34 @@ export function useDashboardStats() {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      await fetchAppointments();
-      setIsLoading(false);
+      try {
+        await fetchAppointments();
+      } catch (err) {
+        toast({
+          title: "Erro ao carregar agendamentos",
+          description: "Não foi possível buscar os agendamentos para o dashboard.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadData();
-  }, [fetchAppointments]);
+  }, [fetchAppointments, toast]);
 
   useEffect(() => {
     if (appointments.length > 0) {
-      // Calculate available time slots for today and tomorrow
-      const slots = calculateAvailableTimeSlots(appointments, [], new Date(), 7);
-      setAvailableTimeSlots(slots.slice(0, 3)); // Show only first 3 suggestions
+      try {
+        // Calculate available time slots for today and tomorrow
+        const slots = calculateAvailableTimeSlots(appointments, blockedDates || [], new Date(), 7);
+        setAvailableTimeSlots(slots.slice(0, 3)); // Show only first 3 suggestions
+      } catch (err) {
+        console.error("Erro ao calcular horários disponíveis:", err);
+      }
     }
-  }, [appointments]);
+  }, [appointments, blockedDates]);
 
-  // Filter only confirmed appointments
+  // Filter only confirmed appointments - avoid recomputing this
   const confirmedAppointments = useMemo(() => 
     appointments.filter(app => app.status === "confirmed"),
   [appointments]);
@@ -88,7 +107,7 @@ export function useDashboardStats() {
     };
   }, [confirmedAppointments]);
 
-  // This month's stats
+  // This month's stats - fixed calculation
   const monthStats = useMemo(() => {
     const now = new Date();
     const startDate = startOfMonth(now);
@@ -96,7 +115,10 @@ export function useDashboardStats() {
     
     const thisMonthsAppointments = confirmedAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return isWithinInterval(appointmentDate, { start: startDate, end: endDate });
+      return isWithinInterval(normalizeDate(appointmentDate), { 
+        start: normalizeDate(startDate), 
+        end: normalizeDate(endDate) 
+      });
     });
     
     const revenue = thisMonthsAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
@@ -108,34 +130,28 @@ export function useDashboardStats() {
     };
   }, [confirmedAppointments]);
 
-  // Future stats (upcoming appointments)
-  const futureStats = useMemo(() => {
+  // Projected future revenue - moved from Dashboard.tsx
+  const projectedRevenue = useMemo(() => {
     const now = new Date();
-    const endDate = endOfMonth(now);
+    const lastDayOfMonth = endOfMonth(now);
     
     const futureAppointments = confirmedAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return isAfter(appointmentDate, now) && isBefore(appointmentDate, endDate);
+      return isFuture(appointmentDate) && isBefore(appointmentDate, lastDayOfMonth);
     });
     
-    const revenue = futureAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
-    
-    return {
-      appointments: futureAppointments,
-      count: futureAppointments.length,
-      revenue
-    };
+    return futureAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
   }, [confirmedAppointments]);
 
   // Calculate average client value
   const averageClientValue = useMemo(() => {
-    if (clients.length === 0 || confirmedAppointments.length === 0) return 0;
+    if (confirmedAppointments.length === 0) return 0;
     
     const totalRevenue = confirmedAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
     const uniqueClientIds = new Set(confirmedAppointments.map(appointment => appointment.clientId));
     
     return uniqueClientIds.size > 0 ? totalRevenue / uniqueClientIds.size : 0;
-  }, [clients, confirmedAppointments]);
+  }, [confirmedAppointments]);
 
   // Average clients per day
   const avgClientsPerDay = useMemo(() => {
@@ -162,6 +178,11 @@ export function useDashboardStats() {
     return daysWithClients > 0 ? Math.round((totalClients / daysWithClients) * 10) / 10 : 0;
   }, [confirmedAppointments]);
   
+  // Monthly revenue count - CORRECTED
+  const monthlyAppointmentsCount = useMemo(() => {
+    return monthStats.count;
+  }, [monthStats]);
+  
   // Update dashboard stats based on calculated values
   useEffect(() => {
     setDashboardStats({
@@ -174,7 +195,7 @@ export function useDashboardStats() {
     });
   }, [appointments.length, todayStats.count, weekStats.count, monthStats.revenue]);
   
-  // Get revenue data for charts
+  // Get revenue data for charts with useCallback
   const getRevenueData = useCallback(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -200,7 +221,7 @@ export function useDashboardStats() {
     return monthlyRevenueData;
   }, [confirmedAppointments]);
   
-  // Calculate monthly revenue for specific month/year
+  // Calculate monthly revenue for specific month/year with useCallback
   const calculatedMonthlyRevenue = useCallback((appointments: Appointment[], month?: number, year?: number) => {
     const now = year ? new Date(year, month || 0, 1) : new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -217,7 +238,7 @@ export function useDashboardStats() {
       }, 0);
   }, []);
 
-  // Calculate net profit (simplified version)
+  // Calculate net profit with useCallback
   const calculateNetProfit = useCallback(() => {
     // Simplified calculation, in a real app you would subtract expenses
     const expenses = monthStats.revenue * 0.3; // Assume expenses are 30% of revenue
@@ -279,11 +300,11 @@ export function useDashboardStats() {
     todayStats,
     weekStats,
     monthStats,
-    futureStats,
+    projectedRevenue,
     availableTimeSlots,
     averageClientValue,
     avgClientsPerDay,
-    // Add these missing properties
+    monthlyAppointmentsCount,
     dashboardStats,
     revenueData,
     calculateNetProfit,
