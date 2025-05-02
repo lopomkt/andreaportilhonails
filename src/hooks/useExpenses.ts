@@ -1,14 +1,31 @@
-
 import { useState, useCallback } from 'react';
 import { Expense, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Get expenses for a specific month and year
+  const getExpensesForMonth = useCallback((month: number, year: number) => {
+    const startDate = startOfMonth(new Date(year, month, 1));
+    const endDate = endOfMonth(startDate);
+    
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return isWithinInterval(expenseDate, { start: startDate, end: endDate });
+    });
+  }, [expenses]);
+
+  // Calculate total expenses for a specific month and year
+  const calculateMonthlyExpenses = useCallback((month: number, year: number) => {
+    const monthlyExpenses = getExpensesForMonth(month, year);
+    return monthlyExpenses.reduce((total, expense) => total + expense.amount, 0);
+  }, [getExpensesForMonth]);
 
   const fetchExpenses = useCallback(async (): Promise<Expense[]> => {
     setLoading(true);
@@ -86,6 +103,9 @@ export function useExpenses() {
         isRecurring: expense.isRecurring,
         notes: expense.notes
       };
+      
+      // Update local state
+      setExpenses(prev => [...prev, mockExpense]);
       
       toast({
         title: 'Despesa adicionada',
@@ -305,6 +325,8 @@ export function useExpenses() {
     fetchExpenses,
     addExpense,
     updateExpense,
-    deleteExpense
+    deleteExpense,
+    getExpensesForMonth,
+    calculateMonthlyExpenses
   };
 }

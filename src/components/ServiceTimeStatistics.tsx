@@ -2,8 +2,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, TrendingUp } from "lucide-react";
 import { useData } from "@/context/DataContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Appointment, Service } from "@/types";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 interface ServiceTimeStats {
   serviceId: string;
@@ -15,54 +16,7 @@ interface ServiceTimeStats {
 
 export function ServiceTimeStatistics() {
   const { appointments, services } = useData();
-  const [serviceStats, setServiceStats] = useState<ServiceTimeStats[]>([]);
-  
-  useEffect(() => {
-    // This is a simplified calculation - in a real app we'd need actual start/end times
-    // Here we're simulating based on the appointment duration vs. scheduled time
-    const stats: ServiceTimeStats[] = services
-      .map(service => {
-        const serviceAppointments = appointments.filter(
-          appt => appt.serviceId === service.id && appt.status === "confirmed"
-        );
-        
-        if (serviceAppointments.length === 0) {
-          return {
-            serviceId: service.id,
-            serviceName: service.name,
-            averageTime: service.durationMinutes,
-            scheduledTime: service.durationMinutes,
-            appointmentCount: 0
-          };
-        }
-        
-        // In a real app, this would be calculated from actual start/end times
-        // For demonstration, we're adding a random variance to simulate real-world timing
-        const simulateRealTime = (appt: Appointment) => {
-          const scheduledDuration = service.durationMinutes;
-          // Add variance between -10% and +30% to simulate real-world timing
-          const variance = scheduledDuration * (Math.random() * 0.4 - 0.1);
-          return scheduledDuration + variance;
-        };
-        
-        const totalRealTime = serviceAppointments.reduce(
-          (sum, appt) => sum + simulateRealTime(appt), 
-          0
-        );
-        
-        return {
-          serviceId: service.id,
-          serviceName: service.name,
-          averageTime: Math.round(totalRealTime / serviceAppointments.length),
-          scheduledTime: service.durationMinutes,
-          appointmentCount: serviceAppointments.length
-        };
-      })
-      .filter(stat => stat.appointmentCount > 0)
-      .sort((a, b) => Math.abs(b.averageTime - b.scheduledTime) - Math.abs(a.averageTime - a.scheduledTime));
-      
-    setServiceStats(stats);
-  }, [appointments, services]);
+  const { serviceTimeStats } = useDashboardStats();
   
   // Format minutes to hours and minutes
   const formatTime = (minutes: number) => {
@@ -103,9 +57,9 @@ export function ServiceTimeStatistics() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {serviceStats.length > 0 ? (
+        {serviceTimeStats && serviceTimeStats.length > 0 ? (
           <div className="space-y-4">
-            {serviceStats.map((stat) => (
+            {serviceTimeStats.map((stat) => (
               <div 
                 key={stat.serviceId} 
                 className="p-4 rounded-xl bg-rose-50 border border-rose-100"

@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -17,6 +18,7 @@ import {
   WhatsAppMessageData,
   ServiceResponse
 } from "@/types";
+import { startOfMonth, endOfMonth, isWithinInterval, isFuture } from "date-fns";
 
 interface DataContextType {
   appointments: Appointment[];
@@ -38,6 +40,7 @@ interface DataContextType {
     services: Service[]
   ) => { name: string; value: number; count: number }[];
   getRevenueData: () => RevenueData[];
+  calculateExpectedRevenue: () => number; // New method
   generateWhatsAppLink: (data: WhatsAppMessageData) => Promise<string>;
   refetchAppointments: () => Promise<void>;
   refetchClients: () => Promise<void>;
@@ -70,7 +73,7 @@ export const DataContext = createContext<DataContextType>({
     totalAppointments: 0,
     inactiveClients: 0,
     todayAppointments: 0,
-    weekAppointments: 0,
+    weekAppointments: 0
   },
   revenueData: [],
   loading: false,
@@ -82,6 +85,7 @@ export const DataContext = createContext<DataContextType>({
   calculatedMonthlyRevenue: () => 0,
   calculateServiceRevenue: () => [],
   getRevenueData: () => [],
+  calculateExpectedRevenue: () => 0, // New method
   generateWhatsAppLink: async () => "",
   refetchAppointments: async () => {},
   refetchClients: async () => {},
@@ -97,9 +101,9 @@ export const DataContext = createContext<DataContextType>({
   updateService: async () => ({}),
   deleteService: async () => ({}),
   fetchBlockedDates: async () => {},
-  fetchAppointments: async () => [], // Updated to return empty array
+  fetchAppointments: async () => [], 
   addBlockedDate: async () => ({}),
-  fetchServices: async () => [], // Added missing fetchServices function
+  fetchServices: async () => [],
 });
 
 export const useData = () => {
@@ -167,7 +171,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     addBlockedDate,
   } = useBlockedDates();
 
-  // Use the fixed dashboardStats hook
+  // Use the dashboard stats hook
   const {
     dashboardStats,
     revenueData,
@@ -183,6 +187,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       updateDashboardStats(appointments); // Pass appointments as required
     }
   }, [appointments, updateDashboardStats]);
+  
+  // Calculate expected revenue from future confirmed appointments
+  const calculateExpectedRevenue = useCallback(() => {
+    const now = new Date();
+    
+    return appointments
+      .filter(appointment => appointment.status === "confirmed" && 
+              new Date(appointment.date) > now)
+      .reduce((sum, appointment) => sum + appointment.price, 0);
+  }, [appointments]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -230,15 +244,25 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     await fetchClients();
   }, [fetchClients]);
 
-  // Modified to pass appointments to the original function
+  // Modified to use the enhanced monthly revenue calculation
   const wrappedCalculatedMonthlyRevenue = useCallback((month?: number, year?: number) => {
-    return calculatedMonthlyRevenue(appointments, month, year);
-  }, [calculatedMonthlyRevenue, appointments]);
-
-  // Modified to pass appointments to the original function
-  const wrappedGetRevenueData = useCallback(() => {
-    return getRevenueData(); // Remove the appointments argument
-  }, [getRevenueData]);
+    const targetDate = year && month !== undefined 
+      ? new Date(year, month, 1) 
+      : new Date();
+    
+    const monthStart = startOfMonth(targetDate);
+    const monthEnd = endOfMonth(targetDate);
+    
+    return appointments
+      .filter(appointment => appointment.status === "confirmed")
+      .reduce((sum, appointment) => {
+        const appointmentDate = new Date(appointment.date);
+        if (isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd })) {
+          return sum + appointment.price;
+        }
+        return sum;
+      }, 0);
+  }, [appointments]);
 
   return (
     <DataContext.Provider
@@ -258,7 +282,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         calculateDailyRevenue,
         calculatedMonthlyRevenue: wrappedCalculatedMonthlyRevenue,
         calculateServiceRevenue,
-        getRevenueData: wrappedGetRevenueData,
+        getRevenueData,
+        calculateExpectedRevenue,
         generateWhatsAppLink,
         refetchAppointments,
         refetchClients,

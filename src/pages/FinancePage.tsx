@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/formatters";
 import { useData } from "@/context/DataContext";
 import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, Users, FileText, Trash2, Edit, AlertCircle } from "lucide-react";
-import { format, subMonths, addMonths, isSameMonth } from "date-fns";
+import { format, subMonths, addMonths, isSameMonth, startOfMonth, endOfMonth } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { Expense } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ptBR } from "date-fns/locale";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const COLORS = ["#9b87f5", "#c026d3", "#e879f9", "#f0abfc", "#f5d0fe"];
 
@@ -25,30 +27,47 @@ export default function FinancePage() {
     clients,
     addExpense,
     deleteExpense,
-    calculatedMonthlyRevenue
   } = useData();
+  
   const [showExpenseForm, setShowExpenseForm] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [activeExpense, setActiveExpense] = useState<Expense | null>(null);
-
-  // Calculate monthly data
+  
+  // Month/year selection
   const currentDate = new Date();
-  const prevMonth = subMonths(currentDate, 1);
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  
+  // Use dashboard stats with selected month and year
+  const dashboardStats = useDashboardStats(selectedMonth, selectedYear);
+  const selectedMonthDate = new Date(selectedYear, selectedMonth, 1);
+  
+  // Calculate monthly data
+  const prevMonth = subMonths(selectedMonthDate, 1);
 
   // Create monthly data for last 6 months
   const monthlyData = Array(6).fill(0).map((_, i) => {
-    const monthDate = subMonths(currentDate, i);
+    const monthDate = subMonths(selectedMonthDate, i);
     const monthName = format(monthDate, "MMM", {
       locale: ptBR
     });
+    
+    const monthStart = startOfMonth(monthDate);
+    const monthEnd = endOfMonth(monthDate);
+    
     const monthRevenue = appointments.filter(appt => {
       const date = new Date(appt.date);
-      return isSameMonth(date, monthDate) && appt.status !== "canceled";
+      const isInMonth = date >= monthStart && date <= monthEnd;
+      return isInMonth && appt.status === "confirmed";
     }).reduce((sum, appt) => sum + appt.price, 0);
+    
     const monthExpenses = expenses.filter(exp => {
       const date = new Date(exp.date);
       return isSameMonth(date, monthDate);
     }).reduce((sum, exp) => sum + exp.amount, 0);
+    
     return {
       name: monthName,
       revenue: monthRevenue,
@@ -57,10 +76,17 @@ export default function FinancePage() {
     };
   }).reverse();
 
-  // Calculate service popularity
+  // Calculate service popularity from confirmed appointments
   const serviceStats = services.map(service => {
-    const count = appointments.filter(appt => appt.serviceId === service.id && appt.status !== "confirmed").length;
-    const revenue = appointments.filter(appt => appt.serviceId === service.id && appt.status !== "canceled").reduce((sum, appt) => sum + appt.price, 0);
+    const filteredAppointments = appointments.filter(appt => {
+      const date = new Date(appt.date);
+      const isInMonth = isSameMonth(date, selectedMonthDate);
+      return isInMonth && appt.serviceId === service.id && appt.status === "confirmed";
+    });
+    
+    const count = filteredAppointments.length;
+    const revenue = filteredAppointments.reduce((sum, appt) => sum + appt.price, 0);
+    
     return {
       id: service.id,
       name: service.name,
@@ -69,67 +95,109 @@ export default function FinancePage() {
     };
   });
 
-  // Sort by popularity
-  const topServices = [...serviceStats].sort((a, b) => b.count - a.count).slice(0, 5);
+  // Sort by revenue
+  const topServices = [...serviceStats].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
-  // Calculate total revenue, expenses and profit
-  const totalRevenue = appointments.filter(appt => appt.status !== "canceled").reduce((sum, appt) => sum + appt.price, 0);
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
-  // Current month calculations
-  const currentMonthRevenue = appointments.filter(appt => {
-    const date = new Date(appt.date);
-    return isSameMonth(date, currentDate) && appt.status !== "canceled";
-  }).reduce((sum, appt) => sum + appt.price, 0);
+  // Calculate month's revenue, expenses and profit
+  const currentMonthRevenue = dashboardStats.monthStats.revenue;
   const currentMonthExpenses = expenses.filter(exp => {
     const date = new Date(exp.date);
-    return isSameMonth(date, currentDate);
+    return isSameMonth(date, selectedMonthDate);
   }).reduce((sum, exp) => sum + exp.amount, 0);
+  const currentMonthProfit = currentMonthRevenue - currentMonthExpenses;
 
   // Previous month calculations
+  const prevMonthDate = subMonths(selectedMonthDate, 1);
   const prevMonthRevenue = appointments.filter(appt => {
     const date = new Date(appt.date);
-    return isSameMonth(date, prevMonth) && appt.status !== "canceled";
+    return isSameMonth(date, prevMonthDate) && appt.status === "confirmed";
   }).reduce((sum, appt) => sum + appt.price, 0);
 
   // Calculate month-over-month changes
   const revenueChange = prevMonthRevenue > 0 ? (currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue * 100 : 100;
+  
+  // Get expected revenue (future confirmed appointments)
+  const expectedRevenue = dashboardStats.calculateExpectedRevenue();
 
-  // Get top 5 clients by total spent
-  const topClients = [...clients].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+  // Generate months for select
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    value: i,
+    label: format(new Date(2000, i, 1), 'MMMM', { locale: ptBR })
+  }));
+  
+  // Generate years (current year and 5 years back)
+  const years = Array.from({ length: 6 }, (_, i) => ({
+    value: currentYear - i,
+    label: `${currentYear - i}`
+  }));
+
   const handleAddExpense = () => {
     setActiveExpense(null);
     setShowExpenseForm(true);
   };
+  
   const handleCloseForm = () => {
     setShowExpenseForm(false);
     setActiveExpense(null);
   };
+  
   const handleDeleteExpense = (expense: Expense) => {
     if (window.confirm(`Tem certeza que deseja excluir a despesa "${expense.name}"?`)) {
       deleteExpense(expense.id);
     }
   };
+  
   const handleEditExpense = (expense: Expense) => {
     setActiveExpense(expense);
     setShowExpenseForm(true);
   };
-  const handlePrevMonth = () => {
-    setSelectedMonth(prevDate => subMonths(prevDate, 1));
-  };
-  const handleNextMonth = () => {
-    setSelectedMonth(nextDate => addMonths(nextDate, 1));
-  };
-  return <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center">
-        <h2 className="font-bold mx-[15px] text-xl">Gestão Financeira</h2>
-        <Button onClick={handleAddExpense} className="gap-1 mx-[15px]">
-          <Plus className="h-4 w-4" />
-          Nova Despesa
-        </Button>
+
+  return (
+    <div className="space-y-6 animate-fade-in px-4 md:px-6">
+      <div className="flex justify-between items-center flex-wrap gap-2">
+        <h2 className="font-bold text-2xl">Gestão Financeira</h2>
+        
+        <div className="flex gap-2">
+          <Select 
+            value={selectedMonth.toString()} 
+            onValueChange={(value) => setSelectedMonth(parseInt(value))}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value.toString()}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select 
+            value={selectedYear.toString()} 
+            onValueChange={(value) => setSelectedYear(parseInt(value))}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year.value} value={year.value.toString()}>
+                  {year.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button onClick={handleAddExpense} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Nova Despesa
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4 sm:grid-cols-2">
         <Card className="bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
@@ -171,10 +239,25 @@ export default function FinancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(currentMonthRevenue - currentMonthExpenses)}
+              {formatCurrency(currentMonthProfit)}
             </div>
             <p className="text-xs text-muted-foreground">
               Receita menos despesas
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-blue-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              Receita Prevista
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(expectedRevenue)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Agendamentos futuros confirmados
             </p>
           </CardContent>
         </Card>
@@ -185,7 +268,6 @@ export default function FinancePage() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="services">Serviços</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
-          
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -315,7 +397,7 @@ export default function FinancePage() {
                       <div className="flex items-center justify-between">
                         <div className="h-2 bg-secondary rounded-full w-full">
                           <div className="h-2 rounded-full" style={{
-                        width: `${service.revenue / totalRevenue * 100}%`,
+                        width: `${service.revenue / (topServices[0]?.revenue || 1) * 100}%`,
                         backgroundColor: COLORS[index % COLORS.length]
                       }} />
                         </div>
@@ -334,19 +416,6 @@ export default function FinancePage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Registro de Despesas</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" onClick={handlePrevMonth}>
-                  &lt;
-                </Button>
-                <span className="text-sm">
-                  {format(selectedMonth, "MMMM yyyy", {
-                  locale: ptBR
-                })}
-                </span>
-                <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                  &gt;
-                </Button>
-              </div>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
@@ -359,7 +428,7 @@ export default function FinancePage() {
                     <div className="text-right">Ações</div>
                   </div>
                   <div className="divide-y">
-                    {expenses.filter(expense => isSameMonth(new Date(expense.date), selectedMonth)).map(expense => <div key={expense.id} className="grid grid-cols-5 gap-4 p-4">
+                    {expenses.filter(expense => isSameMonth(new Date(expense.date), selectedMonthDate)).map(expense => <div key={expense.id} className="grid grid-cols-5 gap-4 p-4">
                           <div className="truncate">{expense.name}</div>
                           <div>{format(new Date(expense.date), "dd/MM/yyyy")}</div>
                           <div>{formatCurrency(expense.amount)}</div>
@@ -395,49 +464,13 @@ export default function FinancePage() {
                             </DropdownMenu>
                           </div>
                         </div>)}
-                    {expenses.filter(expense => isSameMonth(new Date(expense.date), selectedMonth)).length === 0 && <div className="p-4 text-center text-muted-foreground">
+                    {expenses.filter(expense => isSameMonth(new Date(expense.date), selectedMonthDate)).length === 0 && <div className="p-4 text-center text-muted-foreground">
                         <AlertCircle className="h-5 w-5 mx-auto mb-2" />
                         Nenhuma despesa registrada para este mês.
                       </div>}
                   </div>
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="clients" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Melhores Clientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {topClients.map((client, index) => <div key={client.id} className="relative">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-primary font-medium">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">{client.name}</p>
-                          <p className="font-medium text-primary">{formatCurrency(client.totalSpent)}</p>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="mr-1 h-3 w-3" />
-                          <span>
-                            {client.lastAppointment ? `Último atendimento: ${format(new Date(client.lastAppointment), "dd/MM/yyyy")}` : "Sem atendimentos registrados"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-2 h-2 w-full rounded-full bg-primary-foreground">
-                      <div className="h-2 rounded-full bg-primary" style={{
-                    width: `${client.totalSpent / topClients[0].totalSpent * 100}%`
-                  }} />
-                    </div>
-                  </div>)}
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -448,8 +481,16 @@ export default function FinancePage() {
           <DialogHeader>
             <DialogTitle>{activeExpense ? "Editar Despesa" : "Nova Despesa"}</DialogTitle>
           </DialogHeader>
-          <ExpenseForm onCancel={handleCloseForm} onSuccess={handleCloseForm} />
+          <ExpenseForm 
+            expense={activeExpense}
+            onClose={handleCloseForm}
+            onSave={(expense) => {
+              setShowExpenseForm(false);
+              setActiveExpense(null);
+            }}
+          />
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 }

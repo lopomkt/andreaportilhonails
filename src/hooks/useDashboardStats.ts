@@ -9,13 +9,13 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { calculateAvailableTimeSlots } from '@/lib/availabilityCalculator';
 import { Appointment, DashboardStats, RevenueData } from '@/types';
-import { normalizeDate } from '@/lib/dateUtils';
+import { normalizeDate, calculateDurationInMinutes } from '@/lib/dateUtils';
 import { useToast } from '@/hooks/use-toast';
 
-export function useDashboardStats() {
+export function useDashboardStats(month?: number, year?: number) {
   const { toast } = useToast();
   const { appointments, fetchAppointments, error, loading } = useAppointments();
-  const { clients, blockedDates } = useData();
+  const { clients, blockedDates, expenses } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<any[]>([]);
   
@@ -31,6 +31,14 @@ export function useDashboardStats() {
 
   // Store revenue data
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+
+  // Use custom month/year for filtering if provided
+  const filterDate = useMemo(() => {
+    if (month !== undefined && year !== undefined) {
+      return new Date(year, month, 1);
+    }
+    return new Date();
+  }, [month, year]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -107,11 +115,10 @@ export function useDashboardStats() {
     };
   }, [confirmedAppointments]);
 
-  // This month's stats - fixed calculation
+  // This month's stats - using filterDate for custom month/year filtering
   const monthStats = useMemo(() => {
-    const now = new Date();
-    const startDate = startOfMonth(now);
-    const endDate = endOfMonth(now);
+    const startDate = startOfMonth(filterDate);
+    const endDate = endOfMonth(filterDate);
     
     const thisMonthsAppointments = confirmedAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
@@ -128,16 +135,15 @@ export function useDashboardStats() {
       count: thisMonthsAppointments.length,
       revenue
     };
-  }, [confirmedAppointments]);
+  }, [confirmedAppointments, filterDate]);
 
-  // Projected future revenue - moved from Dashboard.tsx
+  // Projected future revenue
   const projectedRevenue = useMemo(() => {
     const now = new Date();
-    const lastDayOfMonth = endOfMonth(now);
     
     const futureAppointments = confirmedAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return isFuture(appointmentDate) && isBefore(appointmentDate, lastDayOfMonth);
+      return isFuture(appointmentDate);
     });
     
     return futureAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
@@ -178,27 +184,73 @@ export function useDashboardStats() {
     return daysWithClients > 0 ? Math.round((totalClients / daysWithClients) * 10) / 10 : 0;
   }, [confirmedAppointments]);
   
-  // Monthly revenue count - CORRECTED
+  // Monthly revenue count
   const monthlyAppointmentsCount = useMemo(() => {
     return monthStats.count;
   }, [monthStats]);
+
+  // Service time statistics - calculate average duration for each service
+  const serviceTimeStats = useMemo(() => {
+    const serviceMap = new Map();
+    
+    confirmedAppointments.forEach(appointment => {
+      if (!appointment.serviceId || !appointment.service) return;
+      
+      const serviceId = appointment.serviceId;
+      const serviceName = appointment.service.name;
+      const serviceScheduledTime = appointment.service.durationMinutes || 60;
+      
+      // Calculate actual duration if end time is available
+      let actualDuration = serviceScheduledTime;
+      if (appointment.endTime) {
+        const startDate = new Date(appointment.date);
+        const endDate = new Date(appointment.endTime);
+        actualDuration = calculateDurationInMinutes(startDate, endDate);
+      }
+      
+      if (!serviceMap.has(serviceId)) {
+        serviceMap.set(serviceId, {
+          serviceId,
+          serviceName,
+          durations: [],
+          scheduledTime: serviceScheduledTime
+        });
+      }
+      
+      serviceMap.get(serviceId).durations.push(actualDuration);
+    });
+    
+    // Calculate averages
+    return Array.from(serviceMap.values()).map(service => {
+      const averageTime = service.durations.length > 0 
+        ? service.durations.reduce((sum, duration) => sum + duration, 0) / service.durations.length
+        : service.scheduledTime;
+        
+      return {
+        serviceId: service.serviceId,
+        serviceName: service.serviceName,
+        averageTime: Math.round(averageTime),
+        scheduledTime: service.scheduledTime,
+        appointmentCount: service.durations.length
+      };
+    }).sort((a, b) => b.appointmentCount - a.appointmentCount);
+  }, [confirmedAppointments]);
   
   // Update dashboard stats based on calculated values
   useEffect(() => {
     setDashboardStats({
       monthRevenue: monthStats.revenue,
       newClients: 0, // Would need to calculate this based on client creation dates
-      totalAppointments: appointments.length,
+      totalAppointments: confirmedAppointments.length,
       inactiveClients: 0, // Would need to calculate this based on client activity
       todayAppointments: todayStats.count,
       weekAppointments: weekStats.count
     });
-  }, [appointments.length, todayStats.count, weekStats.count, monthStats.revenue]);
+  }, [confirmedAppointments.length, todayStats.count, weekStats.count, monthStats.revenue]);
   
   // Get revenue data for charts with useCallback
   const getRevenueData = useCallback(() => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
+    const currentYear = filterDate.getFullYear();
     const monthlyRevenueData: RevenueData[] = [];
 
     for (let i = 0; i < 12; i++) {
@@ -219,13 +271,16 @@ export function useDashboardStats() {
 
     setRevenueData(monthlyRevenueData);
     return monthlyRevenueData;
-  }, [confirmedAppointments]);
+  }, [confirmedAppointments, filterDate]);
   
   // Calculate monthly revenue for specific month/year with useCallback
   const calculatedMonthlyRevenue = useCallback((appointments: Appointment[], month?: number, year?: number) => {
-    const now = year ? new Date(year, month || 0, 1) : new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const targetDate = year && month !== undefined 
+      ? new Date(year, month, 1) 
+      : new Date();
+      
+    const monthStart = startOfMonth(targetDate);
+    const monthEnd = endOfMonth(targetDate);
 
     return appointments
       .filter(appointment => appointment.status === "confirmed")
@@ -240,10 +295,18 @@ export function useDashboardStats() {
 
   // Calculate net profit with useCallback
   const calculateNetProfit = useCallback(() => {
-    // Simplified calculation, in a real app you would subtract expenses
-    const expenses = monthStats.revenue * 0.3; // Assume expenses are 30% of revenue
-    return monthStats.revenue - expenses;
-  }, [monthStats.revenue]);
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    return monthStats.revenue - totalExpenses;
+  }, [monthStats.revenue, expenses]);
+  
+  // Calculate expected revenue (future confirmed appointments)
+  const calculateExpectedRevenue = useCallback(() => {
+    const now = new Date();
+    
+    return confirmedAppointments
+      .filter(appointment => isFuture(new Date(appointment.date)))
+      .reduce((sum, appointment) => sum + appointment.price, 0);
+  }, [confirmedAppointments]);
   
   // Function to update dashboard stats (used by DataProvider)
   const updateDashboardStats = useCallback((currentAppointments: Appointment[]) => {
@@ -276,9 +339,9 @@ export function useDashboardStats() {
     
     setDashboardStats({
       monthRevenue,
-      newClients: 0, // Would need to calculate
+      newClients: 0,
       totalAppointments: currentAppointments.length,
-      inactiveClients: 0, // Would need to calculate
+      inactiveClients: 0,
       todayAppointments: todayCount,
       weekAppointments: weekCount
     });
@@ -310,6 +373,13 @@ export function useDashboardStats() {
     calculateNetProfit,
     calculatedMonthlyRevenue,
     getRevenueData,
-    updateDashboardStats
+    updateDashboardStats,
+    serviceTimeStats,
+    calculateExpectedRevenue,
+    // New methods for financial reporting
+    getMonthlyRevenue: () => monthStats.revenue,
+    getExpectedRevenue: calculateExpectedRevenue,
+    getNetProfit: calculateNetProfit,
+    getTotalExpenses: () => expenses.reduce((sum, expense) => sum + expense.amount, 0)
   };
 }
