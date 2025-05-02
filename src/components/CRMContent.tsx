@@ -14,6 +14,7 @@ import CalendarPage from "@/pages/CalendarPage";
 import ClientsPage from "@/pages/ClientsPage";
 import ServicesPage from "@/pages/ServicesPage";
 import ReportsPage from "@/pages/ReportsPage";
+import SettingsPage from "@/pages/SettingsPage";
 import FunctionalitiesPage from "@/pages/FunctionalitiesPage";
 import CancellationReasonsPage from "@/pages/funcionalidades/CancellationReasonsPage";
 import AbsenceRulesPage from "@/pages/funcionalidades/AbsenceRulesPage";
@@ -62,6 +63,7 @@ export const CRMContent = () => {
             <Route path="/clientes" element={<ClientsPage />} />
             <Route path="/servicos" element={<ServicesPage />} />
             <Route path="/relatorios" element={<ReportsPage />} />
+            <Route path="/configuracoes" element={<SettingsPage />} />
             <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
             <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
             <Route path="/funcionalidades/ausencias" element={<AbsenceRulesPage />} />

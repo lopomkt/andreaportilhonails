@@ -2,6 +2,13 @@
 import React, { useEffect } from 'react';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 
+// Extend Window interface to include our custom method
+declare global {
+  interface Window {
+    openQuickAppointmentModal: (defaultDate?: Date) => void;
+  }
+}
+
 export function AppointmentModalOpener() {
   const { openModal } = useAppointmentsModal();
 
