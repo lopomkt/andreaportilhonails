@@ -1,14 +1,8 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from '@/integrations/supabase/client';
-import { Appointment, WhatsAppMessageData } from "@/types";
+import { Appointment } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-
-export interface WhatsAppMessageData {
-  client?: { phone: string; name: string };
-  appointment?: Appointment;
-  message?: string;
-}
+import { WhatsAppMessageData } from "@/types";
 
 export const useAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -66,6 +60,7 @@ export const useAppointments = () => {
         })) : [];
         setAppointments(mappedAppointments);
         setError(null);
+        return mappedAppointments; // Return the appointments
       }
     } catch (err: any) {
       console.error("Error fetching appointments:", err);
@@ -73,6 +68,7 @@ export const useAppointments = () => {
     } finally {
       setLoading(false);
     }
+    return []; // Return empty array if there was an error
   }, []);
 
   useEffect(() => {

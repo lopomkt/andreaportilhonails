@@ -263,6 +263,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }, 0);
   }, [appointments]);
 
+  // Update fetchAppointments to match the expected return type
+  const wrappedFetchAppointments = useCallback(async (): Promise<Appointment[]> => {
+    return await fetchAppointments();
+  }, [fetchAppointments]);
+
   return (
     <DataContext.Provider
       value={{
@@ -298,7 +303,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         updateService,
         deleteService,
         fetchBlockedDates,
-        fetchAppointments,
+        fetchAppointments: wrappedFetchAppointments, // Use the wrapped function
         addBlockedDate,
         fetchServices,
       }}
