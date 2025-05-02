@@ -32,7 +32,7 @@ const tagConfig = {
   inactive: {
     icon: "😴",
     label: "Sumida",
-    description: "+40 dias sem agendamento",
+    description: "+30 dias sem agendamento",
     className: "bg-gray-100 text-gray-600 border-gray-200"
   }
 };
