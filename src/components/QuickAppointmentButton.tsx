@@ -3,12 +3,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-// Set up global type definition for the window object
-declare global {
-  interface Window {
-    openQuickAppointmentModal?: () => void;
-  }
-}
+// We'll remove the global type declaration since it's already defined in AppointmentModalOpener.tsx
+// This will fix the conflicting declaration errors
 
 export const QuickAppointmentButton = () => {
   const handleOpenModal = () => {

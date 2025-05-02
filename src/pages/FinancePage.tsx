@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -483,8 +482,8 @@ export default function FinancePage() {
           </DialogHeader>
           <ExpenseForm 
             expense={activeExpense}
-            onClose={handleCloseForm}
-            onSave={(expense) => {
+            onCancel={handleCloseForm}
+            onSuccess={() => {
               setShowExpenseForm(false);
               setActiveExpense(null);
             }}
