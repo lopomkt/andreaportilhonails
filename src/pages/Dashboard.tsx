@@ -1,4 +1,7 @@
 
+// ATENÇÃO: O botão QuickAppointment foi removido DEFINITIVAMENTE
+// Nunca reimporte AppointmentModalOpener ou QuickAppointmentModal
+
 import { useData } from "@/context/DataContext";
 import { useEffect } from "react";
 import { format } from "date-fns";
