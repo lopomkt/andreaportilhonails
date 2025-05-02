@@ -9,7 +9,7 @@ import { useServices } from '@/context/ServiceContext';
 import { useData } from '@/context/DataProvider';
 
 export function AppointmentModal() {
-  const { isOpen, closeModal, selectedClient, selectedDate } = useAppointmentsModal();
+  const { isOpen, closeModal, currentAppointment, selectedClient, selectedDate } = useAppointmentsModal();
   const { services, loading: servicesLoading, fetchServices } = useServices();
   const { refetchAppointments } = useData();
 

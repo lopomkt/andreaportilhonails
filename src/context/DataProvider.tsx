@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -101,7 +100,7 @@ export const DataContext = createContext<DataContextType>({
   updateService: async () => ({}),
   deleteService: async () => ({}),
   fetchBlockedDates: async () => {},
-  fetchAppointments: async () => [], 
+  fetchAppointments: async () => [], // Changed this to return an empty array instead of void
   addBlockedDate: async () => ({}),
   fetchServices: async () => [],
 });
@@ -236,7 +235,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refetchAppointments = useCallback(async () => {
     console.log("DataProvider: refetchAppointments called");
-    await fetchAppointments();
+    return await fetchAppointments(); // Make sure this returns the results from fetchAppointments
   }, [fetchAppointments]);
 
   const refetchClients = useCallback(async () => {

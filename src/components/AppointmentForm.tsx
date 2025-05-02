@@ -46,7 +46,7 @@ export function AppointmentForm({
 }: AppointmentFormProps) {
   const isEditMode = !!appointment;
   const { toast } = useToast();
-  const { createAppointment, updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
+  const { addAppointment, updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
   const { 
     clients, 
     appointments, 
@@ -326,7 +326,7 @@ export function AppointmentForm({
       const endDateTime = addMinutes(appointmentDate, serviceDuration);
       
       // Build appointment object with new table structure in mind
-      const result = await createAppointment({
+      const result = await addAppointment({
         clientId: clientId,
         serviceId: serviceId,
         date: appointmentDate,              // Using 'date' instead of 'data'
@@ -342,7 +342,6 @@ export function AppointmentForm({
       }
       
       console.log("Resultado do agendamento:", result);
-      console.log("Resultado Final:", result);
       
       if (result.success) {
         toast({

@@ -1,7 +1,14 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment, WhatsAppMessageData } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+
+export interface WhatsAppMessageData {
+  client?: { phone: string; name: string };
+  appointment?: Appointment;
+  message?: string;
+}
 
 export const useAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -74,7 +81,12 @@ export const useAppointments = () => {
 
   const getAppointmentsForDate = useCallback((date: Date) => {
     const dateString = date.toISOString().slice(0, 10);
-    return appointments.filter(appointment => appointment.date.startsWith(dateString));
+    return appointments.filter(appointment => {
+      const appointmentDate = typeof appointment.date === 'string' 
+        ? appointment.date 
+        : appointment.date.toISOString();
+      return appointmentDate.startsWith(dateString);
+    });
   }, [appointments]);
 
   const calculateDailyRevenue = useCallback((date: Date) => {
@@ -83,23 +95,46 @@ export const useAppointments = () => {
   }, [getAppointmentsForDate]);
 
   const generateWhatsAppLink = async (data: WhatsAppMessageData): Promise<string> => {
-    const { clientPhone, appointmentDate, appointmentTime, serviceName } = data;
-    const formattedDate = new Date(appointmentDate).toLocaleDateString('pt-BR');
+    if (!data.client || !data.client.phone) {
+      return '';
+    }
+    
+    const message = data.message || '';
+    if (!message && !data.appointment) {
+      return '';
+    }
+    
+    let finalMessage = message;
+    if (data.appointment) {
+      const formattedDate = new Date(data.appointment.date).toLocaleDateString('pt-BR');
+      const appointmentTime = new Date(data.appointment.date).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      finalMessage = `Olá! Seu agendamento para ${data.appointment.service?.name || 'serviço'} está confirmado para o dia ${formattedDate} às ${appointmentTime}.`;
+    }
 
-    const message = `Olá! Seu agendamento para ${serviceName} está confirmado para o dia ${formattedDate} às ${appointmentTime}.`;
-    const encodedMessage = encodeURIComponent(message);
-
-    return `https://wa.me/${clientPhone}?text=${encodedMessage}`;
+    const encodedMessage = encodeURIComponent(finalMessage);
+    return `https://wa.me/${data.client.phone}?text=${encodedMessage}`;
   };
 
   const addAppointment = async (appointmentData: Omit<Appointment, "id">) => {
     try {
       // Remove cancellationReason field if it doesn't have a value to prevent null errors
-      const dataToInsert = { ...appointmentData };
+      const dataToInsert = {
+        cliente_id: appointmentData.clientId,
+        servico_id: appointmentData.serviceId,
+        data_inicio: new Date(appointmentData.date).toISOString(),
+        data_fim: appointmentData.endTime ? new Date(appointmentData.endTime).toISOString() : null,
+        preco: appointmentData.price,
+        status: appointmentData.status,
+        observacoes: appointmentData.notes || null
+      };
       
       // Only include cancellation reason if it exists and status is canceled
-      if (appointmentData.status !== 'canceled' || !appointmentData.cancellationReason) {
-        delete dataToInsert.cancellationReason;
+      if (appointmentData.status === 'canceled' && appointmentData.cancellationReason) {
+        dataToInsert['motivo_cancelamento'] = appointmentData.cancellationReason;
       }
       
       // Insert the appointment with the cleaned data
@@ -110,29 +145,39 @@ export const useAppointments = () => {
       
       if (error) {
         console.error("Error adding appointment:", error);
-        throw error;
+        return { success: false, error };
       }
       
       // Refresh appointments after adding
       await fetchAppointments();
-      return data;
+      return { success: true, data };
     } catch (error) {
       console.error("Error in addAppointment:", error);
-      throw error;
+      return { success: false, error };
     }
   };
 
   const updateAppointment = async (id: string, appointmentData: Partial<Appointment>) => {
     try {
-      // Remove cancellationReason field if it doesn't have a value to prevent null errors
-      const dataToUpdate = { ...appointmentData };
+      // Map appointment data to DB schema
+      const dataToUpdate: Record<string, any> = {};
       
-      // Only include cancellation reason if it exists and status is canceled
-      if (appointmentData.status !== 'canceled' || !appointmentData.cancellationReason) {
-        delete dataToUpdate.cancellationReason;
+      if (appointmentData.clientId) dataToUpdate.cliente_id = appointmentData.clientId;
+      if (appointmentData.serviceId) dataToUpdate.servico_id = appointmentData.serviceId;
+      if (appointmentData.date) dataToUpdate.data_inicio = new Date(appointmentData.date).toISOString();
+      if (appointmentData.endTime) dataToUpdate.data_fim = new Date(appointmentData.endTime).toISOString();
+      if (appointmentData.price) dataToUpdate.preco = appointmentData.price;
+      if (appointmentData.status) dataToUpdate.status = appointmentData.status;
+      if (appointmentData.notes !== undefined) dataToUpdate.observacoes = appointmentData.notes;
+      
+      // Only include cancellation reason if status is canceled and it exists
+      if (appointmentData.status === 'canceled' && appointmentData.cancellationReason) {
+        dataToUpdate.motivo_cancelamento = appointmentData.cancellationReason;
+      } else if (appointmentData.status && appointmentData.status !== 'canceled') {
+        // If status is changing to non-canceled, remove cancellation reason
+        dataToUpdate.motivo_cancelamento = null;
       }
       
-      // Update the appointment with the cleaned data
       const { data, error } = await supabase
         .from('agendamentos_novo')
         .update(dataToUpdate)
@@ -141,15 +186,36 @@ export const useAppointments = () => {
       
       if (error) {
         console.error("Error updating appointment:", error);
-        throw error;
+        return { success: false, error };
       }
       
       // Refresh appointments after updating
       await fetchAppointments();
-      return data;
+      return { success: true, data };
     } catch (error) {
       console.error("Error in updateAppointment:", error);
-      throw error;
+      return { success: false, error };
+    }
+  };
+
+  const deleteAppointment = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('agendamentos_novo')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error("Error deleting appointment:", error);
+        return false;
+      }
+      
+      // Refresh appointments after deleting
+      await fetchAppointments();
+      return true;
+    } catch (error) {
+      console.error("Error in deleteAppointment:", error);
+      return false;
     }
   };
 
@@ -163,5 +229,7 @@ export const useAppointments = () => {
     generateWhatsAppLink,
     addAppointment,
     updateAppointment,
+    deleteAppointment,
+    refetchAppointments: fetchAppointments  // Adding this alias to fix the error
   };
 };
