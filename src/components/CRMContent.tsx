@@ -6,7 +6,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AppointmentsModalProvider } from "@/context/AppointmentsModalContext";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { AppointmentModalOpener } from "@/components/AppointmentModalOpener";
-import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
@@ -72,7 +71,6 @@ export const CRMContent = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <WhatsAppButton />
-          <QuickAppointmentButton />
           <AppointmentModal />
           <AppointmentModalOpener />
         </MainLayout>
