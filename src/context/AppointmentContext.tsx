@@ -13,6 +13,7 @@ interface AppointmentContextType {
   refetchAppointments: () => Promise<void>;
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
+  fetchAppointments: () => Promise<Appointment[]>; // Updated return type to match implementation
 }
 
 const AppointmentContext = createContext<AppointmentContextType>({
@@ -25,6 +26,7 @@ const AppointmentContext = createContext<AppointmentContextType>({
   refetchAppointments: async () => {},
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
+  fetchAppointments: async () => [], // Updated default implementation
 });
 
 export const AppointmentProvider = ({ children }: { children: React.ReactNode }) => {
@@ -43,6 +45,7 @@ export const AppointmentProvider = ({ children }: { children: React.ReactNode })
         refetchAppointments: appointmentContext.fetchAppointments,
         addAppointment: appointmentContext.addAppointment,
         updateAppointment: appointmentContext.updateAppointment,
+        fetchAppointments: appointmentContext.fetchAppointments, // Expose fetchAppointments with the correct return type
       }}
     >
       {children}

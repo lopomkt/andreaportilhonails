@@ -303,7 +303,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         updateService,
         deleteService,
         fetchBlockedDates,
-        fetchAppointments: wrappedFetchAppointments, // Use the wrapped function
+        fetchAppointments: wrappedFetchAppointments, // Use the wrapped function with the correct return type
         addBlockedDate,
         fetchServices,
       }}

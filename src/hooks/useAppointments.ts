@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment } from "@/types";
@@ -10,7 +11,7 @@ export const useAppointments = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchAppointments = useCallback(async () => {
+  const fetchAppointments = useCallback(async (): Promise<Appointment[]> => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -33,6 +34,7 @@ export const useAppointments = () => {
       if (error) {
         console.error("Error fetching appointments:", error);
         setError(error.message);
+        return [];
       } else {
         // Map the data to the Appointment type
         const mappedAppointments = data ? data.map((item: any) => ({
@@ -65,10 +67,10 @@ export const useAppointments = () => {
     } catch (err: any) {
       console.error("Error fetching appointments:", err);
       setError(err.message);
+      return []; // Return empty array if there was an error
     } finally {
       setLoading(false);
     }
-    return []; // Return empty array if there was an error
   }, []);
 
   useEffect(() => {
@@ -78,10 +80,11 @@ export const useAppointments = () => {
   const getAppointmentsForDate = useCallback((date: Date) => {
     const dateString = date.toISOString().slice(0, 10);
     return appointments.filter(appointment => {
-      const appointmentDate = typeof appointment.date === 'string' 
-        ? appointment.date 
-        : appointment.date.toISOString();
-      return appointmentDate.startsWith(dateString);
+      if (typeof appointment.date === 'string') {
+        return appointment.date.startsWith(dateString);
+      } else {
+        return appointment.date.toISOString().startsWith(dateString);
+      }
     });
   }, [appointments]);
 

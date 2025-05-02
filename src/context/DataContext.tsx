@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from "react";
 import { DashboardStats, RevenueData, Appointment } from "@/types";
 import { ClientProvider, useClients } from "./ClientContext";
