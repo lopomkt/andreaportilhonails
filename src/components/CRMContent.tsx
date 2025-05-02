@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
-import { QuickAppointmentButton } from "@/components/QuickAppointmentButton";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppointmentsModalProvider } from "@/context/AppointmentsModalContext";
@@ -72,7 +71,6 @@ export const CRMContent = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <WhatsAppButton />
-          <QuickAppointmentButton />
           <AppointmentModal />
           <AppointmentModalOpener />
         </MainLayout>
