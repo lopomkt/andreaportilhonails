@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { format, isSameMonth, isToday } from 'date-fns';
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ interface DayCellProps {
   onClick: () => void;
 }
 
-export const DayCell: React.FC<DayCellProps> = ({
+export const DayCell: React.FC<DayCellProps> = React.memo(({
   day,
   isCurrentMonth,
   appointmentsCount,
@@ -25,6 +25,9 @@ export const DayCell: React.FC<DayCellProps> = ({
   if (!day) return <div className="aspect-square" />;
   
   const isCurrentDay = isToday(day);
+  const handleClick = useCallback(() => {
+    onClick();
+  }, [onClick]);
 
   return (
     <div 
@@ -35,7 +38,7 @@ export const DayCell: React.FC<DayCellProps> = ({
         isFullDayBlocked && "bg-gray-50", 
         "hover:border-rose-300"
       )} 
-      onClick={onClick}
+      onClick={handleClick}
     >
       {/* Circular border showing occupancy */}
       <div 
@@ -68,4 +71,6 @@ export const DayCell: React.FC<DayCellProps> = ({
       )}
     </div>
   );
-};
+});
+
+DayCell.displayName = 'DayCell';

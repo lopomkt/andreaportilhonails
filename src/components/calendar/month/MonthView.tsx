@@ -1,11 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayCell } from './DayCell';
+import { normalizeDate } from '@/lib/dateUtils';
 
 interface MonthViewProps {
   date: Date;
@@ -97,18 +97,20 @@ export const MonthView: React.FC<MonthViewProps> = ({
   
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-  const goToPreviousMonth = () => setCurrentMonth(prev => addDays(prev, -30));
-  const goToNextMonth = () => setCurrentMonth(prev => addDays(prev, 30));
+  // Fixed month navigation functions using addMonths instead of addDays
+  const goToPreviousMonth = () => setCurrentMonth(prev => addMonths(prev, -1));
+  const goToNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
-  // Handler for day cell click - Updated to use toISOString for consistent date format
-  const handleDayClick = (day: Date | null) => {
+  // Handler for day cell click - Using normalizeDate to avoid timezone issues
+  const handleDayClick = useCallback((day: Date | null) => {
     console.log("Day clicked in MonthView:", day);
     if (day) {
-      // Using toISOString().split('T')[0] for consistent YYYY-MM-DD format
-      console.log("Selected date ISO string:", day.toISOString().split('T')[0]);
-      onDaySelect(day);
+      // Clone date to prevent timezone issues
+      const normalizedDate = normalizeDate(day);
+      console.log("Selected date normalized:", normalizedDate.toISOString());
+      onDaySelect(normalizedDate);
     }
-  };
+  }, [onDaySelect]);
 
   return (
     <div className="space-y-4 p-4">
@@ -147,7 +149,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
               blocksCount={stats.blocksCount}
               occupancyPercentage={stats.occupancyPercentage}
               isFullDayBlocked={stats.isFullDayBlocked}
-              onClick={() => day && handleDayClick(day)}
+              onClick={() => day && isCurrentMonthDay && handleDayClick(day)}
             />
           );
         })}

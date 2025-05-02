@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -10,6 +9,7 @@ import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarViewTabs } from "@/components/calendar/CalendarViewTabs";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useData } from "@/context/DataProvider";
+import { normalizeDate } from "@/lib/dateUtils";
 
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
@@ -74,9 +74,11 @@ export default function CalendarPage() {
 
   const handleDaySelect = (date: Date) => {
     console.log("handleDaySelect called with:", date);
-    const selectedDate = new Date(date);
+    // Normalize the date to avoid timezone issues
+    const selectedDate = normalizeDate(date);
     setCurrentDate(selectedDate);
     
+    // Update view mode and localStorage
     if (calendarView === "month") {
       setCalendarView("day");
       localStorage.setItem('calendarViewMode', 'day');
@@ -86,7 +88,7 @@ export default function CalendarPage() {
     const formattedDate = selectedDate.toISOString().split('T')[0];
     const searchParams = new URLSearchParams();
     searchParams.set('date', formattedDate);
-    searchParams.set('view', 'day');
+    searchParams.set('view', calendarView);
     navigate(`/calendario?${searchParams.toString()}`);
     
     // Force a refresh of appointments
@@ -106,11 +108,13 @@ export default function CalendarPage() {
     });
 
     setTimeout(() => {
-      setCalendarView(value as "day" | "week" | "month");
+      const viewMode = value as "day" | "week" | "month";
+      setCalendarView(viewMode);
       localStorage.setItem('calendarViewMode', value);
       
       const searchParams = new URLSearchParams(location.search);
       searchParams.set('view', value);
+      searchParams.set('date', currentDate.toISOString().split('T')[0]);
       navigate(`/calendario?${searchParams.toString()}`);
       setIsLoading(false);
     }, 100);

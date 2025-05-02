@@ -93,6 +93,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
     setIsWeekDialogOpen(false);
   };
 
+  // Updated handleMonthChange to maintain week view
   const handleMonthChange = (monthIndex: number) => {
     setSelectedMonth(monthIndex);
     
@@ -106,6 +107,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
       newDate.setDate(maxDaysInMonth);
     }
     
+    // Set view mode to week and notify parent
+    localStorage.setItem('calendarViewMode', 'week');
     onDaySelect(newDate);
   };
 
@@ -114,7 +117,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return setMonth(new Date(), selectedMonth);
   }, [selectedMonth]);
 
-  // Generate weeks using useMemo to optimize performance
+  // Improved weeks generation using useMemo with proper month filtering
   const weeks = useMemo(() => {
     const monthStart = startOfMonth(filteredMonth);
     const monthEnd = endOfMonth(filteredMonth);
@@ -184,71 +187,73 @@ export const WeekView: React.FC<WeekViewProps> = ({
         </DropdownMenu>
       </div>
       
-      {weeks.map((weekStart, index) => {
-        const weekStats = getWeekStats(weekStart);
-        const weekNumber = getWeekOfMonth(weekStart, { locale: ptBR });
-        
-        return (
-          <Card 
-            key={index} 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => handleOpenWeekDetails(weekStart)}
-          >
-            <CardHeader className="pb-2 p-3 md:p-6">
-              <CardTitle className="flex items-center justify-between text-base md:text-lg">
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1 text-primary" />
-                  {isMobile ? (
-                    <span className="text-lg">
-                      S{weekNumber} ({format(weekStats.startDate, 'dd', { locale: ptBR })}–
-                      {format(weekStats.endDate, 'dd/MM', { locale: ptBR })})
-                    </span>
-                  ) : (
-                    <span>
-                      Semana {weekNumber} ({format(weekStats.startDate, 'dd', { locale: ptBR })} a{' '}
-                      {format(weekStats.endDate, 'dd/MM', { locale: ptBR })})
-                    </span>
+      <div className="grid md:grid-cols-2 gap-4">
+        {weeks.map((weekStart, index) => {
+          const weekStats = getWeekStats(weekStart);
+          const weekNumber = getWeekOfMonth(weekStart, { locale: ptBR });
+          
+          return (
+            <Card 
+              key={index} 
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => handleOpenWeekDetails(weekStart)}
+            >
+              <CardHeader className="pb-2 p-3 md:p-6">
+                <CardTitle className="flex items-center justify-between text-base md:text-lg">
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1 text-primary" />
+                    {isMobile ? (
+                      <span className="text-lg">
+                        S{weekNumber} ({format(weekStats.startDate, 'dd', { locale: ptBR })}–
+                        {format(weekStats.endDate, 'dd/MM', { locale: ptBR })})
+                      </span>
+                    ) : (
+                      <span>
+                        Semana {weekNumber} ({format(weekStats.startDate, 'dd', { locale: ptBR })} a{' '}
+                        {format(weekStats.endDate, 'dd/MM', { locale: ptBR })})
+                      </span>
+                    )}
+                  </div>
+
+                  {!isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Updated to call the new function
+                        handleViewDay(weekStart);
+                      }}
+                    >
+                      <span className="text-xs mr-1">Detalhar</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </Button>
                   )}
-                </div>
+                </CardTitle>
+              </CardHeader>
 
-                {!isMobile && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Updated to call the new function
-                      handleViewDay(weekStart);
-                    }}
-                  >
-                    <span className="text-xs mr-1">Detalhar</span>
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
+              <CardContent className={isMobile ? "p-3 pt-0" : ""}>
+                {weekStats.totalAppointments > 0 ? (
+                  <WeekStats
+                    appointments={appointments}
+                    totalAppointments={weekStats.totalAppointments}
+                    totalConfirmed={weekStats.totalConfirmed}
+                    totalCanceled={weekStats.totalCanceled}
+                    totalRevenue={weekStats.totalRevenue}
+                    expectedRevenue={weekStats.expectedRevenue}
+                    isMobile={isMobile}
+                  />
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-2">
+                    Nenhum agendamento encontrado para esta semana.
+                  </div>
                 )}
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className={isMobile ? "p-3 pt-0" : ""}>
-              {weekStats.totalAppointments > 0 ? (
-                <WeekStats
-                  appointments={appointments}
-                  totalAppointments={weekStats.totalAppointments}
-                  totalConfirmed={weekStats.totalConfirmed}
-                  totalCanceled={weekStats.totalCanceled}
-                  totalRevenue={weekStats.totalRevenue}
-                  expectedRevenue={weekStats.expectedRevenue}
-                  isMobile={isMobile}
-                />
-              ) : (
-                <div className="text-center text-sm text-muted-foreground py-2">
-                  Nenhum agendamento encontrado para esta semana.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Week Appointments Dialog */}
       <Dialog open={isWeekDialogOpen} onOpenChange={setIsWeekDialogOpen}>
