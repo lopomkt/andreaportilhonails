@@ -1,11 +1,12 @@
+
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayCell } from './DayCell';
-import { normalizeDate } from '@/lib/dateUtils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MonthViewProps {
   date: Date;
@@ -27,13 +28,19 @@ export const MonthView: React.FC<MonthViewProps> = ({
   });
   
   const startWeekday = getDay(monthStart);
+  
+  // Create array of days for the current month only, with empty slots for padding
   const daysToDisplay = [
     ...Array(startWeekday).fill(null).map((_, i) => addDays(monthStart, i - startWeekday)), 
     ...monthDays
   ];
   
-  while (daysToDisplay.length < 42) {
-    daysToDisplay.push(addDays(daysToDisplay[daysToDisplay.length - 1], 1));
+  // Only add enough days to complete the last week of the month
+  const remainingCells = 7 - (daysToDisplay.length % 7);
+  if (remainingCells < 7) {
+    for (let i = 0; i < remainingCells; i++) {
+      daysToDisplay.push(addDays(monthEnd, i + 1));
+    }
   }
 
   // Business hours configuration
@@ -101,23 +108,61 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const goToPreviousMonth = () => setCurrentMonth(prev => addMonths(prev, -1));
   const goToNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
-  // Handler for day cell click - Using normalizeDate to avoid timezone issues
+  // Handler for day cell click with fixed local date creation
   const handleDayClick = useCallback((day: Date | null) => {
-    console.log("Day clicked in MonthView:", day);
     if (day) {
-      // Clone date to prevent timezone issues
-      const normalizedDate = normalizeDate(day);
-      console.log("Selected date normalized:", normalizedDate.toISOString());
-      onDaySelect(normalizedDate);
+      // Create new Date with year, month, day to avoid timezone issues
+      const localDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+      onDaySelect(localDate);
     }
   }, [onDaySelect]);
+
+  // Create month selector options
+  const months = [
+    { value: '0', label: 'Jan' },
+    { value: '1', label: 'Fev' },
+    { value: '2', label: 'Mar' },
+    { value: '3', label: 'Abr' },
+    { value: '4', label: 'Mai' },
+    { value: '5', label: 'Jun' },
+    { value: '6', label: 'Jul' },
+    { value: '7', label: 'Ago' },
+    { value: '8', label: 'Set' },
+    { value: '9', label: 'Out' },
+    { value: '10', label: 'Nov' },
+    { value: '11', label: 'Dez' },
+  ];
+
+  const handleMonthChange = (monthValue: string) => {
+    const newMonth = parseInt(monthValue, 10);
+    const newDate = new Date(currentMonth.getFullYear(), newMonth, 1);
+    setCurrentMonth(newDate);
+  };
 
   return (
     <div className="space-y-4 p-4">
       <div className="flex justify-between items-center">
-        <h2 className="font-bold md:text-2xl text-lg">
-          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-        </h2>
+        <div className="flex items-center gap-2">
+          <Select 
+            value={currentMonth.getMonth().toString()} 
+            onValueChange={handleMonthChange}
+          >
+            <SelectTrigger className="w-[100px] h-9">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <span className="font-bold md:text-2xl text-lg">
+            {format(currentMonth, 'yyyy', { locale: ptBR })}
+          </span>
+        </div>
         
         <div className="flex space-x-2">
           <Button variant="outline" size="icon" onClick={goToPreviousMonth} className="h-8 w-8 border-rose-200">
