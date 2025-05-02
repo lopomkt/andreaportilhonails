@@ -40,11 +40,31 @@ export const WeekStats: React.FC<WeekStatsProps> = ({
   }
   
   return (
-    <div className="grid grid-cols-1 gap-2">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <div className="flex items-center text-sm">
+          <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+          <span>{totalConfirmed} confirmados</span>
+        </div>
+        <div className="flex items-center text-sm">
+          <XCircle className="h-4 w-4 mr-2 text-red-500" />
+          <span>{totalCanceled} cancelados</span>
+        </div>
+        <div className="flex items-center text-sm">
+          <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
+          <span>{totalPending} pendentes</span>
+        </div>
+      </div>
       <div>
         <p className="text-sm font-medium">Total agendamentos: {totalAppointments}</p>
         <p className="text-sm text-green-600 font-medium mt-1">
           Receita confirmada: {totalRevenue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          })}
+        </p>
+        <p className="text-sm text-gray-600 mt-1">
+          Previsto: {expectedRevenue.toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
           })}

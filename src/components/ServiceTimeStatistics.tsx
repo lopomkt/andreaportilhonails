@@ -20,8 +20,6 @@ export function ServiceTimeStatistics() {
   
   // Format minutes to hours and minutes
   const formatTime = (minutes: number) => {
-    if (minutes < 0) minutes = Math.abs(minutes);
-    
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     
@@ -47,59 +45,6 @@ export function ServiceTimeStatistics() {
     return "👌"; // Close to scheduled time
   };
 
-  // Calculate our own serviceTimeStats if the hook doesn't provide them
-  const calculatedServiceTimeStats = useMemo(() => {
-    if (serviceTimeStats && serviceTimeStats.length > 0) {
-      return serviceTimeStats;
-    }
-    
-    // Only use confirmed appointments with an endTime for accurate calculations
-    const confirmedAppointmentsWithEndTime = appointments.filter(
-      app => app.status === "confirmed" && app.endTime
-    );
-    
-    const serviceMap = new Map();
-    
-    confirmedAppointmentsWithEndTime.forEach(appointment => {
-      if (!appointment.serviceId || !appointment.service) return;
-      
-      const serviceId = appointment.serviceId;
-      const serviceName = appointment.service.name;
-      const serviceScheduledTime = appointment.service.durationMinutes || 60;
-      
-      // Calculate actual duration
-      const startTime = new Date(appointment.date);
-      const endTime = new Date(appointment.endTime);
-      const actualDuration = Math.round((endTime.getTime() - startTime.getTime()) / 60000); // in minutes
-      
-      if (!serviceMap.has(serviceId)) {
-        serviceMap.set(serviceId, {
-          serviceId,
-          serviceName,
-          durations: [],
-          scheduledTime: serviceScheduledTime
-        });
-      }
-      
-      serviceMap.get(serviceId).durations.push(actualDuration);
-    });
-    
-    // Calculate averages
-    return Array.from(serviceMap.values()).map(service => {
-      const averageTime = service.durations.length > 0 
-        ? service.durations.reduce((sum, duration) => sum + duration, 0) / service.durations.length
-        : service.scheduledTime;
-        
-      return {
-        serviceId: service.serviceId,
-        serviceName: service.serviceName,
-        averageTime: Math.round(averageTime),
-        scheduledTime: service.scheduledTime,
-        appointmentCount: service.durations.length
-      };
-    }).sort((a, b) => b.appointmentCount - a.appointmentCount);
-  }, [appointments, serviceTimeStats, services]);
-
   return (
     <Card className="card-premium">
       <CardHeader className="pb-2">
@@ -112,9 +57,9 @@ export function ServiceTimeStatistics() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {calculatedServiceTimeStats && calculatedServiceTimeStats.length > 0 ? (
+        {serviceTimeStats && serviceTimeStats.length > 0 ? (
           <div className="space-y-4">
-            {calculatedServiceTimeStats.map((stat) => (
+            {serviceTimeStats.map((stat) => (
               <div 
                 key={stat.serviceId} 
                 className="p-4 rounded-xl bg-rose-50 border border-rose-100"

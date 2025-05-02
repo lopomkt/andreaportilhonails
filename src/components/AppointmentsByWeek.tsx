@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
-import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isAfter, isBefore, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Appointment } from '@/types';
 import { normalizeDate } from '@/lib/dateUtils';
@@ -18,7 +18,6 @@ export const AppointmentsByWeek = ({ appointments, onClick }: AppointmentsByWeek
   const endDate = endOfWeek(today, { locale: ptBR });
   
   const { count, confirmedCount, total } = useMemo(() => {
-    // Fix: Only count appointments in the current week
     const weekAppointments = appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
       const appointmentDateNormalized = normalizeDate(appointmentDate);
@@ -31,7 +30,6 @@ export const AppointmentsByWeek = ({ appointments, onClick }: AppointmentsByWeek
       });
     });
     
-    // Fix: Only count and calculate revenue for confirmed appointments
     const confirmedWeekAppointments = weekAppointments.filter(
       appointment => appointment.status === 'confirmed'
     );
@@ -41,8 +39,7 @@ export const AppointmentsByWeek = ({ appointments, onClick }: AppointmentsByWeek
     );
     
     return {
-      // Only show confirmed appointments count for consistency
-      count: confirmedWeekAppointments.length,
+      count: weekAppointments.length,
       confirmedCount: confirmedWeekAppointments.length,
       total: totalValue
     };
@@ -64,6 +61,9 @@ export const AppointmentsByWeek = ({ appointments, onClick }: AppointmentsByWeek
           </p>
           <div className="mt-2">
             <p className="text-2xl font-bold">{count} agendamentos</p>
+            <p className="text-sm text-muted-foreground">
+              {confirmedCount} confirmados
+            </p>
           </div>
         </div>
         <div className="text-right">

@@ -1,4 +1,3 @@
-
 // ATENÇÃO: O botão QuickAppointment foi removido DEFINITIVAMENTE
 // Nunca reimporte AppointmentModalOpener ou QuickAppointmentModal
 
@@ -78,8 +77,8 @@ export default function CalendarPage() {
 
   const handleDaySelect = (date: Date) => {
     console.log("handleDaySelect called with:", date);
-    // Create a new local date to prevent timezone issues
-    const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Normalize the date to avoid timezone issues
+    const selectedDate = normalizeDate(date);
     setCurrentDate(selectedDate);
     
     // Update view mode and localStorage
