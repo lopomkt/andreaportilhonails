@@ -5,7 +5,6 @@ import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppointmentsModalProvider } from "@/context/AppointmentsModalContext";
 import { AppointmentModal } from "@/components/AppointmentModal";
-import { AppointmentModalOpener } from "@/components/AppointmentModalOpener";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
