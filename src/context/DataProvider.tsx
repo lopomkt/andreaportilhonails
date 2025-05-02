@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -100,7 +101,7 @@ export const DataContext = createContext<DataContextType>({
   updateService: async () => ({}),
   deleteService: async () => ({}),
   fetchBlockedDates: async () => {},
-  fetchAppointments: async () => [], // Changed this to return an empty array instead of void
+  fetchAppointments: async () => [], 
   addBlockedDate: async () => ({}),
   fetchServices: async () => [],
 });
@@ -235,7 +236,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refetchAppointments = useCallback(async () => {
     console.log("DataProvider: refetchAppointments called");
-    return await fetchAppointments(); // Make sure this returns the results from fetchAppointments
+    await fetchAppointments();
   }, [fetchAppointments]);
 
   const refetchClients = useCallback(async () => {
@@ -262,11 +263,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         return sum;
       }, 0);
   }, [appointments]);
-
-  // Update fetchAppointments to match the expected return type
-  const wrappedFetchAppointments = useCallback(async (): Promise<Appointment[]> => {
-    return await fetchAppointments();
-  }, [fetchAppointments]);
 
   return (
     <DataContext.Provider
@@ -303,7 +299,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         updateService,
         deleteService,
         fetchBlockedDates,
-        fetchAppointments: wrappedFetchAppointments, // Use the wrapped function with the correct return type
+        fetchAppointments,
         addBlockedDate,
         fetchServices,
       }}

@@ -1,3 +1,4 @@
+
 import { Client } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -24,12 +25,9 @@ export function ClientCard({
     e.stopPropagation();
     e.preventDefault();
     
-    // Update to pass client as a selected client instead of as an appointment
-    openModal(null);
-    
-    // Since we can't pass the client directly to openModal anymore (type mismatch),
-    // we'd need to modify the AppointmentsModalContext implementation
-    // to handle client selection separately - implemented in the context above
+    // Open ONLY the appointment modal with this client
+    // Without timeout to ensure only one modal is opened
+    openModal(client);
   };
   
   return (

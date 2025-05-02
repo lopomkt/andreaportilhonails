@@ -8,15 +8,15 @@ import { Client } from '@/types';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 
 export function AppointmentFormWrapper({ children }: { children: React.ReactNode }) {
-  const { selectedClient } = useAppointmentsModal();
-  const [selectedClientState, setSelectedClientState] = useState<Client | null>(selectedClient);
+  const { selectedClient: initialSelectedClient } = useAppointmentsModal();
+  const [selectedClient, setSelectedClient] = useState<Client | null>(initialSelectedClient);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const { toast } = useToast();
   
   // Update selected client when context changes
   useEffect(() => {
-    setSelectedClientState(selectedClient);
-  }, [selectedClient]);
+    setSelectedClient(initialSelectedClient);
+  }, [initialSelectedClient]);
 
   const recursivelyModifyChildren = (children: React.ReactNode): React.ReactNode => {
     return React.Children.map(children, child => {
@@ -38,7 +38,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
               const handleClientSelect = (client: Client | null) => {
                 if (client && client.id) {
                   field.onChange(client.id);
-                  setSelectedClientState(client);
+                  setSelectedClient(client);
                 }
               };
 
@@ -46,7 +46,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
                 <div>
                   <ClientAutocomplete 
                     onClientSelect={handleClientSelect}
-                    selectedClient={selectedClientState}
+                    selectedClient={selectedClient}
                   />
                 </div>
               );
@@ -97,7 +97,7 @@ export function AppointmentFormWrapper({ children }: { children: React.ReactNode
             <DialogTitle>Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <ClientForm
-            onSuccess={() => handleSuccess(selectedClientState)}
+            onSuccess={() => handleSuccess(selectedClient)}
             onCancel={() => handleCancel()}
           />
         </DialogContent>
