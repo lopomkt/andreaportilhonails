@@ -71,7 +71,6 @@ export const CRMContent = () => {
           </Routes>
           <WhatsAppButton />
           <AppointmentModal />
-          <AppointmentModalOpener />
         </MainLayout>
       </div>
     </AppointmentsModalProvider>
