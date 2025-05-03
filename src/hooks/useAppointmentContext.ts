@@ -9,23 +9,25 @@ export const useAppointmentContext = (
   setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>,
   appointments: Appointment[]
 ) => {
-  const fetchAppointments = async () => {
-    try {
-      const appointmentsData = await appointmentService.getAll();
-      if (!appointmentsData) {
-        console.error('Error: No appointments data returned');
-        return;
-      }
-      setAppointments(appointmentsData);
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      toast({
-        title: 'Erro ao carregar agendamentos',
-        description: 'Ocorreu um erro ao carregar os agendamentos. Por favor, tente novamente.',
-        variant: 'destructive',
-      });
+  const fetchAppointments = async (): Promise<Appointment[]> => {
+  try {
+    const appointmentsData = await appointmentService.getAll();
+    if (!appointmentsData) {
+      console.error("Error: No appointments data returned");
+      return []; // ✅ retorna array vazio
     }
-  };
+    setAppointments(appointmentsData);
+    return appointmentsData; // ✅ retorna os dados corretamente
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    toast({
+      title: "Erro ao carregar agendamentos",
+      description: "Ocorreu um erro ao carregar os agendamentos. Por favor, tente novamente.",
+      variant: "destructive",
+    });
+    return []; // ✅ garante retorno mesmo em erro
+  }
+};
 
   const getAppointmentsForDate = useCallback((date: Date): Appointment[] => {
     return appointments.filter((appointment) => {
