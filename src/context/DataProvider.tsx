@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -42,7 +41,7 @@ interface DataContextType {
   getRevenueData: () => RevenueData[];
   calculateExpectedRevenue: () => number; // New method
   generateWhatsAppLink: (data: WhatsAppMessageData) => Promise<string>;
-  refetchAppointments: () => Promise<void>;
+  refetchAppointments: () => Promise<Appointment[]>;
   refetchClients: () => Promise<void>;
   createClient: (clientData: any) => Promise<any>;
   updateClient: (clientId: string, clientData: any) => Promise<any>;
@@ -87,7 +86,7 @@ export const DataContext = createContext<DataContextType>({
   getRevenueData: () => [],
   calculateExpectedRevenue: () => 0, // New method
   generateWhatsAppLink: async () => "",
-  refetchAppointments: async () => {},
+  refetchAppointments: async () => [],
   refetchClients: async () => {},
   createClient: async () => ({}),
   updateClient: async () => ({}),
@@ -221,7 +220,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     loadData();
-  }, [fetchAppointments, fetchClients, fetchServices, fetchExpenses, fetchBlockedDates]);
+  }, []);
 
   useEffect(() => {
     const isLoading = clientsLoading || appointmentsLoading || servicesLoading || expensesLoading || blockedDatesLoading;
@@ -234,15 +233,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clientsError, appointmentsError, servicesError, expensesError, blockedDatesError
   ]);
 
-  const refetchAppointments = useCallback(async () => {
+  // Define refetchAppointments for DataContext
+  const refetchAppointments = useCallback(async (): Promise<Appointment[]> => {
     console.log("DataProvider: refetchAppointments called");
-    await fetchAppointments();
+    return await fetchAppointments();
   }, [fetchAppointments]);
-
-  const refetchClients = useCallback(async () => {
-    console.log("DataProvider: refetchClients called");
-    await fetchClients();
-  }, [fetchClients]);
 
   // Modified to use the enhanced monthly revenue calculation
   const wrappedCalculatedMonthlyRevenue = useCallback((month?: number, year?: number) => {

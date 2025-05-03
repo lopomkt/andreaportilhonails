@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useData } from '@/context/DataProvider';
@@ -137,17 +136,32 @@ export function useDashboardStats(month?: number, year?: number) {
     };
   }, [confirmedAppointments, filterDate]);
 
-  // Projected future revenue
+  // Projected future revenue - REWRITING THIS TO FIX ISSUE #1
   const projectedRevenue = useMemo(() => {
     const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     
+    // Use filterDate for month/year if provided, otherwise use current
+    const targetMonth = month !== undefined ? month : currentMonth;
+    const targetYear = year !== undefined ? year : currentYear;
+    
+    const monthEnd = endOfMonth(new Date(targetYear, targetMonth));
+    
+    // Filter for confirmed appointments from today until end of current month
     const futureAppointments = confirmedAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return isFuture(appointmentDate);
+      return (
+        // Is future or today
+        (isFuture(appointmentDate) || isToday(appointmentDate)) &&
+        // Is within this month
+        appointmentDate <= monthEnd
+      );
     });
     
+    // Sum prices of future confirmed appointments
     return futureAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
-  }, [confirmedAppointments]);
+  }, [confirmedAppointments, month, year]);
 
   // Calculate average client value
   const averageClientValue = useMemo(() => {
@@ -302,12 +316,18 @@ export function useDashboardStats(month?: number, year?: number) {
   // Calculate expected revenue (future confirmed appointments)
   const calculateExpectedRevenue = useCallback(() => {
     const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const monthEnd = endOfMonth(new Date(currentYear, currentMonth));
     
     return confirmedAppointments
-      .filter(appointment => isFuture(new Date(appointment.date)))
+      .filter(appointment => {
+        const appointmentDate = new Date(appointment.date);
+        return (isFuture(appointmentDate) || isToday(appointmentDate)) && appointmentDate <= monthEnd;
+      })
       .reduce((sum, appointment) => sum + appointment.price, 0);
   }, [confirmedAppointments]);
-  
+
   // Function to update dashboard stats (used by DataProvider)
   const updateDashboardStats = useCallback((currentAppointments: Appointment[]) => {
     const confirmedApps = currentAppointments.filter(app => app.status === "confirmed");

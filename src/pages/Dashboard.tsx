@@ -1,6 +1,5 @@
 
-// ATENÇÃO: O botão QuickAppointment foi removido DEFINITIVAMENTE
-// Nunca reimporte AppointmentModalOpener ou QuickAppointmentModal
+// AVISO: Componente QuickAppointmentButton removido permanentemente por padrão do projeto.
 
 import { useData } from "@/context/DataContext";
 import { useEffect } from "react";

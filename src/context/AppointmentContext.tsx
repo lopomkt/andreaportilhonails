@@ -10,7 +10,7 @@ interface AppointmentContextType {
   getAppointmentsForDate: (date: Date) => Appointment[];
   calculateDailyRevenue: (date: Date) => number;
   generateWhatsAppLink: (data: WhatsAppMessageData) => Promise<string>;
-  refetchAppointments: () => Promise<void>;
+  refetchAppointments: () => Promise<Appointment[]>;
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
 }
@@ -22,7 +22,7 @@ const AppointmentContext = createContext<AppointmentContextType>({
   getAppointmentsForDate: () => [],
   calculateDailyRevenue: () => 0,
   generateWhatsAppLink: async () => "",
-  refetchAppointments: async () => {},
+  refetchAppointments: async () => [],
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
 });

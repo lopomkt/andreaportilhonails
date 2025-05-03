@@ -34,7 +34,7 @@ export const RevenueStats = ({
         
         <StatsCard
           title="Receita Prevista"
-          value={projectedRevenue > 0 ? formatCurrency(projectedRevenue) : "Sem previsões ainda 📅"}
+          value={formatCurrency(projectedRevenue || 0)}
           icon={BadgeDollarSign}
           description="agendamentos confirmados até o fim do mês"
           className="bg-white border-rose-100 shadow-soft"

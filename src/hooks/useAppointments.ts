@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Appointment, ServiceResponse, WhatsAppMessageData, AppointmentStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -113,7 +112,7 @@ export function useAppointments() {
     }
   }, [toast]);
 
-  const addAppointment = async (appointment: Omit<Appointment, "id">): Promise<ServiceResponse<Appointment>> => {
+  const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">): Promise<ServiceResponse<Appointment>> => {
     try {
       setLoading(true);
       
@@ -159,8 +158,7 @@ export function useAppointments() {
         status: dbStatus,
         data_fim: dbAppointmentData.data_fim,
         observacoes: dbAppointmentData.observacoes || null,
-        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed',
-        motivo_cancelamento: dbAppointmentData.motivo_cancelamento || null
+        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
       };
       
       console.log("Inserting appointment data:", dataToInsert);
@@ -235,7 +233,7 @@ export function useAppointments() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [appointments, toast, fetchAppointments]);
 
   const updateAppointment = async (id: string, appointmentData: Partial<Appointment>): Promise<ServiceResponse<Appointment>> => {
     try {
@@ -283,7 +281,6 @@ export function useAppointments() {
       if (dbAppointmentData.preco !== undefined) updateData.preco = dbAppointmentData.preco;
       if (dbStatus !== undefined) updateData.status = dbStatus;
       if (dbAppointmentData.data_fim !== undefined) updateData.data_fim = dbAppointmentData.data_fim;
-      if (dbAppointmentData.motivo_cancelamento !== undefined) updateData.motivo_cancelamento = dbAppointmentData.motivo_cancelamento;
       if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
       if (dbAppointmentData.status_confirmacao !== undefined) updateData.status_confirmacao = dbAppointmentData.status_confirmacao;
       
