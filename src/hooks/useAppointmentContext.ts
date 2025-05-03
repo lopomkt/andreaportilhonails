@@ -9,7 +9,7 @@ export const useAppointmentContext = (
   setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>,
   appointments: Appointment[]
 ) => {
-  const fetchAppointments = async (): Promise<void> => {
+  const fetchAppointments = async () => {
     try {
       const appointmentsData = await appointmentService.getAll();
       if (!appointmentsData) {
