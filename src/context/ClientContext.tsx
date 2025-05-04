@@ -30,14 +30,7 @@ export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState([]);
   const appointmentContext = useAppointmentContext(setAppointments, appointments);
-  const clientContext = useClientHook(
-  setClients,
-  async () => {
-    await appointmentContext.fetchAppointments();
-  },
-  clients
-);
-
+  const clientContext = useClientHook(setClients, appointmentContext.fetchAppointments, clients);
 
   return (
     <ClientContext.Provider

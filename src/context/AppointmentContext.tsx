@@ -1,7 +1,7 @@
 
-import React, { createContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { Appointment, WhatsAppMessageData } from "@/types";
-import { useAppointmentContext } from "@/hooks/useAppointmentContext";
+import { useAppointmentContext as useAppointmentHook } from "@/hooks/useAppointmentContext";
 
 interface AppointmentContextType {
   appointments: Appointment[];
@@ -9,81 +9,40 @@ interface AppointmentContextType {
   error: string | null;
   getAppointmentsForDate: (date: Date) => Appointment[];
   calculateDailyRevenue: (date: Date) => number;
+  generateWhatsAppLink: (data: WhatsAppMessageData) => Promise<string>;
   refetchAppointments: () => Promise<Appointment[]>;
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
-  generateWhatsAppLink: (data: WhatsAppMessageData) => Promise<string>;
-  fetchAppointments: () => Promise<Appointment[]>; // Updated return type
 }
 
-export const AppointmentContext = createContext<AppointmentContextType>({
+const AppointmentContext = createContext<AppointmentContextType>({
   appointments: [],
   loading: false,
   error: null,
   getAppointmentsForDate: () => [],
   calculateDailyRevenue: () => 0,
+  generateWhatsAppLink: async () => "",
   refetchAppointments: async () => [],
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
-  generateWhatsAppLink: async () => "",
-  fetchAppointments: async () => [], // Updated return value
 });
 
-export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppointmentProvider = ({ children }: { children: React.ReactNode }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const {
-    fetchAppointments,
-    getAppointmentsForDate,
-    calculateDailyRevenue,
-    addAppointment,
-    updateAppointment,
-    generateWhatsAppLink
-  } = useAppointmentContext(setAppointments, appointments);
-
-  useEffect(() => {
-    const loadAppointments = async () => {
-      try {
-        setLoading(true);
-        await fetchAppointments();
-      } catch (err: any) {
-        setError(err.message || "Error loading appointments");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAppointments();
-  }, [fetchAppointments]);
-
-  const refetchAppointments = useCallback(async (): Promise<Appointment[]> => {
-    try {
-      setLoading(true);
-      const data = await fetchAppointments();
-      return data;
-    } catch (err: any) {
-      setError(err.message || "Error refreshing appointments");
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchAppointments]);
+  const appointmentContext = useAppointmentHook(setAppointments, appointments);
 
   return (
     <AppointmentContext.Provider
       value={{
         appointments,
-        loading,
-        error,
-        getAppointmentsForDate,
-        calculateDailyRevenue,
-        refetchAppointments,
-        addAppointment,
-        updateAppointment,
-        generateWhatsAppLink,
-        fetchAppointments,
+        loading: false,
+        error: null,
+        getAppointmentsForDate: appointmentContext.getAppointmentsForDate,
+        calculateDailyRevenue: appointmentContext.calculateDailyRevenue,
+        generateWhatsAppLink: appointmentContext.generateWhatsAppLink,
+        refetchAppointments: appointmentContext.fetchAppointments,
+        addAppointment: appointmentContext.addAppointment,
+        updateAppointment: appointmentContext.updateAppointment,
       }}
     >
       {children}
@@ -92,7 +51,7 @@ export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 };
 
 export const useAppointments = () => {
-  const context = React.useContext(AppointmentContext);
+  const context = useContext(AppointmentContext);
   if (!context) {
     throw new Error("useAppointments must be used within an AppointmentProvider");
   }
