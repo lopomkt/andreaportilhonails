@@ -61,14 +61,10 @@ export const DataContext = createContext<CombinedContextType>({
   getAppointmentsForDate: () => [],
   calculateDailyRevenue: () => 0,
   generateWhatsAppLink: async () => "",
-  refetchAppointments: async (): Promise<Appointment[]> => {
-  return [];
-},
+  refetchAppointments: async (): Promise<Appointment[]> => [],
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
-  fetchAppointments: async (): Promise<Appointment[]> => {
-  return [];
-},
+  fetchAppointments: async (): Promise<Appointment[]> => [],
   
   // Service context properties
   services: [],

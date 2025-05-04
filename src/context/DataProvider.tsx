@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -116,20 +117,20 @@ export const useData = () => {
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const refetchClients = async () => {
-  try {
-    const updatedClients = await clientService.getAll();
-    setClients(updatedClients);
-  } catch (error) {
-    console.error("Erro ao atualizar a lista de clientes:", error);
-    toast({
-      title: "Erro ao buscar clientes",
-      description: "Não foi possível atualizar os clientes. Tente novamente.",
-      variant: "destructive",
-    });
-  }
-};
+    try {
+      await fetchClients();
+    } catch (error) {
+      console.error("Erro ao atualizar a lista de clientes:", error);
+      toast({
+        title: "Erro ao buscar clientes",
+        description: "Não foi possível atualizar os clientes. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Using existing hooks
   const {
@@ -204,10 +205,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Calculate expected revenue from future confirmed appointments
   const calculateExpectedRevenue = useCallback(() => {
     const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
     
     return appointments
       .filter(appointment => appointment.status === "confirmed" && 
-              new Date(appointment.date) > now)
+              new Date(appointment.date) >= now &&
+              new Date(appointment.date) <= lastDayOfMonth)
       .reduce((sum, appointment) => sum + appointment.price, 0);
   }, [appointments]);
 

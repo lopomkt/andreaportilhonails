@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Users, BarChart, Settings } from 'lucide-react';
+import { Home, Calendar, Users, BarChart, Settings, Scissors } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 interface SidebarNavProps {
@@ -26,7 +27,7 @@ const navItems = [
   {
     path: '/servicos',
     label: 'Serviços',
-    icon: Settings,
+    icon: Scissors,
   },
   {
     path: '/relatorios',
