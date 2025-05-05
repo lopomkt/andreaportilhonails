@@ -81,17 +81,34 @@ export const DayView: React.FC<DayViewProps> = ({
     setEditingAppointment(appointment);
   };
 
+  // Fixed navigation functions to handle day changes correctly
+  const handlePreviousDay = () => {
+    if (onDaySelect) {
+      // Use a single call to addDays with -1 to go back one day
+      const previousDay = addDays(date, -1);
+      onDaySelect(previousDay);
+    }
+  };
+
+  const handleNextDay = () => {
+    if (onDaySelect) {
+      // Use a single call to addDays with 1 to advance one day
+      const nextDay = addDays(date, 1);
+      onDaySelect(nextDay);
+    }
+  };
+
   return (
     <div className="day-view-container px-2 pt-4">
       <div className="flex justify-between items-center mb-4">
-        <Button variant="ghost" onClick={() => onDaySelect && onDaySelect(addDays(date, -1))}>
+        <Button variant="ghost" onClick={handlePreviousDay}>
           <ArrowLeft className="h-4 w-4 mr-1 md:mr-2" />
           <span className="hidden md:inline">Dia anterior</span>
         </Button>
 
         <h2 className="text-lg font-bold">{format(date, "EEEE, dd MMMM", { locale: ptBR })}</h2>
 
-        <Button variant="ghost" onClick={() => onDaySelect && onDaySelect(addDays(date, 1))}>
+        <Button variant="ghost" onClick={handleNextDay}>
           <span className="hidden md:inline">Próximo dia</span>
           <ArrowRight className="h-4 w-4 ml-1 md:ml-2" />
         </Button>

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
@@ -163,6 +164,18 @@ export const WeekView: React.FC<WeekViewProps> = ({
     }
   };
 
+  // Fixed function to format date range without duplicating month names
+  const formatDateRange = (startDate: Date, endDate: Date) => {
+    // Check if start and end dates are in the same month
+    if (startDate.getMonth() === endDate.getMonth()) {
+      // Same month - just show the month name once
+      return `${format(startDate, 'dd', { locale: ptBR })} a ${format(endDate, 'dd/MM', { locale: ptBR })}`;
+    } else {
+      // Different months - show both months
+      return `${format(startDate, 'dd/MM', { locale: ptBR })} a ${format(endDate, 'dd/MM', { locale: ptBR })}`;
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center pb-4">
@@ -191,6 +204,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
         {weeks.map((weekStart, index) => {
           const weekStats = getWeekStats(weekStart);
           const weekNumber = getWeekOfMonth(weekStart, { locale: ptBR });
+          const weekEnd = weekStats.endDate;
           
           return (
             <Card 
@@ -204,13 +218,11 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     <Calendar className="h-4 w-4 mr-1 text-primary" />
                     {isMobile ? (
                       <span className="text-lg">
-                        S{weekNumber} ({format(weekStats.startDate, 'dd', { locale: ptBR })}–
-                        {format(weekStats.endDate, 'dd/MM', { locale: ptBR })})
+                        S{weekNumber} ({formatDateRange(weekStats.startDate, weekStats.endDate)})
                       </span>
                     ) : (
                       <span>
-                        Semana {weekNumber} ({format(weekStats.startDate, 'dd', { locale: ptBR })} a{' '}
-                        {format(weekStats.endDate, 'dd/MM', { locale: ptBR })})
+                        Semana {weekNumber} ({formatDateRange(weekStats.startDate, weekStats.endDate)})
                       </span>
                     )}
                   </div>
@@ -262,8 +274,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
             <DialogTitle>
               {selectedWeekDates && (
                 <>
-                  Agendamentos da Semana ({format(selectedWeekDates.start, 'dd/MM', { locale: ptBR })} a{' '}
-                  {format(selectedWeekDates.end, 'dd/MM', { locale: ptBR })})
+                  Agendamentos da Semana ({formatDateRange(selectedWeekDates.start, selectedWeekDates.end)})
                 </>
               )}
             </DialogTitle>

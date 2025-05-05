@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
@@ -101,14 +102,26 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const goToPreviousMonth = () => setCurrentMonth(prev => addMonths(prev, -1));
   const goToNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
-  // Handler for day cell click - Using normalizeDate to avoid timezone issues
+  // Fixed handler for day cell click to correctly handle date selection
   const handleDayClick = useCallback((day: Date | null) => {
-    console.log("Day clicked in MonthView:", day);
     if (day) {
-      // Clone date to prevent timezone issues
-      const normalizedDate = normalizeDate(day);
+      console.log("Day clicked in MonthView:", day);
+      
+      // Create a new date object to avoid mutating the original date
+      const selectedDate = new Date(day);
+      
+      // Normalize the date to avoid timezone issues
+      const normalizedDate = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate()
+      );
+      
       console.log("Selected date normalized:", normalizedDate.toISOString());
       onDaySelect(normalizedDate);
+      
+      // Update localStorage to indicate we should show day view
+      localStorage.setItem('calendarViewMode', 'day');
     }
   }, [onDaySelect]);
 
