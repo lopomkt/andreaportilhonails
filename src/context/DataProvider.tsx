@@ -6,7 +6,7 @@ import { useExpenses } from "@/hooks/useExpenses";
 import { useBlockedDates } from "@/hooks/useBlockedDates";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useToast } from "@/hooks/use-toast";
-import { clientService } from "@/services/clientService";
+import { useClientContext } from "@/hooks/useClientContext";
 import { 
   Appointment, 
   Client, 
