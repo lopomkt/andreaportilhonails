@@ -118,8 +118,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [clients, setClients] = useState<Client[]>([]);
-
   const refetchClients = async () => {
   try {
     const updatedClients = await clientService.getAll();
