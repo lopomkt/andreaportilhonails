@@ -15,7 +15,8 @@ import {
   isSameYear,
   isAfter,
   startOfDay,
-  endOfDay 
+  endOfDay,
+  parseISO
 } from "date-fns";
 import { Bar, BarChart as RechartsBarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -37,7 +38,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
     
     // Filter appointments for selected month
     const monthAppointments = appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      const appointmentDate = parseISO(appointment.date);
       return isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd });
     });
     
