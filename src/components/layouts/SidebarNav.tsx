@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Users, BarChart, Settings } from 'lucide-react';
+import { Home, Calendar, Users, BarChart, Settings, Trophy } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 interface SidebarNavProps {
@@ -32,6 +33,11 @@ const navItems = [
     path: '/relatorios',
     label: 'Relatórios',
     icon: BarChart,
+  },
+  {
+    path: '/ranking-clientes',
+    label: 'Ranking de Clientes',
+    icon: Trophy,
   },
   {
     path: '/funcionalidades',

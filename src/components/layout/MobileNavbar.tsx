@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Calendar, LayoutDashboard, Users, Scissors, BarChart2, Settings, ChevronLeft } from "lucide-react";
+import { Calendar, LayoutDashboard, Users, Scissors, BarChart2, Settings, ChevronLeft, Trophy } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -31,6 +32,10 @@ const navItems: NavItem[] = [{
   label: "Relatórios",
   icon: BarChart2,
   href: "/relatorios"
+}, {
+  label: "Ranking de Clientes",
+  icon: Trophy,
+  href: "/ranking-clientes"
 }, {
   label: "Funcionalidades",
   icon: Settings,
@@ -75,7 +80,7 @@ export function BackButton() {
   const location = useLocation();
 
   // Don't show back button on main routes
-  const mainRoutes = ['/', '/calendario', '/clientes', '/servicos', '/financeiro', '/relatorios', '/funcionalidades'];
+  const mainRoutes = ['/', '/calendario', '/clientes', '/servicos', '/financeiro', '/relatorios', '/ranking-clientes', '/funcionalidades'];
   if (mainRoutes.includes(location.pathname)) {
     return null;
   }
@@ -101,6 +106,8 @@ export function TopBar() {
         return "Serviços";
       case "/relatorios":
         return "Relatórios";
+      case "/ranking-clientes":
+        return "Ranking de Clientes";
       case "/funcionalidades":
         return "Funcionalidades";
       case "/funcionalidades/motivos-cancelamento":
@@ -109,8 +116,6 @@ export function TopBar() {
         return "Regras de Ausência";
       case "/funcionalidades/mensagens":
         return "Mensagens para WhatsApp";
-      case "/funcionalidades/ranking-clientes":
-        return "Ranking de Clientes";
       default:
         return "Nail CRM";
     }

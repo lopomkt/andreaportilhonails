@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
@@ -17,6 +18,7 @@ export function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
     { path: '/clientes', label: 'Clientes' },
     { path: '/servicos', label: 'Serviços' },
     { path: '/relatorios', label: 'Relatórios' },
+    { path: '/ranking-clientes', label: 'Ranking de Clientes' },
     { path: '/funcionalidades', label: 'Funcionalidades' },
   ];
 

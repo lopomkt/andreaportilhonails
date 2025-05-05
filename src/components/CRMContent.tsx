@@ -17,7 +17,7 @@ import FunctionalitiesPage from "@/pages/FunctionalitiesPage";
 import CancellationReasonsPage from "@/pages/funcionalidades/CancellationReasonsPage";
 import AbsenceRulesPage from "@/pages/funcionalidades/AbsenceRulesPage";
 import MessagesTemplatePage from "@/pages/funcionalidades/MessagesTemplatePage";
-import ClientRankingPage from "@/pages/funcionalidades/ClientRankingPage";
+import ClientRankingPage from "@/pages/ClientRankingPage";
 import NotFound from "@/pages/NotFound";
 
 export const CRMContent = () => {
@@ -62,11 +62,11 @@ export const CRMContent = () => {
             <Route path="/servicos" element={<ServicesPage />} />
             <Route path="/relatorios" element={<ReportsPage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
+            <Route path="/ranking-clientes" element={<ClientRankingPage />} />
             <Route path="/funcionalidades" element={<FunctionalitiesPage />} />
             <Route path="/funcionalidades/motivos-cancelamento" element={<CancellationReasonsPage />} />
             <Route path="/funcionalidades/ausencias" element={<AbsenceRulesPage />} />
             <Route path="/funcionalidades/mensagens" element={<MessagesTemplatePage />} />
-            <Route path="/funcionalidades/ranking-clientes" element={<ClientRankingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <WhatsAppButton />

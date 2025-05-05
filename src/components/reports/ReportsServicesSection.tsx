@@ -1,16 +1,19 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, Scissors } from "lucide-react";
-import { format, subDays, isWithinInterval, startOfMonth, endOfMonth, isSameMonth, isSameYear } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { formatCurrency } from "@/lib/formatters";
 import { useAppointments } from "@/context/AppointmentContext";
+import { formatCurrency } from "@/lib/formatters";
+import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format } from "date-fns";
+import { CheckCircle, Users, XCircle } from "lucide-react";
+import { Appointment, Service } from "@/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useServices } from "@/context/ServiceContext";
 
 interface ReportsServicesSectionProps {
@@ -18,227 +21,225 @@ interface ReportsServicesSectionProps {
   selectedYear: number;
 }
 
-interface ServiceSummary {
-  id: string;
+interface ServiceReportData {
+  serviceId: string;
   name: string;
-  quantity: number;
-  totalRevenue: number;
+  count: number;
+  revenue: number;
+  lastMonthCount: number;
+  lastMonthRevenue: number;
+  percentChangeCount: number;
+  percentChangeRevenue: number;
 }
 
 export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsServicesSectionProps) {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  
-  // Get data from contexts
   const { appointments } = useAppointments();
   const { services } = useServices();
   
-  // Calculate service metrics for the selected month
   const serviceMetrics = useMemo(() => {
-    // Create date bounds for selected month
-    const targetDate = new Date(selectedYear, selectedMonth);
-    const monthStart = startOfMonth(targetDate);
-    const monthEnd = endOfMonth(targetDate);
+    const currentDate = new Date(selectedYear, selectedMonth);
+    const currentMonthStart = startOfMonth(currentDate);
+    const currentMonthEnd = endOfMonth(currentDate);
     
-    // Filter appointments for the selected month
-    const monthAppointments = appointments.filter(appointment => {
+    // For comparison with last month
+    const lastMonthDate = subMonths(currentDate, 1);
+    const lastMonthStart = startOfMonth(lastMonthDate);
+    const lastMonthEnd = endOfMonth(lastMonthDate);
+    
+    // Current month appointments
+    const currentMonthAppointments = appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return isWithinInterval(appointmentDate, { 
-        start: monthStart, 
-        end: monthEnd 
-      }) && appointment.status !== "canceled";
+      return isWithinInterval(appointmentDate, { start: currentMonthStart, end: currentMonthEnd });
     });
     
-    // Group by service and calculate metrics
-    const serviceMap = new Map<string, ServiceSummary>();
+    // Last month appointments
+    const lastMonthAppointments = appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isWithinInterval(appointmentDate, { start: lastMonthStart, end: lastMonthEnd });
+    });
     
-    monthAppointments.forEach(appointment => {
-      if (!appointment.serviceId) return;
+    // Process metrics for current month
+    const serviceDataMap = new Map<string, ServiceReportData>();
+    
+    // Process services from current month
+    services.forEach(service => {
+      const currentMonthServiceAppointments = currentMonthAppointments.filter(
+        app => app.serviceId === service.id && app.status !== "canceled"
+      );
       
-      const service = services.find(s => s.id === appointment.serviceId);
-      if (!service) return;
+      const currentMonthCount = currentMonthServiceAppointments.length;
+      const currentMonthRevenue = currentMonthServiceAppointments.reduce(
+        (sum, app) => sum + app.price, 0
+      );
       
-      const existing = serviceMap.get(service.id);
-      if (existing) {
-        existing.quantity += 1;
-        existing.totalRevenue += appointment.price;
-      } else {
-        serviceMap.set(service.id, {
-          id: service.id,
+      // Process last month data for comparison
+      const lastMonthServiceAppointments = lastMonthAppointments.filter(
+        app => app.serviceId === service.id && app.status !== "canceled"
+      );
+      
+      const lastMonthCount = lastMonthServiceAppointments.length;
+      const lastMonthRevenue = lastMonthServiceAppointments.reduce(
+        (sum, app) => sum + app.price, 0
+      );
+      
+      // Calculate percent changes
+      const percentChangeCount = lastMonthCount > 0 
+        ? ((currentMonthCount - lastMonthCount) / lastMonthCount) * 100 
+        : (currentMonthCount > 0 ? 100 : 0);
+        
+      const percentChangeRevenue = lastMonthRevenue > 0 
+        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+        : (currentMonthRevenue > 0 ? 100 : 0);
+      
+      // Only include services that have appointments
+      if (currentMonthCount > 0 || lastMonthCount > 0) {
+        serviceDataMap.set(service.id, {
+          serviceId: service.id,
           name: service.name,
-          quantity: 1,
-          totalRevenue: appointment.price
+          count: currentMonthCount,
+          revenue: currentMonthRevenue,
+          lastMonthCount,
+          lastMonthRevenue,
+          percentChangeCount,
+          percentChangeRevenue
         });
       }
     });
     
-    // Convert to array and sort by revenue (descending)
-    const serviceArray = Array.from(serviceMap.values())
-      .sort((a, b) => b.totalRevenue - a.totalRevenue);
-      
-    return serviceArray;
+    // Convert map to array and sort by revenue (descending)
+    return Array.from(serviceDataMap.values())
+      .sort((a, b) => b.revenue - a.revenue);
     
   }, [appointments, services, selectedMonth, selectedYear]);
   
-  // Function to calculate comparison with previous period
-  const getPreviousPeriodComparison = (serviceId: string) => {
-    if (!date) return null;
+  // Summary metrics
+  const summaryMetrics = useMemo(() => {
+    const currentDate = new Date(selectedYear, selectedMonth);
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
     
-    // Calculate comparison period (e.g., same range but in the previous month)
-    const currentDay = date.getDate();
-    const previousPeriodEnd = subDays(date, currentDay);
-    const previousPeriodStart = subDays(previousPeriodEnd, currentDay - 1);
-    
-    // Filter appointments for the comparison period
-    const previousPeriodAppointments = appointments.filter(appointment => {
+    const monthAppointments = appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return isWithinInterval(appointmentDate, {
-        start: previousPeriodStart,
-        end: previousPeriodEnd
-      }) && appointment.status !== "canceled" && appointment.serviceId === serviceId;
+      return isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd });
     });
     
-    // Calculate metrics for the comparison period
-    const previousRevenue = previousPeriodAppointments.reduce((sum, app) => sum + app.price, 0);
+    const totalAppointments = monthAppointments.length;
+    const completedAppointments = monthAppointments.filter(app => app.status === "completed").length;
+    const canceledAppointments = monthAppointments.filter(app => app.status === "canceled").length;
     
-    // Find the current period revenue for this service
-    const currentService = serviceMetrics.find(s => s.id === serviceId);
-    if (!currentService || previousRevenue === 0) return null;
-    
-    // Calculate percentage difference
-    const percentDiff = ((currentService.totalRevenue - previousRevenue) / previousRevenue) * 100;
+    const totalClients = new Set(
+      monthAppointments
+        .filter(app => app.clientId)
+        .map(app => app.clientId)
+    ).size;
     
     return {
-      percentDiff: Math.round(percentDiff),
-      isIncrease: percentDiff >= 0,
-      startDate: format(previousPeriodStart, "dd/MM"),
-      endDate: format(previousPeriodEnd, "dd/MM")
+      totalAppointments,
+      completedAppointments,
+      canceledAppointments,
+      totalClients
     };
-  };
-  
-  const comparisonDate = date ? format(date, "dd/MM/yyyy") : "";
-  const previousPeriodStart = date ? format(subDays(date, date.getDate()), "dd/MM/yyyy") : "";
-  const previousPeriodEnd = date ? format(subDays(date, 1), "dd/MM/yyyy") : "";
+  }, [appointments, selectedMonth, selectedYear]);
 
   return (
     <div className="space-y-6">
-      {/* Services performance */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Scissors className="h-5 w-5" />
-          Desempenho por Serviço
-        </h3>
+      {/* Service metrics summary cards */}
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Agendamentos Realizados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">
+                {summaryMetrics.completedAppointments}
+              </div>
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
         
-        {/* Date comparison selector */}
-        <div className="flex flex-col items-end gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-                className="p-3 pointer-events-auto"
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <div className="text-xs text-muted-foreground">
-            {date && (
-              <>Comparando com o período de {previousPeriodStart} até {previousPeriodEnd}</>
-            )}
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Cancelamentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">
+                {summaryMetrics.canceledAppointments}
+              </div>
+              <XCircle className="h-5 w-5 text-destructive" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Clientes Atendidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">
+                {summaryMetrics.totalClients}
+              </div>
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
-      
+
       {/* Services table */}
       <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Serviço</TableHead>
-                <TableHead className="text-right">Qtd Vendida</TableHead>
-                <TableHead className="text-right">Total Gerado</TableHead>
-                <TableHead className="text-right">Comparativo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {serviceMetrics.length > 0 ? (
-                serviceMetrics.map((service, index) => {
-                  const comparison = date ? getPreviousPeriodComparison(service.id) : null;
-                  
-                  return (
-                    <TableRow key={service.id} className={index % 2 === 0 ? "bg-muted/50" : ""}>
+        <CardHeader>
+          <CardTitle>Serviços Realizados no Mês</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Receita</TableHead>
+                  <TableHead className="hidden md:table-cell">Comparativo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {serviceMetrics.length > 0 ? (
+                  serviceMetrics.map((service, index) => (
+                    <TableRow key={service.serviceId} className={index % 2 === 0 ? "bg-muted/50" : ""}>
                       <TableCell className="font-medium">{service.name}</TableCell>
-                      <TableCell className="text-right">{service.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(service.totalRevenue)}</TableCell>
-                      <TableCell className="text-right">
-                        {comparison ? (
-                          <span className={comparison.isIncrease ? "text-green-600" : "text-red-600"}>
-                            {comparison.isIncrease ? "↑" : "↓"} {Math.abs(comparison.percentDiff)}% em relação a {comparison.startDate} a {comparison.endDate}
+                      <TableCell>{service.count}</TableCell>
+                      <TableCell>{formatCurrency(service.revenue)}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex flex-col text-xs">
+                          <span className={service.percentChangeRevenue > 0 ? "text-green-600" : service.percentChangeRevenue < 0 ? "text-red-600" : "text-gray-500"}>
+                            {service.percentChangeRevenue > 0 ? "↑" : service.percentChangeRevenue < 0 ? "↓" : "→"} 
+                            {Math.abs(service.percentChangeRevenue).toFixed(0)}% em receita
                           </span>
-                        ) : (
-                          <span className="text-muted-foreground">Sem dados para comparação</span>
-                        )}
+                          <span className="text-muted-foreground">
+                            {format(subMonths(new Date(selectedYear, selectedMonth), 1), "MMMM")}
+                          </span>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                    Não há serviços registrados para este período
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      
-      {/* Services comparison placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Comparativo com Período Anterior</CardTitle>
-        </CardHeader>
-        <CardContent className="min-h-[200px]">
-          {serviceMetrics.length > 0 && date ? (
-            <div className="space-y-4">
-              {serviceMetrics.slice(0, 3).map(service => {
-                const comparison = getPreviousPeriodComparison(service.id);
-                if (!comparison) return null;
-                
-                return (
-                  <div key={`detail-${service.id}`} className="flex justify-between items-center border-b pb-2">
-                    <div className="font-medium">{service.name}</div>
-                    <div className={comparison.isIncrease ? "text-green-600" : "text-red-600"}>
-                      {comparison.isIncrease ? "+" : "-"}{Math.abs(comparison.percentDiff)}% 
-                      <span className="text-muted-foreground text-sm ml-2">
-                        (Período: {comparison.startDate} - {comparison.endDate})
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center text-muted-foreground h-full">
-              <p>Selecione uma data para ver comparativos detalhados</p>
-            </div>
-          )}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      Não há dados de serviços para este período
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
