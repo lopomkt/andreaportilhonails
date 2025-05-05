@@ -1,9 +1,24 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, TrendingUp, Wallet, PiggyBank } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
+import { useAppointments } from "@/context/AppointmentContext";
+import { useExpenses } from "@/context/ExpenseContext";
+import { 
+  startOfMonth, 
+  endOfMonth, 
+  isWithinInterval, 
+  format, 
+  isBefore, 
+  isSameMonth, 
+  isSameYear,
+  isAfter,
+  startOfDay,
+  endOfDay 
+} from "date-fns";
+import { Bar, BarChart as RechartsBarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface ReportsFinanceSectionProps {
   selectedMonth: number;
@@ -11,19 +26,77 @@ interface ReportsFinanceSectionProps {
 }
 
 export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFinanceSectionProps) {
-  // Placeholder data - will be replaced with real data in the next phase
-  const placeholderData = {
-    totalRevenue: 5000,
-    expectedRevenue: 8000,
-    expenses: 2500,
-    netProfit: 2500,
-    expensesList: [
-      { category: "Material de Consumo", value: 800, date: "05/05/2025", observations: "Produtos para manicure" },
-      { category: "Aluguel", value: 1200, date: "01/05/2025", observations: "Aluguel do espaço" },
-      { category: "Energia", value: 300, date: "10/05/2025", observations: "Conta de luz" },
-      { category: "Água", value: 200, date: "15/05/2025", observations: "Conta de água" },
-    ]
-  };
+  // Get appointments and expenses from contexts
+  const { appointments } = useAppointments();
+  const { expenses } = useExpenses();
+  
+  // Filter appointments for selected month and calculate metrics
+  const filteredData = useMemo(() => {
+    const targetDate = new Date(selectedYear, selectedMonth);
+    const monthStart = startOfMonth(targetDate);
+    const monthEnd = endOfMonth(targetDate);
+    
+    // Filter appointments for selected month
+    const monthAppointments = appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd });
+    });
+    
+    // Calculate total revenue (all appointments not canceled)
+    const totalRevenue = monthAppointments
+      .filter(app => app.status !== "canceled")
+      .reduce((sum, app) => sum + app.price, 0);
+    
+    // Calculate expected revenue (future appointments)
+    const now = new Date();
+    const expectedRevenue = monthAppointments
+      .filter(app => app.status === "confirmed" && isAfter(new Date(app.date), now))
+      .reduce((sum, app) => sum + app.price, 0);
+    
+    // Filter expenses for selected month
+    const monthExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return isSameMonth(expenseDate, targetDate) && isSameYear(expenseDate, targetDate);
+    });
+    
+    // Calculate total expenses
+    const totalExpenses = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    // Calculate net profit
+    const netProfit = totalRevenue - totalExpenses;
+    
+    // Daily revenue data for chart
+    const dailyRevenueData = [];
+    const daysInMonth = monthEnd.getDate();
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDate = new Date(selectedYear, selectedMonth, day);
+      const dayStart = startOfDay(currentDate);
+      const dayEnd = endOfDay(currentDate);
+      
+      const dayRevenue = monthAppointments
+        .filter(app => {
+          const appDate = new Date(app.date);
+          return isWithinInterval(appDate, { start: dayStart, end: dayEnd }) && 
+                 app.status !== "canceled";
+        })
+        .reduce((sum, app) => sum + app.price, 0);
+      
+      dailyRevenueData.push({
+        name: format(currentDate, "dd"),
+        revenue: dayRevenue
+      });
+    }
+    
+    return {
+      totalRevenue,
+      expectedRevenue,
+      totalExpenses,
+      netProfit,
+      monthExpenses,
+      dailyRevenueData
+    };
+  }, [appointments, expenses, selectedMonth, selectedYear]);
 
   return (
     <div className="space-y-6">
@@ -38,7 +111,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(placeholderData.totalRevenue)}
+                {formatCurrency(filteredData.totalRevenue)}
               </div>
               <Wallet className="h-5 w-5 text-primary" />
             </div>
@@ -54,7 +127,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(placeholderData.expectedRevenue)}
+                {formatCurrency(filteredData.expectedRevenue)}
               </div>
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
@@ -70,7 +143,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(placeholderData.expenses)}
+                {formatCurrency(filteredData.totalExpenses)}
               </div>
               <BarChart className="h-5 w-5 text-destructive" />
             </div>
@@ -86,7 +159,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(placeholderData.netProfit)}
+                {formatCurrency(filteredData.netProfit)}
               </div>
               <PiggyBank className="h-5 w-5 text-green-500" />
             </div>
@@ -94,16 +167,33 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
         </Card>
       </div>
 
-      {/* Chart placeholder */}
+      {/* Chart with real data */}
       <Card>
         <CardHeader>
           <CardTitle>Evolução da Receita Mensal</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="min-h-[280px] bg-muted rounded-2xl p-4 flex items-center justify-center text-muted-foreground">
-            {/* // gráfico será integrado com dados reais na próxima etapa */}
-            <p>Gráfico será integrado com dados reais na próxima etapa</p>
-          </div>
+          {filteredData.dailyRevenueData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <RechartsBarChart
+                data={filteredData.dailyRevenueData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(value) => `${value}`} />
+                <Tooltip 
+                  formatter={(value) => [formatCurrency(Number(value)), "Receita"]}
+                  labelFormatter={(label) => `Dia ${label}`}
+                />
+                <Bar dataKey="revenue" fill="#9333ea" radius={[4, 4, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="min-h-[280px] bg-muted rounded-2xl p-4 flex items-center justify-center text-muted-foreground">
+              <p>Sem dados de receita para o período selecionado</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -124,14 +214,22 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {placeholderData.expensesList.map((expense, index) => (
-                  <TableRow key={index} className={index % 2 === 0 ? "bg-muted/50" : ""}>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell>{formatCurrency(expense.value)}</TableCell>
-                    <TableCell>{expense.date}</TableCell>
-                    <TableCell className="hidden md:table-cell">{expense.observations}</TableCell>
+                {filteredData.monthExpenses.length > 0 ? (
+                  filteredData.monthExpenses.map((expense, index) => (
+                    <TableRow key={expense.id} className={index % 2 === 0 ? "bg-muted/50" : ""}>
+                      <TableCell>{expense.category}</TableCell>
+                      <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                      <TableCell>{format(new Date(expense.date), "dd/MM/yyyy")}</TableCell>
+                      <TableCell className="hidden md:table-cell">{expense.notes || "-"}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      Não há despesas registradas para este período
+                    </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>

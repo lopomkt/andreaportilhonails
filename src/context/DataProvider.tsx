@@ -119,18 +119,20 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const refetchClients = async () => {
-  try {
-    const updatedClients = await clientService.getAll();
-    setClients(updatedClients);
-  } catch (error) {
-    console.error("Erro ao atualizar a lista de clientes:", error);
-    toast({
-      title: "Erro ao buscar clientes",
-      description: "Não foi possível atualizar os clientes. Tente novamente.",
-      variant: "destructive",
-    });
-  }
-};
+    try {
+      const { toast } = useToast();
+      await fetchClients();
+      
+    } catch (error) {
+      console.error("Erro ao atualizar a lista de clientes:", error);
+      const { toast } = useToast();
+      toast({
+        title: "Erro ao buscar clientes",
+        description: "Não foi possível atualizar os clientes. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Using existing hooks
   const {
