@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState } from "react";
-import { Client } from "@/types";
+import { Client, Appointment } from "@/types";
 import { useClientContext as useClientHook } from "@/hooks/useClientContext";
 import { useAppointmentContext } from "@/hooks/useAppointmentContext";
 
@@ -28,9 +28,16 @@ const ClientContext = createContext<ClientContextType>({
 
 export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const appointmentContext = useAppointmentContext(setAppointments, appointments);
-  const clientContext = useClientHook(setClients, appointmentContext.fetchAppointments, clients);
+  
+  // Fix: Use async function that returns void to match the interface type
+  const fetchAppointmentsWrapper = async (): Promise<void> => {
+    await appointmentContext.fetchAppointments();
+    return;
+  };
+  
+  const clientContext = useClientHook(setClients, fetchAppointmentsWrapper, clients);
 
   return (
     <ClientContext.Provider
