@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppointments } from "@/context/AppointmentContext";
 import { formatCurrency } from "@/lib/formatters";
-import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format } from "date-fns";
+import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format, parseISO } from "date-fns";
 import { CheckCircle, Users, XCircle } from "lucide-react";
 import { Appointment, Service } from "@/types";
 import {
@@ -48,13 +48,13 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
     
     // Current month appointments
     const currentMonthAppointments = appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      const appointmentDate = parseISO(appointment.date);
       return isWithinInterval(appointmentDate, { start: currentMonthStart, end: currentMonthEnd });
     });
     
     // Last month appointments
     const lastMonthAppointments = appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      const appointmentDate = parseISO(appointment.date);
       return isWithinInterval(appointmentDate, { start: lastMonthStart, end: lastMonthEnd });
     });
     
@@ -119,7 +119,7 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
     const monthEnd = endOfMonth(currentDate);
     
     const monthAppointments = appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      const appointmentDate = parseISO(appointment.date);
       return isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd });
     });
     
