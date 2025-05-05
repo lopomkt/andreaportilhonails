@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
@@ -89,7 +88,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   const handleAppointmentClick = (appointment: any) => {
-    // Usar o novo modal de edição
     setEditingAppointment(appointment);
     setIsWeekDialogOpen(false);
   };
@@ -118,41 +116,56 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return setMonth(new Date(), selectedMonth);
   }, [selectedMonth]);
 
-  // Improved weeks generation using useMemo with proper month filtering
+  // Melhorado para evitar duplicação de meses
   const weeks = useMemo(() => {
     const monthStart = startOfMonth(filteredMonth);
     const monthEnd = endOfMonth(filteredMonth);
     
     // Get the first week of the month
     const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
-    // Maximum number of weeks to cover all days in the month (6 is enough for any month)
-    const weeksNeeded = 6;
     
+    // Build weeks
     const result = [];
-    for (let i = 0; i < weeksNeeded; i++) {
-      const currentWeekStart = new Date(firstWeekStart);
-      currentWeekStart.setDate(firstWeekStart.getDate() + (i * 7));
+    let currentWeekStart = firstWeekStart;
+    
+    while (currentWeekStart <= monthEnd) {
+      const weekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
+      const daysInWeek = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
       
-      const currentWeekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
+      // Check if at least one day in the week is in the current month
+      const hasCurrentMonthDay = daysInWeek.some(day => isSameMonth(day, filteredMonth));
       
-      // Only include weeks that have at least one day in the selected month
-      if (
-        (currentWeekStart <= monthEnd && currentWeekStart >= monthStart) ||
-        (currentWeekEnd >= monthStart && currentWeekEnd <= monthEnd) ||
-        (currentWeekStart <= monthStart && currentWeekEnd >= monthEnd)
-      ) {
-        // Check if any day in this week belongs to the selected month
-        const weekDays = eachDayOfInterval({ start: currentWeekStart, end: currentWeekEnd });
-        const hasMonthDay = weekDays.some(day => isSameMonth(day, filteredMonth));
+      if (hasCurrentMonthDay) {
+        // Calculate month range for display (without duplications)
+        const startMonth = currentWeekStart.getMonth();
+        const endMonth = weekEnd.getMonth();
+        let weekTitle = '';
         
-        if (hasMonthDay) {
-          result.push(currentWeekStart);
+        if (startMonth === endMonth) {
+          // Same month for the week
+          weekTitle = `${format(currentWeekStart, "d")} - ${format(weekEnd, "d")} ${MONTH_NAMES[startMonth]}`;
+        } else {
+          // Week spans two months
+          weekTitle = `${format(currentWeekStart, "d")} ${MONTH_NAMES[startMonth]} - ${format(weekEnd, "d")} ${MONTH_NAMES[endMonth]}`;
         }
+        
+        const stats = getWeekStats(currentWeekStart);
+        
+        result.push({
+          start: currentWeekStart,
+          end: weekEnd,
+          title: weekTitle,
+          weekNumber: getWeekOfMonth(currentWeekStart),
+          stats
+        });
       }
+      
+      // Move to next week
+      currentWeekStart = addDays(weekEnd, 1);
     }
     
     return result;
-  }, [filteredMonth]);
+  }, [filteredMonth, appointments]);
 
   // Add function to handle view day from week details
   const handleViewDay = (weekStart: Date) => {
@@ -177,7 +190,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-4">
       <div className="flex justify-between items-center pb-4">
         <h3 className="text-lg font-medium">Semanas de {MONTH_NAMES[selectedMonth]}</h3>
         <DropdownMenu>
@@ -201,16 +214,16 @@ export const WeekView: React.FC<WeekViewProps> = ({
       </div>
       
       <div className="grid md:grid-cols-2 gap-4">
-        {weeks.map((weekStart, index) => {
-          const weekStats = getWeekStats(weekStart);
-          const weekNumber = getWeekOfMonth(weekStart, { locale: ptBR });
+        {weeks.map((week, index) => {
+          const weekStats = week.stats;
+          const weekNumber = week.weekNumber;
           const weekEnd = weekStats.endDate;
           
           return (
             <Card 
               key={index} 
               className="cursor-pointer hover:border-primary transition-colors"
-              onClick={() => handleOpenWeekDetails(weekStart)}
+              onClick={() => handleOpenWeekDetails(week.start)}
             >
               <CardHeader className="pb-2 p-3 md:p-6">
                 <CardTitle className="flex items-center justify-between text-base md:text-lg">
@@ -235,7 +248,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         // Updated to call the new function
-                        handleViewDay(weekStart);
+                        handleViewDay(week.start);
                       }}
                     >
                       <span className="text-xs mr-1">Detalhar</span>

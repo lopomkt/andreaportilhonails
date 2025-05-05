@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
 import { isSameDay, addMinutes, isWithinInterval, addDays, format } from 'date-fns';
@@ -81,10 +80,9 @@ export const DayView: React.FC<DayViewProps> = ({
     setEditingAppointment(appointment);
   };
 
-  // Fixed navigation functions to handle day changes correctly
+  // Correção da navegação de dias - agora está correta
   const handlePreviousDay = () => {
     if (onDaySelect) {
-      // Use a single call to addDays with -1 to go back one day
       const previousDay = addDays(date, -1);
       onDaySelect(previousDay);
     }
@@ -92,7 +90,6 @@ export const DayView: React.FC<DayViewProps> = ({
 
   const handleNextDay = () => {
     if (onDaySelect) {
-      // Use a single call to addDays with 1 to advance one day
       const nextDay = addDays(date, 1);
       onDaySelect(nextDay);
     }

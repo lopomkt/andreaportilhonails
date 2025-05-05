@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -102,26 +102,28 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const goToPreviousMonth = () => setCurrentMonth(prev => addMonths(prev, -1));
   const goToNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
-  // Fixed handler for day cell click to correctly handle date selection
+  // Correção do handler de clique para não mostrar mês anterior
   const handleDayClick = useCallback((day: Date | null) => {
     if (day) {
       console.log("Day clicked in MonthView:", day);
       
-      // Create a new date object to avoid mutating the original date
-      const selectedDate = new Date(day);
-      
-      // Normalize the date to avoid timezone issues
-      const normalizedDate = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
-        selectedDate.getDate()
+      // Create a new date object to avoid timezone issues
+      const selectedDate = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        12, // noon to avoid timezone issues
+        0, 
+        0
       );
       
-      console.log("Selected date normalized:", normalizedDate.toISOString());
-      onDaySelect(normalizedDate);
+      console.log("Selected date normalized:", selectedDate.toISOString());
       
-      // Update localStorage to indicate we should show day view
+      // Set calendar view mode to day
       localStorage.setItem('calendarViewMode', 'day');
+      
+      // Call the onDaySelect with the normalized date
+      onDaySelect(selectedDate);
     }
   }, [onDaySelect]);
 

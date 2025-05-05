@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, MessageCircle } from "lucide-react";
 import { Client } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
@@ -66,7 +66,7 @@ export function ClientRanking() {
           break;
       }
       
-      // Get confirmed appointments for the selected period
+      // Get confirmed appointments for the selected period - modificado para usar "confirmed" em vez de status genérico
       const filteredAppointments = appointments.filter(appt => {
         const appointmentDate = new Date(appt.date);
         return appt.status === "confirmed" && 
@@ -75,17 +75,20 @@ export function ClientRanking() {
       
       // Calculate total spent per client during this period
       const clientSpending: Record<string, number> = {};
+      const clientAppointmentCount: Record<string, number> = {};
       
       filteredAppointments.forEach(appt => {
         if (appt.clientId) {
           if (!clientSpending[appt.clientId]) {
             clientSpending[appt.clientId] = 0;
+            clientAppointmentCount[appt.clientId] = 0;
           }
           clientSpending[appt.clientId] += appt.price;
+          clientAppointmentCount[appt.clientId]++;
         }
       });
       
-      // Map clients with ranking
+      // Map clients with ranking - agora inclui o número de agendamentos
       const clientsWithSpending = clients
         .filter(client => clientSpending[client.id])
         .map(client => ({
@@ -93,6 +96,7 @@ export function ClientRanking() {
           rank: 0, // Will be assigned after sorting
           badge: null,
           totalSpent: clientSpending[client.id] || 0,
+          appointmentCount: clientAppointmentCount[client.id] || 0
         }))
         .sort((a, b) => b.totalSpent - a.totalSpent)
         .slice(0, isMobile ? 10 : 20) // Top 10 clients on mobile, 20 on desktop

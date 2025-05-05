@@ -124,7 +124,8 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
     });
     
     const totalAppointments = monthAppointments.length;
-    const completedAppointments = monthAppointments.filter(app => app.status === "completed").length;
+    // Corrigindo o erro de tipo: completed -> confirmed
+    const completedAppointments = monthAppointments.filter(app => app.status === "confirmed").length;
     const canceledAppointments = monthAppointments.filter(app => app.status === "canceled").length;
     
     const totalClients = new Set(

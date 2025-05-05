@@ -2,7 +2,7 @@
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart, TrendingUp, Wallet, PiggyBank } from "lucide-react";
+import { BarChart, TrendingUp, Wallet, PiggyBank, User, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { useAppointments } from "@/context/AppointmentContext";
 import { useExpenses } from "@/context/ExpenseContext";
@@ -11,7 +11,6 @@ import {
   endOfMonth, 
   isWithinInterval, 
   format, 
-  isBefore, 
   isSameMonth, 
   isSameYear,
   isAfter,
@@ -42,16 +41,18 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
       return isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd });
     });
     
-    // Calculate total revenue (all appointments not canceled)
-    const totalRevenue = monthAppointments
-      .filter(app => app.status !== "canceled")
-      .reduce((sum, app) => sum + app.price, 0);
+    // Calculate total revenue (all completed appointments)
+    const completedAppointments = monthAppointments.filter(app => app.status === "confirmed");
+    const totalRevenue = completedAppointments.reduce((sum, app) => sum + app.price, 0);
     
-    // Calculate expected revenue (future appointments)
-    const now = new Date();
-    const expectedRevenue = monthAppointments
-      .filter(app => app.status === "confirmed" && isAfter(new Date(app.date), now))
-      .reduce((sum, app) => sum + app.price, 0);
+    // Calculate average ticket price
+    const averageTicket = completedAppointments.length > 0 
+      ? totalRevenue / completedAppointments.length 
+      : 0;
+    
+    // Count total appointments by status
+    const totalCompletedAppointments = completedAppointments.length;
+    const totalCanceledAppointments = monthAppointments.filter(app => app.status === "canceled").length;
     
     // Filter expenses for selected month
     const monthExpenses = expenses.filter(expense => {
@@ -78,7 +79,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
         .filter(app => {
           const appDate = new Date(app.date);
           return isWithinInterval(appDate, { start: dayStart, end: dayEnd }) && 
-                 app.status !== "canceled";
+                 app.status === "confirmed";
         })
         .reduce((sum, app) => sum + app.price, 0);
       
@@ -90,11 +91,13 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
     
     return {
       totalRevenue,
-      expectedRevenue,
       totalExpenses,
       netProfit,
       monthExpenses,
-      dailyRevenueData
+      dailyRevenueData,
+      averageTicket,
+      totalCompletedAppointments,
+      totalCanceledAppointments
     };
   }, [appointments, expenses, selectedMonth, selectedYear]);
 
@@ -121,13 +124,13 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Receita Esperada no Mês
+              Ticket Médio
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(filteredData.expectedRevenue)}
+                {formatCurrency(filteredData.averageTicket)}
               </div>
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
@@ -137,15 +140,15 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Despesas do Mês
+              Agendamentos Finalizados
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(filteredData.totalExpenses)}
+                {filteredData.totalCompletedAppointments}
               </div>
-              <BarChart className="h-5 w-5 text-destructive" />
+              <User className="h-5 w-5 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -153,15 +156,15 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Lucro Líquido do Mês
+              Faltas / Cancelamentos
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(filteredData.netProfit)}
+                {filteredData.totalCanceledAppointments}
               </div>
-              <PiggyBank className="h-5 w-5 text-green-500" />
+              <XCircle className="h-5 w-5 text-destructive" />
             </div>
           </CardContent>
         </Card>
