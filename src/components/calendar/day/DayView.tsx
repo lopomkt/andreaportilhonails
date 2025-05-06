@@ -82,18 +82,21 @@ export const DayView: React.FC<DayViewProps> = ({
 
   // Correção da navegação de dias - agora está correta
   const handlePreviousDay = () => {
-    if (onDaySelect) {
-      const previousDay = addDays(date, -1);
-      onDaySelect(previousDay);
-    }
-  };
+  if (onDaySelect) {
+    const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+    const previousDay = addDays(baseDate, -1);
+    onDaySelect(previousDay);
+  }
+};
 
-  const handleNextDay = () => {
-    if (onDaySelect) {
-      const nextDay = addDays(date, 1);
-      onDaySelect(nextDay);
-    }
-  };
+const handleNextDay = () => {
+  if (onDaySelect) {
+    const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+    const nextDay = addDays(baseDate, 1);
+    onDaySelect(nextDay);
+  }
+};
+
 
   return (
     <div className="day-view-container px-2 pt-4">
