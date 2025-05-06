@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import { formatCurrency } from '@/lib/formatters';
 import { EditAppointmentModal } from '@/components/EditAppointmentModal';
 import { Appointment } from '@/types';
 import { addDays } from 'date-fns';
-
 
 interface WeekViewProps {
   date: Date;

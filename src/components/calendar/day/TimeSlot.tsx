@@ -24,8 +24,11 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
   const { time, appointments, isBlocked } = slot;
   const { openModal } = useAppointmentsModal();
   
+  // Check if there are any confirmed appointments at this time
+  const hasConfirmedAppointment = appointments.some(app => app.status === 'confirmed');
+  
   const handleTimeClick = () => {
-    if (!isBlocked && appointments.length === 0) {
+    if (!isBlocked && !hasConfirmedAppointment) {
       openModal(null, time);
     }
   };
@@ -44,7 +47,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
       className={cn(
         "p-2 border rounded-md flex items-center justify-between",
         isBlocked ? "bg-gray-100" : "hover:bg-gray-50 cursor-pointer",
-        appointments.length > 0 ? "bg-nail-50" : ""
+        hasConfirmedAppointment ? "bg-nail-50" : ""
       )}
       onClick={handleTimeClick}
     >
@@ -70,7 +73,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
           />
         ))}
         
-        {!isBlocked && appointments.length === 0 && (
+        {!isBlocked && !hasConfirmedAppointment && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

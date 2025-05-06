@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
 import { isSameDay, addMinutes, isWithinInterval, addDays, format } from 'date-fns';
@@ -47,6 +48,7 @@ export const DayView: React.FC<DayViewProps> = ({
         const slotTime = new Date(date);
         slotTime.setHours(hour, minute, 0, 0);
         
+        // Modified to only consider confirmed appointments for blocking slots
         const slotAppointments = dayAppointments.filter(appointment => {
           const appointmentDate = new Date(appointment.date);
           const appointmentEndTime = appointment.endTime 
@@ -80,23 +82,26 @@ export const DayView: React.FC<DayViewProps> = ({
     setEditingAppointment(appointment);
   };
 
-  // Correção da navegação de dias - agora está correta
+  // Fix the previous and next day navigation
   const handlePreviousDay = () => {
-  if (onDaySelect) {
-    const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
-    const previousDay = addDays(baseDate, -1);
-    onDaySelect(previousDay);
-  }
-};
+    if (onDaySelect) {
+      const previousDay = new Date(date);
+      previousDay.setDate(date.getDate() - 1);
+      // Set time to noon to avoid timezone issues
+      previousDay.setHours(12, 0, 0, 0);
+      onDaySelect(previousDay);
+    }
+  };
 
-const handleNextDay = () => {
-  if (onDaySelect) {
-    const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
-    const nextDay = addDays(baseDate, 1);
-    onDaySelect(nextDay);
-  }
-};
-
+  const handleNextDay = () => {
+    if (onDaySelect) {
+      const nextDay = new Date(date);
+      nextDay.setDate(date.getDate() + 1);
+      // Set time to noon to avoid timezone issues
+      nextDay.setHours(12, 0, 0, 0);
+      onDaySelect(nextDay);
+    }
+  };
 
   return (
     <div className="day-view-container px-2 pt-4">
