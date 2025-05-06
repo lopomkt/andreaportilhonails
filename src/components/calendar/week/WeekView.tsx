@@ -14,7 +14,6 @@ import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
 import { formatCurrency } from '@/lib/formatters';
 import { EditAppointmentModal } from '@/components/EditAppointmentModal';
 import { Appointment } from '@/types';
-import { addDays } from 'date-fns';
 
 interface WeekViewProps {
   date: Date;
