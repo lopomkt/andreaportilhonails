@@ -24,12 +24,20 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ month, onDaySelect }) => {
     { locale: ptBR }  // Use the Brazilian Portuguese locale for proper week starts
   );
   
-  // Use a Set to track unique week start times
-  const uniqueWeekStarts = Array.from(
-    new Set(
-      weekStarts.map(date => date.getTime())
-    )
-  ).map(time => new Date(time));
+  // Use a Set to track unique week start times to prevent duplication
+  const uniqueWeekStartTimes = new Set<number>();
+  const uniqueWeekStarts: Date[] = [];
+  
+  // Filter weeks to only include unique ones
+  weekStarts.forEach(weekStart => {
+    const weekStartTime = weekStart.getTime();
+    
+    // Only add this week if we haven't processed it already
+    if (!uniqueWeekStartTimes.has(weekStartTime)) {
+      uniqueWeekStartTimes.add(weekStartTime);
+      uniqueWeekStarts.push(new Date(weekStartTime));
+    }
+  });
   
   return (
     <div className="space-y-4">

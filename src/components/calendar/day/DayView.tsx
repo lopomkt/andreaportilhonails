@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
-import { isSameDay, addMinutes, isWithinInterval, format } from 'date-fns';
+import { isSameDay, addMinutes, isWithinInterval, format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
@@ -90,31 +90,38 @@ export const DayView: React.FC<DayViewProps> = ({
     setEditingAppointment(appointment);
   };
 
-  // Fix the previous and next day navigation
+  // Fixed previous day navigation to properly subtract exactly one day
   const handlePreviousDay = () => {
     if (onDaySelect) {
-      // Create a new date object with noon time to avoid timezone issues
-      const previousDay = new Date(
+      // Create a normalized date with noon time to avoid timezone issues
+      const baseDate = new Date(
         date.getFullYear(),
         date.getMonth(),
-        date.getDate() - 1,  // Subtract exactly one day
+        date.getDate(),
         12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
       );
+      
+      // Subtract exactly one day using addDays with -1
+      const previousDay = addDays(baseDate, -1);
       
       console.log("Moving to previous day:", previousDay);
       onDaySelect(previousDay);
     }
   };
 
+  // Fixed next day navigation to properly add exactly one day
   const handleNextDay = () => {
     if (onDaySelect) {
-      // Create a new date object with noon time to avoid timezone issues
-      const nextDay = new Date(
+      // Create a normalized date with noon time to avoid timezone issues
+      const baseDate = new Date(
         date.getFullYear(),
         date.getMonth(),
-        date.getDate() + 1,  // Add exactly one day
+        date.getDate(),
         12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
       );
+      
+      // Add exactly one day
+      const nextDay = addDays(baseDate, 1);
       
       console.log("Moving to next day:", nextDay);
       onDaySelect(nextDay);

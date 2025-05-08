@@ -35,10 +35,12 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
 
   const handleScheduleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onSuggestedTimeSelect) {
-      onSuggestedTimeSelect(time, format(time, 'HH:mm'));
-    } else {
-      openModal(null, time);
+    if (!isBlocked && !hasConfirmedAppointment) {
+      if (onSuggestedTimeSelect) {
+        onSuggestedTimeSelect(time, format(time, 'HH:mm'));
+      } else {
+        openModal(null, time);
+      }
     }
   };
   

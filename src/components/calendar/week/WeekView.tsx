@@ -100,6 +100,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
     // Update the current date to the selected month but keep the day
     const newDate = new Date(date);
     newDate.setMonth(monthIndex);
+    newDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
     
     // If the day doesn't exist in the new month, set to last day of month
     const maxDaysInMonth = new Date(date.getFullYear(), monthIndex + 1, 0).getDate();
@@ -114,73 +115,97 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   // Get start of selected month for filtering
   const filteredMonth = useMemo(() => {
-    return setMonth(new Date(date.getFullYear(), 0), selectedMonth);
+    return new Date(date.getFullYear(), selectedMonth, 1, 12, 0, 0, 0);
   }, [selectedMonth, date]);
 
-  // Improved to avoid month duplication
+  // Fixed week generation to avoid duplication
   const weeks = useMemo(() => {
     const monthStart = startOfMonth(filteredMonth);
     const monthEnd = endOfMonth(filteredMonth);
     
-    // Get the first week of the month
+    // Get the first day of the first week that contains a day of the month
     const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
     
-    // Build weeks
+    // Track processed week start times to avoid duplication
+    const processedWeekStartTimes = new Set<number>();
     const result = [];
-    let currentWeekStart = firstWeekStart;
-    const processedWeekStarts = new Set();
     
-    while (currentWeekStart <= monthEnd) {
+    // Start with the first week and go through at most 6 weeks
+    for (let i = 0; i < 6; i++) {
+      // Safely calculate the start of the current week
+      const currentWeekStart = i === 0 ? 
+        firstWeekStart : 
+        new Date(firstWeekStart.getFullYear(), firstWeekStart.getMonth(), firstWeekStart.getDate() + (7 * i), 12, 0, 0);
+      
+      // Calculate the end of the week
       const weekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
+      
+      // Check if we've gone past the end of the month
+      if (currentWeekStart > monthEnd) break;
+      
+      // Generate days in the current week
       const daysInWeek = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
       
-      // Check if at least one day in the week is in the current month
+      // Check if at least one day in the week belongs to the current month
       const hasCurrentMonthDay = daysInWeek.some(day => isSameMonth(day, filteredMonth));
       
-      // Check if this week start has already been processed
-      const weekStartTime = currentWeekStart.getTime();
+      if (!hasCurrentMonthDay) continue;
       
-      if (hasCurrentMonthDay && !processedWeekStarts.has(weekStartTime)) {
-        processedWeekStarts.add(weekStartTime);
-        
-        // Calculate month range for display (without duplications)
-        const startMonth = currentWeekStart.getMonth();
-        const endMonth = weekEnd.getMonth();
-        let weekTitle = '';
-        
-        if (startMonth === endMonth) {
-          // Same month for the week
-          weekTitle = `${format(currentWeekStart, "d")} - ${format(weekEnd, "d")} ${MONTH_NAMES[startMonth]}`;
-        } else {
-          // Week spans two months
-          weekTitle = `${format(currentWeekStart, "d")} ${MONTH_NAMES[startMonth]} - ${format(weekEnd, "d")} ${MONTH_NAMES[endMonth]}`;
-        }
-        
-        const stats = getWeekStats(currentWeekStart);
-        
-        result.push({
-          start: currentWeekStart,
-          end: weekEnd,
-          title: weekTitle,
-          weekNumber: getWeekOfMonth(currentWeekStart),
-          stats
-        });
+      // Use the timestamp as a unique identifier
+      const weekStartTimestamp = currentWeekStart.getTime();
+      
+      // Skip if we've already processed this week
+      if (processedWeekStartTimes.has(weekStartTimestamp)) continue;
+      
+      // Add this week's timestamp to our set of processed weeks
+      processedWeekStartTimes.add(weekStartTimestamp);
+      
+      // Format date range for display
+      const startMonth = currentWeekStart.getMonth();
+      const endMonth = weekEnd.getMonth();
+      let weekTitle = '';
+      
+      if (startMonth === endMonth) {
+        // Same month for the week
+        weekTitle = `${format(currentWeekStart, "d")} - ${format(weekEnd, "d")} ${MONTH_NAMES[startMonth]}`;
+      } else {
+        // Week spans two months
+        weekTitle = `${format(currentWeekStart, "d")} ${MONTH_NAMES[startMonth]} - ${format(weekEnd, "d")} ${MONTH_NAMES[endMonth]}`;
       }
       
-      // Move to next week
-      currentWeekStart = new Date(weekEnd.getTime() + 24 * 60 * 60 * 1000); // Add one day without using addDays
+      // Get statistics for the week
+      const stats = getWeekStats(currentWeekStart);
+      
+      result.push({
+        start: currentWeekStart,
+        end: weekEnd,
+        title: weekTitle,
+        weekNumber: getWeekOfMonth(currentWeekStart),
+        stats
+      });
     }
     
     return result;
   }, [filteredMonth, appointments]);
 
-  // Add function to handle view day from week details
+  // Fixed function to properly handle day view navigation
   const handleViewDay = (weekStart: Date) => {
     console.log("Switching to day view from week:", weekStart);
     if (onDaySelect) {
-      // Close the dialog and trigger day selection
+      // Create a normalized date with noon time to avoid timezone issues
+      const normalizedDate = new Date(
+        weekStart.getFullYear(),
+        weekStart.getMonth(),
+        weekStart.getDate(),
+        12, 0, 0, 0 // Set to noon (12:00) to avoid timezone issues
+      );
+      
+      // Close the dialog and save view mode preference
       setIsWeekDialogOpen(false);
-      onDaySelect(weekStart);
+      localStorage.setItem('calendarViewMode', 'day');
+      
+      // Trigger day selection with normalized date
+      onDaySelect(normalizedDate);
     }
   };
 
@@ -357,7 +382,20 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 variant="default" 
                 onClick={() => {
                   setIsWeekDialogOpen(false);
-                  onDaySelect(selectedWeekDates.start);
+                  
+                  // Create a normalized date with noon time to avoid timezone issues
+                  const normalizedDate = new Date(
+                    selectedWeekDates.start.getFullYear(),
+                    selectedWeekDates.start.getMonth(),
+                    selectedWeekDates.start.getDate(),
+                    12, 0, 0, 0
+                  );
+                  
+                  // Save view mode preference
+                  localStorage.setItem('calendarViewMode', 'day');
+                  
+                  // Trigger day selection with normalized date
+                  onDaySelect(normalizedDate);
                 }}
               >
                 Ver dia completo

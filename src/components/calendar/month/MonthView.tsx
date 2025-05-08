@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
@@ -103,7 +104,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
 
   // Fixed handler for day click with correct date handling
   const handleDayClick = useCallback((day: Date | null) => {
-    if (day) {
+    if (day && isSameMonth(day, currentMonth)) {
       // Set calendar view mode to day
       localStorage.setItem('calendarViewMode', 'day');
       
@@ -120,7 +121,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
       // Call the onDaySelect with the normalized date
       onDaySelect(selectedDate);
     }
-  }, [onDaySelect]);
+  }, [onDaySelect, currentMonth]);
 
   return (
     <div className="space-y-4 p-4">
