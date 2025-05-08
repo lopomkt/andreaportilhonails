@@ -4,14 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, subMonths, addMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
-import { DatePicker } from "@/components/ui/date-picker"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils";
 
-export function ReportsFinanceSection() {
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+interface ReportsFinanceSectionProps {
+  selectedMonth: number;
+  selectedYear: number;
+}
+
+export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFinanceSectionProps) {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(selectedYear, selectedMonth, 1));
   const { appointments } = useData();
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
   const [previousMonthRevenue, setPreviousMonthRevenue] = useState<number>(0);
@@ -28,23 +32,26 @@ export function ReportsFinanceSection() {
   };
 
   useEffect(() => {
-    const monthStart = startOfMonth(selectedMonth);
-    const monthEnd = endOfMonth(selectedMonth);
+    // Update the selectedDate when the props change
+    setSelectedDate(new Date(selectedYear, selectedMonth, 1));
+    
+    const monthStart = startOfMonth(new Date(selectedYear, selectedMonth, 1));
+    const monthEnd = endOfMonth(new Date(selectedYear, selectedMonth, 1));
     const filteredAppointments = filterAppointmentsByMonth(monthStart, monthEnd);
     const totalRevenue = filteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
     setMonthlyRevenue(totalRevenue);
 
-    const previousMonth = subMonths(selectedMonth, 1);
+    const previousMonth = subMonths(monthStart, 1);
     const previousMonthStart = startOfMonth(previousMonth);
     const previousMonthEnd = endOfMonth(previousMonth);
     const previousMonthFilteredAppointments = filterAppointmentsByMonth(previousMonthStart, previousMonthEnd);
     const previousMonthTotalRevenue = previousMonthFilteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
     setPreviousMonthRevenue(previousMonthTotalRevenue);
-  }, [selectedMonth, appointments]);
+  }, [selectedMonth, selectedYear, appointments]);
 
   const handleMonthChange = (date: Date | undefined) => {
     if (date) {
-      setSelectedMonth(date);
+      setSelectedDate(date);
     }
   };
 
@@ -87,12 +94,12 @@ export function ReportsFinanceSection() {
               variant={"outline"}
               className={cn(
                 "w-[200px] justify-start text-left font-normal",
-                !selectedMonth && "text-muted-foreground"
+                !selectedDate && "text-muted-foreground"
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedMonth ? (
-                format(selectedMonth, "MMMM yyyy", { locale: ptBR })
+              {selectedDate ? (
+                format(selectedDate, "MMMM yyyy", { locale: ptBR })
               ) : (
                 <span>Selecionar mês</span>
               )}
@@ -102,9 +109,10 @@ export function ReportsFinanceSection() {
             <Calendar
               mode="single"
               locale={ptBR}
-              selected={selectedMonth}
-              onSelect={handleMonthChange}
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
               initialFocus
+              className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>
         </Popover>

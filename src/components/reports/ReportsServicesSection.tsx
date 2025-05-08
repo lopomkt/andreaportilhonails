@@ -1,21 +1,37 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataProvider';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { formatCurrency } from '@/lib/formatters';
 import { Appointment } from '@/types';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
-export function ReportsServicesSection() {
+interface ReportsServicesSectionProps {
+  selectedMonth: number;
+  selectedYear: number;
+}
+
+export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsServicesSectionProps) {
   const { appointments, services } = useData();
   const [serviceStats, setServiceStats] = useState<{ name: string; value: number; count: number }[]>([]);
 
   useEffect(() => {
     if (appointments && services) {
-      const confirmedAppointments = appointments.filter(appointment => appointment.status === 'confirmed');
-      setServiceStats(calculateServiceStats(confirmedAppointments));
+      // Filter appointments for the selected month and year
+      const monthStart = startOfMonth(new Date(selectedYear, selectedMonth, 1));
+      const monthEnd = endOfMonth(new Date(selectedYear, selectedMonth, 1));
+      
+      const filteredAppointments = appointments.filter(appointment => {
+        const appointmentDate = new Date(appointment.date);
+        return appointmentDate >= monthStart && 
+               appointmentDate <= monthEnd && 
+               appointment.status === 'confirmed';
+      });
+      
+      setServiceStats(calculateServiceStats(filteredAppointments));
     }
-  }, [appointments, services]);
+  }, [appointments, services, selectedMonth, selectedYear]);
 
   // Add a helper function to ensure dates are processed correctly
   const processDateString = (dateValue: string | Date): string => {
