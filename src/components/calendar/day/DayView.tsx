@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
-import { isSameDay, addMinutes, isWithinInterval, addDays, format } from 'date-fns';
+import { isSameDay, addMinutes, isWithinInterval, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
@@ -50,6 +50,9 @@ export const DayView: React.FC<DayViewProps> = ({
         
         // Modified to only consider confirmed appointments for blocking slots
         const slotAppointments = dayAppointments.filter(appointment => {
+          // Only consider confirmed appointments for blocking slots
+          if (appointment.status !== 'confirmed') return false;
+          
           const appointmentDate = new Date(appointment.date);
           const appointmentEndTime = appointment.endTime 
             ? new Date(appointment.endTime)
@@ -68,7 +71,12 @@ export const DayView: React.FC<DayViewProps> = ({
         
         slots.push({
           time: slotTime,
-          appointments: slotAppointments,
+          appointments: dayAppointments.filter(appointment => {
+            const appointmentDate = new Date(appointment.date);
+            const appointmentHour = appointmentDate.getHours();
+            const appointmentMinute = appointmentDate.getMinutes();
+            return appointmentHour === hour && appointmentMinute === minute;
+          }),
           isBlocked: isTimeBlocked
         });
       }
@@ -85,20 +93,30 @@ export const DayView: React.FC<DayViewProps> = ({
   // Fix the previous and next day navigation
   const handlePreviousDay = () => {
     if (onDaySelect) {
-      const previousDay = new Date(date);
-      previousDay.setDate(date.getDate() - 1);
-      // Set time to noon to avoid timezone issues
-      previousDay.setHours(12, 0, 0, 0);
+      // Create a new date object with noon time to avoid timezone issues
+      const previousDay = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() - 1,  // Subtract exactly one day
+        12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
+      );
+      
+      console.log("Moving to previous day:", previousDay);
       onDaySelect(previousDay);
     }
   };
 
   const handleNextDay = () => {
     if (onDaySelect) {
-      const nextDay = new Date(date);
-      nextDay.setDate(date.getDate() + 1);
-      // Set time to noon to avoid timezone issues
-      nextDay.setHours(12, 0, 0, 0);
+      // Create a new date object with noon time to avoid timezone issues
+      const nextDay = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() + 1,  // Add exactly one day
+        12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
+      );
+      
+      console.log("Moving to next day:", nextDay);
       onDaySelect(nextDay);
     }
   };

@@ -1,7 +1,8 @@
 
 import React from "react";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, eachWeekOfInterval } from "date-fns";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachWeekOfInterval } from "date-fns";
 import { WeekView } from "./WeekView";
+import { ptBR } from "date-fns/locale";
 
 interface WeekGridProps {
   month: Date;
@@ -14,17 +15,25 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ month, onDaySelect }) => {
   // Get the last day of the month
   const monthEnd = endOfMonth(month);
   
-  // Get all weeks that occur in this month
+  // Get all weeks that occur in this month, using the correct locale
   const weekStarts = eachWeekOfInterval(
     {
       start: monthStart,
       end: monthEnd
-    }
+    },
+    { locale: ptBR }  // Use the Brazilian Portuguese locale for proper week starts
   );
+  
+  // Use a Set to track unique week start times
+  const uniqueWeekStarts = Array.from(
+    new Set(
+      weekStarts.map(date => date.getTime())
+    )
+  ).map(time => new Date(time));
   
   return (
     <div className="space-y-4">
-      {weekStarts.map((weekStart) => (
+      {uniqueWeekStarts.map((weekStart) => (
         <WeekView 
           key={weekStart.toISOString()} 
           date={weekStart} 

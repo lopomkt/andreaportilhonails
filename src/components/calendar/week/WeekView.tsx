@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,10 +114,10 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   // Get start of selected month for filtering
   const filteredMonth = useMemo(() => {
-    return setMonth(new Date(), selectedMonth);
-  }, [selectedMonth]);
+    return setMonth(new Date(date.getFullYear(), 0), selectedMonth);
+  }, [selectedMonth, date]);
 
-  // Melhorado para evitar duplicação de meses
+  // Improved to avoid month duplication
   const weeks = useMemo(() => {
     const monthStart = startOfMonth(filteredMonth);
     const monthEnd = endOfMonth(filteredMonth);
@@ -127,6 +128,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
     // Build weeks
     const result = [];
     let currentWeekStart = firstWeekStart;
+    const processedWeekStarts = new Set();
     
     while (currentWeekStart <= monthEnd) {
       const weekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
@@ -135,7 +137,12 @@ export const WeekView: React.FC<WeekViewProps> = ({
       // Check if at least one day in the week is in the current month
       const hasCurrentMonthDay = daysInWeek.some(day => isSameMonth(day, filteredMonth));
       
-      if (hasCurrentMonthDay) {
+      // Check if this week start has already been processed
+      const weekStartTime = currentWeekStart.getTime();
+      
+      if (hasCurrentMonthDay && !processedWeekStarts.has(weekStartTime)) {
+        processedWeekStarts.add(weekStartTime);
+        
         // Calculate month range for display (without duplications)
         const startMonth = currentWeekStart.getMonth();
         const endMonth = weekEnd.getMonth();
@@ -161,7 +168,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
       }
       
       // Move to next week
-      currentWeekStart = addDays(weekEnd, 1);
+      currentWeekStart = new Date(weekEnd.getTime() + 24 * 60 * 60 * 1000); // Add one day without using addDays
     }
     
     return result;

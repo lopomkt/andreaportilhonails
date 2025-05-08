@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
@@ -113,8 +112,10 @@ export const MonthView: React.FC<MonthViewProps> = ({
         day.getFullYear(),
         day.getMonth(),
         day.getDate(),
-        12, 0, 0, 0
+        12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
       );
+      
+      console.log("Day clicked, redirecting to day view with date:", selectedDate);
       
       // Call the onDaySelect with the normalized date
       onDaySelect(selectedDate);

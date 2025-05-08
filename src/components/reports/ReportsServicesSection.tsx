@@ -1,248 +1,113 @@
-
-import React, { useMemo } from "react";
+import React, { useState, useEffect } from 'react';
+import { useData } from '@/context/DataProvider';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAppointments } from "@/context/AppointmentContext";
-import { formatCurrency } from "@/lib/formatters";
-import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format, parseISO } from "date-fns";
-import { CheckCircle, Users, XCircle } from "lucide-react";
-import { Appointment, Service } from "@/types";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useServices } from "@/context/ServiceContext";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { formatCurrency } from '@/lib/formatters';
+import { Appointment } from '@/types';
+import { format } from 'date-fns';
 
-interface ReportsServicesSectionProps {
-  selectedMonth: number;
-  selectedYear: number;
-}
+export function ReportsServicesSection() {
+  const { appointments, services } = useData();
+  const [serviceStats, setServiceStats] = useState<{ name: string; value: number; count: number }[]>([]);
 
-interface ServiceReportData {
-  serviceId: string;
-  name: string;
-  count: number;
-  revenue: number;
-  lastMonthCount: number;
-  lastMonthRevenue: number;
-  percentChangeCount: number;
-  percentChangeRevenue: number;
-}
+  useEffect(() => {
+    if (appointments && services) {
+      const confirmedAppointments = appointments.filter(appointment => appointment.status === 'confirmed');
+      setServiceStats(calculateServiceStats(confirmedAppointments));
+    }
+  }, [appointments, services]);
 
-export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsServicesSectionProps) {
-  const { appointments } = useAppointments();
-  const { services } = useServices();
-  
-  const serviceMetrics = useMemo(() => {
-    const currentDate = new Date(selectedYear, selectedMonth);
-    const currentMonthStart = startOfMonth(currentDate);
-    const currentMonthEnd = endOfMonth(currentDate);
-    
-    // For comparison with last month
-    const lastMonthDate = subMonths(currentDate, 1);
-    const lastMonthStart = startOfMonth(lastMonthDate);
-    const lastMonthEnd = endOfMonth(lastMonthDate);
-    
-    // Current month appointments
-    const currentMonthAppointments = appointments.filter(appointment => {
-      const appointmentDate = parseISO(appointment.date);
-      return isWithinInterval(appointmentDate, { start: currentMonthStart, end: currentMonthEnd });
-    });
-    
-    // Last month appointments
-    const lastMonthAppointments = appointments.filter(appointment => {
-      const appointmentDate = parseISO(appointment.date);
-      return isWithinInterval(appointmentDate, { start: lastMonthStart, end: lastMonthEnd });
-    });
-    
-    // Process metrics for current month
-    const serviceDataMap = new Map<string, ServiceReportData>();
-    
-    // Process services from current month
-    services.forEach(service => {
-      const currentMonthServiceAppointments = currentMonthAppointments.filter(
-        app => app.serviceId === service.id && app.status !== "canceled"
-      );
-      
-      const currentMonthCount = currentMonthServiceAppointments.length;
-      const currentMonthRevenue = currentMonthServiceAppointments.reduce(
-        (sum, app) => sum + app.price, 0
-      );
-      
-      // Process last month data for comparison
-      const lastMonthServiceAppointments = lastMonthAppointments.filter(
-        app => app.serviceId === service.id && app.status !== "canceled"
-      );
-      
-      const lastMonthCount = lastMonthServiceAppointments.length;
-      const lastMonthRevenue = lastMonthServiceAppointments.reduce(
-        (sum, app) => sum + app.price, 0
-      );
-      
-      // Calculate percent changes
-      const percentChangeCount = lastMonthCount > 0 
-        ? ((currentMonthCount - lastMonthCount) / lastMonthCount) * 100 
-        : (currentMonthCount > 0 ? 100 : 0);
-        
-      const percentChangeRevenue = lastMonthRevenue > 0 
-        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
-        : (currentMonthRevenue > 0 ? 100 : 0);
-      
-      // Only include services that have appointments
-      if (currentMonthCount > 0 || lastMonthCount > 0) {
-        serviceDataMap.set(service.id, {
-          serviceId: service.id,
-          name: service.name,
-          count: currentMonthCount,
-          revenue: currentMonthRevenue,
-          lastMonthCount,
-          lastMonthRevenue,
-          percentChangeCount,
-          percentChangeRevenue
-        });
+  // Add a helper function to ensure dates are processed correctly
+  const processDateString = (dateValue: string | Date): string => {
+    if (dateValue instanceof Date) {
+      return format(dateValue, 'yyyy-MM-dd');
+    }
+    return dateValue;
+  };
+
+  const calculateServiceStats = (appointmentsData: Appointment[]) => {
+    const serviceRevenue: { [key: string]: { value: number; count: number; name: string } } = {};
+
+    appointmentsData.forEach(appointment => {
+      if (!appointment.service) return;
+
+      const serviceId = appointment.service.id;
+      const serviceName = appointment.service.name;
+      const price = appointment.price || 0;
+
+      if (!serviceRevenue[serviceId]) {
+        serviceRevenue[serviceId] = { value: 0, count: 0, name: serviceName };
       }
+
+      serviceRevenue[serviceId].value += price;
+      serviceRevenue[serviceId].count += 1;
     });
-    
-    // Convert map to array and sort by revenue (descending)
-    return Array.from(serviceDataMap.values())
-      .sort((a, b) => b.revenue - a.revenue);
-    
-  }, [appointments, services, selectedMonth, selectedYear]);
-  
-  // Summary metrics
-  const summaryMetrics = useMemo(() => {
-    const currentDate = new Date(selectedYear, selectedMonth);
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    
-    const monthAppointments = appointments.filter(appointment => {
-      const appointmentDate = parseISO(appointment.date);
-      return isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd });
-    });
-    
-    const totalAppointments = monthAppointments.length;
-    // Corrigindo o erro de tipo: completed -> confirmed
-    const completedAppointments = monthAppointments.filter(app => app.status === "confirmed").length;
-    const canceledAppointments = monthAppointments.filter(app => app.status === "canceled").length;
-    
-    const totalClients = new Set(
-      monthAppointments
-        .filter(app => app.clientId)
-        .map(app => app.clientId)
-    ).size;
-    
-    return {
-      totalAppointments,
-      completedAppointments,
-      canceledAppointments,
-      totalClients
-    };
-  }, [appointments, selectedMonth, selectedYear]);
+
+    // Convert the serviceRevenue object to an array for recharts
+    const serviceStatsArray = Object.entries(serviceRevenue).map(([, data]) => ({
+      name: data.name,
+      value: data.value,
+      count: data.count,
+    }));
+
+    // Sort services by revenue in descending order
+    serviceStatsArray.sort((a, b) => b.value - a.value);
+
+    return serviceStatsArray;
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Service metrics summary cards */}
-      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Agendamentos Realizados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {summaryMetrics.completedAppointments}
-              </div>
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Cancelamentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {summaryMetrics.canceledAppointments}
-              </div>
-              <XCircle className="h-5 w-5 text-destructive" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Clientes Atendidos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {summaryMetrics.totalClients}
-              </div>
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Services table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Serviços Realizados no Mês</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Serviço</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                  <TableHead>Receita</TableHead>
-                  <TableHead className="hidden md:table-cell">Comparativo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {serviceMetrics.length > 0 ? (
-                  serviceMetrics.map((service, index) => (
-                    <TableRow key={service.serviceId} className={index % 2 === 0 ? "bg-muted/50" : ""}>
-                      <TableCell className="font-medium">{service.name}</TableCell>
-                      <TableCell>{service.count}</TableCell>
-                      <TableCell>{formatCurrency(service.revenue)}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex flex-col text-xs">
-                          <span className={service.percentChangeRevenue > 0 ? "text-green-600" : service.percentChangeRevenue < 0 ? "text-red-600" : "text-gray-500"}>
-                            {service.percentChangeRevenue > 0 ? "↑" : service.percentChangeRevenue < 0 ? "↓" : "→"} 
-                            {Math.abs(service.percentChangeRevenue).toFixed(0)}% em receita
-                          </span>
-                          <span className="text-muted-foreground">
-                            {format(subMonths(new Date(selectedYear, selectedMonth), 1), "MMMM")}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                      Não há dados de serviços para este período
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Receita por Serviço</CardTitle>
+      </CardHeader>
+      <CardContent className="pl-2">
+        {serviceStats.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={serviceStats}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderCustomizedLabel}
+                outerRadius={120}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {serviceStats.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-center py-4">Nenhum dado de serviço disponível.</div>
+        )}
+        <ul>
+          {serviceStats.map((service, index) => (
+            <li key={index} className="py-1">
+              {service.name}: {formatCurrency(service.value)} ({service.count} agendamentos)
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
