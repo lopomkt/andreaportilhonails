@@ -29,7 +29,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
   
   const handleTimeClick = () => {
     if (!isBlocked && !hasConfirmedAppointment) {
-      openModal(null, time);
+      openModal(null, new Date(time));
     }
   };
 
@@ -37,9 +37,9 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({ slot, onAppointmentClick, on
     e.stopPropagation();
     if (!isBlocked && !hasConfirmedAppointment) {
       if (onSuggestedTimeSelect) {
-        onSuggestedTimeSelect(time, format(time, 'HH:mm'));
+        onSuggestedTimeSelect(new Date(time), format(time, 'HH:mm'));
       } else {
-        openModal(null, time);
+        openModal(null, new Date(time));
       }
     }
   };

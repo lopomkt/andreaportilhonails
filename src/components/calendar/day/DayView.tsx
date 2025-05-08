@@ -27,7 +27,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const { appointments, blockedDates, refetchAppointments } = useData();
   const { openModal } = useAppointmentsModal();
   
-  // Filter appointments for the current day using local time comparison
+  // Filter appointments for the current day using local date string comparison
   const dayAppointments = useMemo(() => {
     return appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
@@ -48,11 +48,8 @@ export const DayView: React.FC<DayViewProps> = ({
         const slotTime = new Date(date);
         slotTime.setHours(hour, minute, 0, 0);
         
-        // Modified to only consider confirmed appointments for blocking slots
+        // Get all appointments for this time slot
         const slotAppointments = dayAppointments.filter(appointment => {
-          // Only consider confirmed appointments for blocking slots
-          if (appointment.status !== 'confirmed') return false;
-          
           const appointmentDate = new Date(appointment.date);
           const appointmentEndTime = appointment.endTime 
             ? new Date(appointment.endTime)
@@ -64,6 +61,7 @@ export const DayView: React.FC<DayViewProps> = ({
           });
         });
         
+        // Check if the date is blocked as a whole day
         const isTimeBlocked = blockedDates.some(blockedDate => {
           const blockDate = new Date(blockedDate.date);
           return isSameDay(blockDate, date) && blockedDate.allDay;
@@ -90,7 +88,7 @@ export const DayView: React.FC<DayViewProps> = ({
     setEditingAppointment(appointment);
   };
 
-  // Fixed previous day navigation to properly subtract exactly one day
+  // Fixed day navigation to properly handle exactly one day at a time
   const handlePreviousDay = () => {
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
@@ -104,12 +102,12 @@ export const DayView: React.FC<DayViewProps> = ({
       // Subtract exactly one day using addDays with -1
       const previousDay = addDays(baseDate, -1);
       
-      console.log("Moving to previous day:", previousDay);
+      // Call the onDaySelect handler with the normalized date
       onDaySelect(previousDay);
     }
   };
 
-  // Fixed next day navigation to properly add exactly one day
+  // Fixed next day navigation to properly handle exactly one day at a time
   const handleNextDay = () => {
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
@@ -123,7 +121,7 @@ export const DayView: React.FC<DayViewProps> = ({
       // Add exactly one day
       const nextDay = addDays(baseDate, 1);
       
-      console.log("Moving to next day:", nextDay);
+      // Call the onDaySelect handler with the normalized date
       onDaySelect(nextDay);
     }
   };
