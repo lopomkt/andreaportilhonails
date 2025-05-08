@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataProvider';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,14 +57,15 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
   };
 
   const getRevenueData = () => {
+    // Create a new Date object using selectedYear instead of calling getFullYear() on selectedMonth
     const months = Array.from({ length: 12 }, (_, i) => {
-      const monthDate = new Date(selectedMonth.getFullYear(), i, 1);
+      const monthDate = new Date(selectedYear, i, 1);
       return format(monthDate, 'MMMM', { locale: ptBR });
     });
 
     const revenueData = months.map((month, index) => {
-      const monthStart = startOfMonth(new Date(selectedMonth.getFullYear(), index, 1));
-      const monthEnd = endOfMonth(new Date(selectedMonth.getFullYear(), index, 1));
+      const monthStart = startOfMonth(new Date(selectedYear, index, 1));
+      const monthEnd = endOfMonth(new Date(selectedYear, index, 1));
       const filteredAppointments = filterAppointmentsByMonth(monthStart, monthEnd);
       const totalRevenue = filteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
 
