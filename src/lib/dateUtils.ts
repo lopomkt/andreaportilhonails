@@ -1,10 +1,10 @@
 
 /**
- * Normalizes a date by removing the time component
+ * Normalizes a date by setting the time component to noon (12:00)
  * This helps prevent issues with timezone handling
  */
 export const normalizeDate = (date: Date): Date => {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
 };
 
 /**

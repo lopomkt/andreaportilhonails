@@ -48,7 +48,7 @@ export const DayView: React.FC<DayViewProps> = ({
         const slotTime = new Date(date);
         slotTime.setHours(hour, minute, 0, 0);
         
-        // Get all appointments for this time slot
+        // Get all appointments for this time slot regardless of status
         const slotAppointments = dayAppointments.filter(appointment => {
           const appointmentDate = new Date(appointment.date);
           const appointmentEndTime = appointment.endTime 
@@ -84,7 +84,6 @@ export const DayView: React.FC<DayViewProps> = ({
   }, [date, dayAppointments, blockedDates]);
 
   const handleAppointmentClick = (appointment: Appointment) => {
-    // Set the editing appointment to open the edit modal
     setEditingAppointment(appointment);
   };
 
@@ -96,7 +95,7 @@ export const DayView: React.FC<DayViewProps> = ({
         date.getFullYear(),
         date.getMonth(),
         date.getDate(),
-        12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
+        12, 0, 0, 0
       );
       
       // Subtract exactly one day using addDays with -1
@@ -115,7 +114,7 @@ export const DayView: React.FC<DayViewProps> = ({
         date.getFullYear(),
         date.getMonth(),
         date.getDate(),
-        12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
+        12, 0, 0, 0
       );
       
       // Add exactly one day

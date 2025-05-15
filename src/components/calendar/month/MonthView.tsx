@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
@@ -6,7 +5,6 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayCell } from './DayCell';
-import { normalizeDate } from '@/lib/dateUtils';
 
 interface MonthViewProps {
   date: Date;

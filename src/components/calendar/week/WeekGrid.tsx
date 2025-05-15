@@ -1,6 +1,6 @@
 
 import React from "react";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachWeekOfInterval } from "date-fns";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachWeekOfInterval, isSameMonth, addDays } from "date-fns";
 import { WeekView } from "./WeekView";
 import { ptBR } from "date-fns/locale";
 
@@ -24,24 +24,24 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ month, onDaySelect }) => {
     { locale: ptBR }  // Use the Brazilian Portuguese locale for proper week starts
   );
   
-  // Use a Set to track unique week start times to prevent duplication
-  const uniqueWeekStartTimes = new Set<number>();
-  const uniqueWeekStarts: Date[] = [];
-  
-  // Filter weeks to only include unique ones
-  weekStarts.forEach(weekStart => {
-    const weekStartTime = weekStart.getTime();
+  // Filter weeks to only include those containing days from the current month
+  const validWeeks = weekStarts.filter(weekStart => {
+    const weekEnd = endOfWeek(weekStart, { locale: ptBR });
+    const daysInWeek = [];
     
-    // Only add this week if we haven't processed it already
-    if (!uniqueWeekStartTimes.has(weekStartTime)) {
-      uniqueWeekStartTimes.add(weekStartTime);
-      uniqueWeekStarts.push(new Date(weekStartTime));
+    // Check each day in the week
+    for (let i = 0; i <= 6; i++) {
+      const currentDay = addDays(weekStart, i);
+      daysInWeek.push(currentDay);
     }
+    
+    // At least one day in the week must be in the current month
+    return daysInWeek.some(day => isSameMonth(day, month));
   });
   
   return (
     <div className="space-y-4">
-      {uniqueWeekStarts.map((weekStart) => (
+      {validWeeks.map((weekStart) => (
         <WeekView 
           key={weekStart.toISOString()} 
           date={weekStart} 

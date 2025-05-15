@@ -1,3 +1,4 @@
+
 // ATENÇÃO: O botão QuickAppointment foi removido DEFINITIVAMENTE
 // Nunca reimporte AppointmentModalOpener ou QuickAppointmentModal
 
@@ -12,7 +13,6 @@ import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarViewTabs } from "@/components/calendar/CalendarViewTabs";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useData } from "@/context/DataProvider";
-import { normalizeDate } from "@/lib/dateUtils";
 
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
@@ -41,6 +41,8 @@ export default function CalendarPage() {
       try {
         const parsedDate = new Date(dateParam);
         if (!isNaN(parsedDate.getTime())) {
+          // Set time to noon (12:00) to avoid timezone issues
+          parsedDate.setHours(12, 0, 0, 0);
           setCurrentDate(parsedDate);
           
           if (viewParam && (viewParam === 'day' || viewParam === 'week' || viewParam === 'month')) {
@@ -76,22 +78,24 @@ export default function CalendarPage() {
   }, [fetchBlockedDates, fetchAppointments, toast]);
 
   const handleDaySelect = (date: Date) => {
-    console.log("handleDaySelect called with:", date);
-    // Normalize the date to avoid timezone issues
-    const selectedDate = normalizeDate(date);
-    setCurrentDate(selectedDate);
+    // Use the date directly without normalizing it again
+    // The components sending the date should already have it set to noon (12:00)
+    setCurrentDate(date);
     
-    // Update view mode and localStorage
-    if (calendarView === "month") {
+    // Get the source view - if coming from month view, switch to day view
+    const isFromMonthView = calendarView === "month";
+    
+    // Update view mode and localStorage if coming from month view
+    if (isFromMonthView) {
       setCalendarView("day");
       localStorage.setItem('calendarViewMode', 'day');
     }
     
     // Update URL with the selected date and view
-    const formattedDate = selectedDate.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split('T')[0];
     const searchParams = new URLSearchParams();
     searchParams.set('date', formattedDate);
-    searchParams.set('view', calendarView);
+    searchParams.set('view', isFromMonthView ? 'day' : calendarView);
     navigate(`/calendario?${searchParams.toString()}`);
     
     // Force a refresh of appointments
