@@ -8,6 +8,14 @@ export const normalizeDate = (date: Date): Date => {
 };
 
 /**
+ * Standard normalization function to use across the application
+ * Always sets time to noon (12:00) to avoid timezone issues
+ */
+export const normalizeDateNoon = (date: Date): Date => {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+};
+
+/**
  * Creates a new date with noon (12:00) time setting to avoid timezone issues
  * @param year The year
  * @param month The month (0-11)
@@ -62,6 +70,29 @@ export const groupAppointmentsByMonth = (appointments: any[], filterByConfirmed 
   });
   
   return grouped;
+};
+
+/**
+ * Check if a date is today or in the future
+ * Useful for filtering future appointments
+ */
+export const isTodayOrFuture = (date: Date): boolean => {
+  const today = new Date();
+  const normalizedToday = normalizeDateNoon(today);
+  const normalizedDate = normalizeDateNoon(date);
+  
+  return normalizedDate >= normalizedToday;
+};
+
+/**
+ * Get confirmed future appointments
+ * Returns only appointments that are today or in the future with status "confirmed"
+ */
+export const getConfirmedFutureAppointments = (appointments: any[]): any[] => {
+  return appointments.filter(appointment => {
+    const appointmentDate = new Date(appointment.date);
+    return appointment.status === 'confirmed' && isTodayOrFuture(appointmentDate);
+  });
 };
 
 /**

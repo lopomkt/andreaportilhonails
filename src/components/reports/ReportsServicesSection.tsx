@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, BarChart, Bar, XAxis,
 import { formatCurrency } from '@/lib/formatters';
 import { Appointment } from '@/types';
 import { format, startOfMonth, endOfMonth, isWithinInterval, subMonths, isSameDay, getDay } from 'date-fns';
-import { createDateWithNoon, formatTimeDuration, calculatePercentageChange, getDayOfWeekDistribution, getHourDistribution } from '@/lib/dateUtils';
+import { createDateWithNoon, normalizeDateNoon, formatTimeDuration, calculatePercentageChange, getDayOfWeekDistribution, getHourDistribution } from '@/lib/dateUtils';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -27,14 +27,16 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
 
   // Use useMemo for filtered appointments - current period
   const filteredAppointments = useMemo(() => {
-    if (!appointments) return [];
+    if (!appointments || appointments.length === 0) return [];
     
     // Filter appointments for the selected month and year
     const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
     const monthEnd = endOfMonth(monthStart);
     
     return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      if (!appointment) return false;
+      
+      const appointmentDate = normalizeDateNoon(new Date(appointment.date));
       return isWithinInterval(appointmentDate, {
           start: monthStart,
           end: monthEnd
@@ -45,13 +47,15 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
   
   // Use useMemo for previous period appointments (for comparison)
   const previousPeriodAppointments = useMemo(() => {
-    if (!appointments || !comparisonDate) return [];
+    if (!appointments || appointments.length === 0 || !comparisonDate) return [];
     
     const comparisonMonthStart = startOfMonth(comparisonDate);
     const comparisonMonthEnd = endOfMonth(comparisonMonthStart);
     
     return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      if (!appointment) return false;
+      
+      const appointmentDate = normalizeDateNoon(new Date(appointment.date));
       return isWithinInterval(appointmentDate, {
           start: comparisonMonthStart,
           end: comparisonMonthEnd
@@ -69,13 +73,14 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
   // Handle custom comparison date change
   const handleComparisonDateChange = useCallback((date: Date | undefined) => {
     if (date) {
-      setComparisonDate(date);
+      const normalizedDate = normalizeDateNoon(date);
+      setComparisonDate(normalizedDate);
       setUseCustomComparison(true);
     }
   }, []);
   
   useEffect(() => {
-    if (filteredAppointments.length > 0 && services) {
+    if ((filteredAppointments.length > 0) && services && services.length > 0) {
       const currentStats = calculateServiceStats(filteredAppointments);
       const previousStats = calculateServiceStats(previousPeriodAppointments);
       
@@ -101,8 +106,10 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
   const calculateServiceStats = useMemo(() => (appointmentsData: Appointment[]) => {
     const serviceRevenue: { [key: string]: { value: number; count: number; name: string; timeTotalMinutes: number } } = {};
 
+    if (!appointmentsData || appointmentsData.length === 0) return [];
+
     appointmentsData.forEach(appointment => {
-      if (!appointment.service) return;
+      if (!appointment || !appointment.service) return;
 
       const serviceId = appointment.service.id;
       const serviceName = appointment.service.name;
@@ -147,7 +154,7 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
 
   // Day of week distribution data
   const dayOfWeekData = useMemo(() => {
-    if (!filteredAppointments.length) return [];
+    if (!filteredAppointments || filteredAppointments.length === 0) return [];
     
     const dayDistribution = getDayOfWeekDistribution(filteredAppointments);
     const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -160,7 +167,7 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
   
   // Hour distribution data
   const hourDistributionData = useMemo(() => {
-    if (!filteredAppointments.length) return [];
+    if (!filteredAppointments || filteredAppointments.length === 0) return [];
     
     const hourDistribution = getHourDistribution(filteredAppointments);
     return hourDistribution.map((count, hour) => ({

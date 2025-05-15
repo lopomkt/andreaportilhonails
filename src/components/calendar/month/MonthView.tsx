@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayCell } from './DayCell';
-import { createDateWithNoon } from '@/lib/dateUtils';
+import { createDateWithNoon, normalizeDateNoon } from '@/lib/dateUtils';
 
 interface MonthViewProps {
   date: Date;
@@ -17,7 +17,8 @@ export const MonthView: React.FC<MonthViewProps> = ({
   date,
   onDaySelect
 }) => {
-  const [currentMonth, setCurrentMonth] = useState<Date>(date);
+  const normalizedDate = normalizeDateNoon(date);
+  const [currentMonth, setCurrentMonth] = useState<Date>(normalizedDate);
   const { appointments, blockedDates } = useData();
   
   // Always use noon (12:00) for month start and end
@@ -58,19 +59,22 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const totalBusinessMinutes = (businessEndHour - businessStartHour) * 60;
   
   const getDayStats = useCallback((day: Date) => {
-    if (!day) return {
+    if (!day || !appointments || !blockedDates) return {
       appointmentsCount: 0,
       blocksCount: 0,
       occupancyPercentage: 0,
       isFullDayBlocked: false
     };
 
+    // Normalize the input day to noon
+    const normalizedDay = normalizeDateNoon(day);
+
     // Use isSameDay for more reliable date comparison
     const dayAppointments = appointments.filter(appt => 
-      appt && isSameDay(new Date(appt.date), day) && appt.status !== 'canceled'
+      appt && isSameDay(normalizeDateNoon(new Date(appt.date)), normalizedDay) && appt.status !== 'canceled'
     );
     const dayBlocks = blockedDates.filter(block => 
-      block && isSameDay(new Date(block.date), day)
+      block && isSameDay(normalizeDateNoon(new Date(block.date)), normalizedDay)
     );
     const isFullDayBlocked = dayBlocks.some(block => block.allDay);
 
@@ -82,27 +86,23 @@ export const MonthView: React.FC<MonthViewProps> = ({
         if (appt.endTime) {
           const startTime = new Date(appt.date);
           const endTime = new Date(appt.endTime);
-          const apptStartHour = startTime.getHours();
-          const apptEndHour = endTime.getHours();
-          const apptEndMinutes = endTime.getMinutes();
-
-          const effectiveStartHour = Math.max(apptStartHour, businessStartHour);
-          const effectiveEndHour = Math.min(apptEndHour + (apptEndMinutes > 0 ? 1 : 0), businessEndHour);
+          const apptStartHour = Math.max(startTime.getHours(), businessStartHour);
+          const apptEndHour = Math.min(endTime.getHours(), businessEndHour);
+          const apptStartMinutes = startTime.getHours() === apptStartHour ? startTime.getMinutes() : 0;
+          const apptEndMinutes = endTime.getHours() === apptEndHour ? endTime.getMinutes() : 0;
           
-          if (effectiveEndHour > effectiveStartHour) {
-            occupiedMinutes += (effectiveEndHour - effectiveStartHour) * 60;
-            if (apptStartHour >= businessStartHour && apptStartHour < businessEndHour) {
-              occupiedMinutes -= startTime.getMinutes();
-            }
-            if (apptEndHour >= businessStartHour && apptEndHour < businessEndHour) {
-              occupiedMinutes -= (60 - apptEndMinutes) % 60;
-            }
-          }
+          occupiedMinutes += (apptEndHour - apptStartHour) * 60 + apptEndMinutes - apptStartMinutes;
+        } else if (appt.service?.durationMinutes) {
+          occupiedMinutes += appt.service.durationMinutes;
+        } else {
+          // Default to 1 hour if no duration specified
+          occupiedMinutes += 60;
         }
       });
     }
-
-    const occupancyPercentage = Math.min(Math.round(occupiedMinutes / totalBusinessMinutes * 100), 100);
+    
+    // Calculate occupancy percentage (0-100)
+    const occupancyPercentage = Math.min(Math.round((occupiedMinutes / totalBusinessMinutes) * 100), 100);
     
     return {
       appointmentsCount: dayAppointments.length,
@@ -110,93 +110,75 @@ export const MonthView: React.FC<MonthViewProps> = ({
       occupancyPercentage,
       isFullDayBlocked
     };
-  }, [appointments, blockedDates]);
-  
-  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  }, [appointments, blockedDates, totalBusinessMinutes, businessStartHour, businessEndHour]);
 
-  // Fixed month navigation functions using addMonths with noon time
-  const goToPreviousMonth = useCallback(() => {
-    const prevMonth = addMonths(currentMonth, -1);
-    // Create new date with noon time
-    const normalizedDate = createDateWithNoon(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
-    setCurrentMonth(normalizedDate);
-  }, [currentMonth]);
-  
-  const goToNextMonth = useCallback(() => {
-    const nextMonth = addMonths(currentMonth, 1);
-    // Create new date with noon time
-    const normalizedDate = createDateWithNoon(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
-    setCurrentMonth(normalizedDate);
-  }, [currentMonth]);
+  const handlePrevMonth = useCallback(() => {
+    setCurrentMonth(prevMonth => {
+      const newDate = addMonths(prevMonth, -1);
+      return createDateWithNoon(newDate.getFullYear(), newDate.getMonth(), 1);
+    });
+  }, []);
 
-  // Fixed handler for day click with correct date handling and noon time
-  const handleDayClick = useCallback((day: Date | null) => {
-    if (day && isSameMonth(day, currentMonth)) {
-      // Set calendar view mode to day
-      localStorage.setItem('calendarViewMode', 'day');
-      
-      // Create normalized date with noon time to avoid timezone issues
-      const selectedDate = createDateWithNoon(
-        day.getFullYear(),
-        day.getMonth(),
-        day.getDate()
-      );
-      
-      // Call the onDaySelect with the normalized date
-      onDaySelect(selectedDate);
-    }
-  }, [onDaySelect, currentMonth]);
+  const handleNextMonth = useCallback(() => {
+    setCurrentMonth(prevMonth => {
+      const newDate = addMonths(prevMonth, 1);
+      return createDateWithNoon(newDate.getFullYear(), newDate.getMonth(), 1);
+    });
+  }, []);
+
+  const handleDayClick = useCallback((day: Date) => {
+    // Set localStorage to remember day view preference
+    localStorage.setItem('calendarViewMode', 'day');
+    
+    // Use normalizeDateNoon to ensure consistent noon time for all date operations
+    const normalizedDay = normalizeDateNoon(day);
+    onDaySelect(normalizedDay);
+  }, [onDaySelect]);
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex justify-between items-center">
-        <h2 className="font-bold md:text-2xl text-lg">
-          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+    <div className="month-view-container p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold">
+          {format(monthStart, "MMMM yyyy", { locale: ptBR })}
         </h2>
-        
-        <div className="flex space-x-2">
-          <Button variant="outline" size="icon" onClick={goToPreviousMonth} className="h-8 w-8 border-rose-200">
+        <div className="space-x-2">
+          <Button variant="outline" onClick={handlePrevMonth}>
             <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Mês anterior</span>
           </Button>
-          <Button variant="outline" size="icon" onClick={goToNextMonth} className="h-8 w-8 border-rose-200">
+          <Button variant="outline" onClick={handleNextMonth}>
             <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Próximo mês</span>
           </Button>
         </div>
       </div>
-      
-      <div className="grid grid-cols-7 gap-1 md:gap-2">
-        {weekDays.map(day => (
-          <div key={day} className="text-center py-2 text-sm font-medium text-muted-foreground">
+
+      <div className="grid grid-cols-7 gap-1">
+        {/* Day names header */}
+        {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => (
+          <div key={day} className="text-center py-2 text-sm font-medium">
             {day}
           </div>
         ))}
-        
+
+        {/* Calendar days */}
         {daysToDisplay.map((day, index) => {
-          const isCurrentMonthDay = day ? isSameMonth(day, currentMonth) : false;
-          const stats = getDayStats(day);
+          if (!day) return <div key={index} className="p-2 border rounded-md bg-gray-50" />;
+          
+          const isCurrentMonth = isSameMonth(day, monthStart);
+          const dayStats = getDayStats(day);
           
           return (
             <DayCell
-              key={day ? day.toISOString() : `empty-${index}`}
+              key={index}
               day={day}
-              isCurrentMonth={isCurrentMonthDay}
-              appointmentsCount={stats.appointmentsCount}
-              blocksCount={stats.blocksCount}
-              occupancyPercentage={stats.occupancyPercentage}
-              isFullDayBlocked={stats.isFullDayBlocked}
-              onClick={() => day && isCurrentMonthDay && handleDayClick(day)}
+              isCurrentMonth={isCurrentMonth}
+              dayStats={dayStats}
+              onClick={handleDayClick}
             />
           );
         })}
       </div>
-      
-      <div className="text-xs text-gray-500 mt-4">
-        {appointments.length > 0 ? (
-          <p>Analise os agendamentos e bloqueios por cada data do mês selecionado.</p>
-        ) : (
-          <p>Nenhum agendamento encontrado para esta data.</p>
-        )}
-      </div>
     </div>
   );
-};
+}

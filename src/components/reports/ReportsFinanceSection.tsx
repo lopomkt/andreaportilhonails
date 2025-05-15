@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { createDateWithNoon } from '@/lib/dateUtils';
+import { createDateWithNoon, normalizeDateNoon, isTodayOrFuture, getConfirmedFutureAppointments } from '@/lib/dateUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ReportsFinanceSectionProps {
@@ -27,11 +27,15 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
 
   // Use useMemo to optimize filtering of appointments
   const filteredAppointmentsByMonth = useMemo(() => {
+    if (!appointments || appointments.length === 0) return [];
+    
     const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
     const monthEnd = endOfMonth(monthStart);
 
     return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      if (!appointment) return false;
+      
+      const appointmentDate = normalizeDateNoon(new Date(appointment.date));
       return (
         isWithinInterval(appointmentDate, {
           start: monthStart,
@@ -44,13 +48,17 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
 
   // Use useMemo for previous month appointments
   const previousMonthFilteredAppointments = useMemo(() => {
+    if (!appointments || appointments.length === 0) return [];
+    
     const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
     const previousMonth = subMonths(monthStart, 1);
     const previousMonthStart = startOfMonth(previousMonth);
     const previousMonthEnd = endOfMonth(previousMonth);
 
     return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
+      if (!appointment) return false;
+      
+      const appointmentDate = normalizeDateNoon(new Date(appointment.date));
       return (
         isWithinInterval(appointmentDate, {
           start: previousMonthStart,
@@ -63,30 +71,40 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
 
   // Use useMemo for expected future revenue in current month
   const calculatedExpectedRevenue = useMemo(() => {
-    const now = new Date();
+    if (!appointments || appointments.length === 0) return 0;
+    
     const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
     const monthEnd = endOfMonth(monthStart);
     
-    // Only count appointments that are in the future or today, and within this month
+    // Only count future confirmed appointments within this month
     return appointments
       .filter(appointment => {
+        if (!appointment) return false;
+        
         const appointmentDate = new Date(appointment.date);
         return (
-          (isFuture(appointmentDate) || isToday(appointmentDate)) &&
-          isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd }) &&
+          isTodayOrFuture(appointmentDate) &&
+          isWithinInterval(normalizeDateNoon(appointmentDate), { 
+            start: monthStart, 
+            end: monthEnd 
+          }) &&
           appointment.status === 'confirmed'
         );
       })
-      .reduce((sum, appointment) => sum + appointment.price, 0);
+      .reduce((sum, appointment) => sum + (appointment.price || 0), 0);
   }, [appointments, selectedMonth, selectedYear]);
   
   // Use useMemo for filtered expenses in current month
   const filteredMonthlyExpenses = useMemo(() => {
+    if (!expenses || expenses.length === 0) return [];
+    
     const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
     const monthEnd = endOfMonth(monthStart);
     
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
+      if (!expense) return false;
+      
+      const expenseDate = normalizeDateNoon(new Date(expense.date));
       return isWithinInterval(expenseDate, {
         start: monthStart,
         end: monthEnd
@@ -96,12 +114,15 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
   
   // Calculate monthly total expenses
   const monthlyExpensesTotal = useMemo(() => {
-    return filteredMonthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    if (!filteredMonthlyExpenses || filteredMonthlyExpenses.length === 0) return 0;
+    return filteredMonthlyExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
   }, [filteredMonthlyExpenses]);
   
   // Calculate net profit
   const calculatedNetProfit = useMemo(() => {
-    return monthlyRevenue - monthlyExpensesTotal;
+    const revenue = monthlyRevenue || 0;
+    const expenses = monthlyExpensesTotal || 0;
+    return revenue - expenses;
   }, [monthlyRevenue, monthlyExpensesTotal]);
 
   useEffect(() => {
@@ -109,11 +130,11 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
     setSelectedDate(createDateWithNoon(selectedYear, selectedMonth));
     
     // Calculate current month revenue
-    const totalRevenue = filteredAppointmentsByMonth.reduce((sum, appointment) => sum + appointment.price, 0);
+    const totalRevenue = filteredAppointmentsByMonth.reduce((sum, appointment) => sum + (appointment.price || 0), 0);
     setMonthlyRevenue(totalRevenue);
 
     // Calculate previous month revenue
-    const previousMonthTotalRevenue = previousMonthFilteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
+    const previousMonthTotalRevenue = previousMonthFilteredAppointments.reduce((sum, appointment) => sum + (appointment.price || 0), 0);
     setPreviousMonthRevenue(previousMonthTotalRevenue);
     
     // Set expected revenue
@@ -125,12 +146,25 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
 
   const handleMonthChange = useCallback((date: Date | undefined) => {
     if (date) {
-      setSelectedDate(date);
+      const normalizedDate = normalizeDateNoon(date);
+      setSelectedDate(normalizedDate);
     }
   }, []);
 
   // Revenue and Expenses data for the year bar chart
   const yearlyFinanceData = useMemo(() => {
+    if (!appointments || appointments.length === 0 || !expenses) {
+      return Array.from({ length: 12 }, (_, monthIndex) => {
+        const monthName = format(new Date(selectedYear, monthIndex, 1), 'MMM', { locale: ptBR });
+        return {
+          name: monthName,
+          receita: 0,
+          despesas: 0,
+          lucro: 0
+        };
+      });
+    }
+    
     const currentYear = selectedYear;
     
     return Array.from({ length: 12 }, (_, monthIndex) => {
@@ -139,20 +173,24 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
       
       const monthRevenue = appointments
         .filter(appointment => {
-          const appointmentDate = new Date(appointment.date);
+          if (!appointment) return false;
+          
+          const appointmentDate = normalizeDateNoon(new Date(appointment.date));
           return (
             isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd }) &&
             appointment.status === 'confirmed'
           );
         })
-        .reduce((sum, appointment) => sum + appointment.price, 0);
+        .reduce((sum, appointment) => sum + (appointment.price || 0), 0);
         
       const monthExpenses = expenses
         .filter(expense => {
-          const expenseDate = new Date(expense.date);
+          if (!expense) return false;
+          
+          const expenseDate = normalizeDateNoon(new Date(expense.date));
           return isWithinInterval(expenseDate, { start: monthStart, end: monthEnd });
         })
-        .reduce((sum, expense) => sum + expense.amount, 0);
+        .reduce((sum, expense) => sum + (expense.amount || 0), 0);
       
       const monthName = format(monthStart, 'MMM', { locale: ptBR });
       
@@ -205,14 +243,14 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
               {new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
-              }).format(monthlyRevenue)}
+              }).format(monthlyRevenue || 0)}
             </div>
             <p className="text-sm text-muted-foreground">
               Receita do mês atual em comparação com{' '}
               {new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
-              }).format(previousMonthRevenue)} do mês anterior.
+              }).format(previousMonthRevenue || 0)} do mês anterior.
             </p>
           </CardContent>
         </Card>
@@ -226,7 +264,7 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
               {new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
-              }).format(expectedRevenue)}
+              }).format(expectedRevenue || 0)}
             </div>
             <p className="text-sm text-muted-foreground">
               Receita prevista de agendamentos confirmados até o final do mês.
@@ -243,11 +281,11 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
               {new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
-              }).format(netProfit)}
+              }).format(netProfit || 0)}
             </div>
             <p className="text-sm text-muted-foreground">
-              Total de receitas (R$ {monthlyRevenue.toLocaleString('pt-BR')}) menos despesas 
-              (R$ {monthlyExpensesTotal.toLocaleString('pt-BR')}) do mês.
+              Total de receitas (R$ {(monthlyRevenue || 0).toLocaleString('pt-BR')}) menos despesas 
+              (R$ {(monthlyExpensesTotal || 0).toLocaleString('pt-BR')}) do mês.
             </p>
           </CardContent>
         </Card>

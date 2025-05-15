@@ -10,7 +10,7 @@ import { TimeSlot } from '@/components/calendar/day/TimeSlot';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { EditAppointmentModal } from '@/components/EditAppointmentModal';
-import { normalizeDate } from '@/lib/dateUtils';
+import { normalizeDateNoon } from '@/lib/dateUtils';
 
 export interface DayViewProps {
   date: Date;
@@ -28,11 +28,16 @@ export const DayView: React.FC<DayViewProps> = ({
   const { appointments, blockedDates, refetchAppointments } = useData();
   const { openModal } = useAppointmentsModal();
   
-  // Filter appointments for the current day using isSameDay instead of local date string comparison
+  // Filter appointments for the current day using isSameDay with normalized dates
   const dayAppointments = useMemo(() => {
+    if (!appointments || appointments.length === 0) return [];
+    
     return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
-      return isSameDay(appointmentDate, date);
+      if (!appointment) return false;
+      
+      const appointmentDate = normalizeDateNoon(new Date(appointment.date));
+      const normalizedDate = normalizeDateNoon(date);
+      return isSameDay(appointmentDate, normalizedDate);
     });
   }, [appointments, date]);
   
@@ -67,13 +72,18 @@ export const DayView: React.FC<DayViewProps> = ({
         
         // Check if the date is blocked as a whole day
         const isTimeBlocked = blockedDates.some(blockedDate => {
-          const blockDate = new Date(blockedDate.date);
-          return isSameDay(blockDate, date) && blockedDate.allDay;
+          if (!blockedDate) return false;
+          
+          const blockDate = normalizeDateNoon(new Date(blockedDate.date));
+          const normalizedDate = normalizeDateNoon(date);
+          return isSameDay(blockDate, normalizedDate) && blockedDate.allDay;
         });
         
         slots.push({
           time: slotTime,
           appointments: dayAppointments.filter(appointment => {
+            if (!appointment) return false;
+            
             const appointmentDate = new Date(appointment.date);
             const appointmentHour = appointmentDate.getHours();
             const appointmentMinute = appointmentDate.getMinutes();
@@ -95,15 +105,10 @@ export const DayView: React.FC<DayViewProps> = ({
   const handlePreviousDay = useCallback(() => {
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
-      const baseDate = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        12, 0, 0, 0
-      );
+      const normalizedDate = normalizeDateNoon(date);
       
       // Subtract exactly one day using addDays with -1
-      const previousDay = addDays(baseDate, -1);
+      const previousDay = addDays(normalizedDate, -1);
       
       // Call the onDaySelect handler with the normalized date
       onDaySelect(previousDay);
@@ -114,15 +119,10 @@ export const DayView: React.FC<DayViewProps> = ({
   const handleNextDay = useCallback(() => {
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
-      const baseDate = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        12, 0, 0, 0
-      );
+      const normalizedDate = normalizeDateNoon(date);
       
       // Add exactly one day
-      const nextDay = addDays(baseDate, 1);
+      const nextDay = addDays(normalizedDate, 1);
       
       // Call the onDaySelect handler with the normalized date
       onDaySelect(nextDay);
@@ -172,4 +172,4 @@ export const DayView: React.FC<DayViewProps> = ({
       )}
     </div>
   );
-};
+}
