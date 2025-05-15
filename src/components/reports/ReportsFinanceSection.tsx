@@ -190,11 +190,12 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
-                  mode="month"
-                  locale={ptBR}
+                  mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => date && handleMonthChange(date)}
+                  onSelect={handleMonthChange}
                   initialFocus
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>

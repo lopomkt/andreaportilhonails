@@ -213,11 +213,12 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
-                  mode="month"
-                  locale={ptBR}
+                  mode="single"
                   selected={comparisonDate}
                   onSelect={handleComparisonDateChange}
                   initialFocus
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
