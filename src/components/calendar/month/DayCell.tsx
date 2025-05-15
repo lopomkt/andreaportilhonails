@@ -6,28 +6,29 @@ import { cn } from "@/lib/utils";
 interface DayCellProps {
   day: Date | null;
   isCurrentMonth: boolean;
-  appointmentsCount: number;
-  blocksCount: number;
-  occupancyPercentage: number;
-  isFullDayBlocked: boolean;
-  onClick: () => void;
+  dayStats: {
+    appointmentsCount: number;
+    blocksCount: number;
+    occupancyPercentage: number;
+    isFullDayBlocked: boolean;
+  };
+  onClick: (day: Date) => void;
 }
 
 export const DayCell: React.FC<DayCellProps> = React.memo(({
   day,
   isCurrentMonth,
-  appointmentsCount,
-  blocksCount,
-  occupancyPercentage,
-  isFullDayBlocked,
+  dayStats,
   onClick
 }) => {
   if (!day) return <div className="aspect-square" />;
   
+  const { appointmentsCount, blocksCount, occupancyPercentage, isFullDayBlocked } = dayStats;
   const isCurrentDay = isToday(day);
+  
   const handleClick = useCallback(() => {
-    onClick();
-  }, [onClick]);
+    onClick(day);
+  }, [onClick, day]);
 
   return (
     <div 
