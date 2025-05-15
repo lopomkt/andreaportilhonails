@@ -1,4 +1,3 @@
-
 // ATENÇÃO: O botão QuickAppointment foi removido DEFINITIVAMENTE
 // Nunca reimporte AppointmentModalOpener ou QuickAppointmentModal
 
@@ -17,7 +16,11 @@ import { useData } from "@/context/DataProvider";
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
   const { fetchBlockedDates, fetchAppointments, refetchAppointments } = useData();
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    // Initialize with current date at noon to avoid timezone issues
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+  });
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const isMobile = useIsMobile();
@@ -77,9 +80,9 @@ export default function CalendarPage() {
     loadCalendarData();
   }, [fetchBlockedDates, fetchAppointments, toast]);
 
+  // Fixed handleDaySelect to use the date directly without re-normalizing
   const handleDaySelect = (date: Date) => {
-    // Use the date directly without normalizing it again
-    // The components sending the date should already have it set to noon (12:00)
+    // Use the date directly as it should already be normalized to noon (12:00)
     setCurrentDate(date);
     
     // Get the source view - if coming from month view, switch to day view
@@ -129,8 +132,15 @@ export default function CalendarPage() {
 
   // Handle the suggested time selection by opening the appointment modal
   const handleSuggestedTimeSelect = (date: Date, timeString: string) => {
-    // Create a new date object with the selected time
-    const selectedDateTime = new Date(date);
+    // Create a new date object with the selected time, ensuring noon base
+    const selectedDateTime = new Date(
+      date.getFullYear(),
+      date.getMonth(), 
+      date.getDate(),
+      12, 0, 0, 0
+    );
+    
+    // Then set the specific hours and minutes
     const [hours, minutes] = timeString.split(':').map(Number);
     selectedDateTime.setHours(hours, minutes, 0, 0);
     

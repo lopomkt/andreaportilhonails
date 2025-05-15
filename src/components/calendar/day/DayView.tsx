@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
-import { isSameDay, addMinutes, isWithinInterval, format, addDays } from 'date-fns';
+import { isSameDay, addDays, isWithinInterval, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppointmentCard } from '@/components/calendar/day/AppointmentCard';
 import { useAppointmentsModal } from '@/context/AppointmentsModalContext';
@@ -27,11 +27,11 @@ export const DayView: React.FC<DayViewProps> = ({
   const { appointments, blockedDates, refetchAppointments } = useData();
   const { openModal } = useAppointmentsModal();
   
-  // Filter appointments for the current day using local date string comparison
+  // Filter appointments for the current day using isSameDay instead of local date string comparison
   const dayAppointments = useMemo(() => {
     return appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
-      return appointmentDate.toLocaleDateString('pt-BR') === date.toLocaleDateString('pt-BR');
+      return isSameDay(appointmentDate, date);
     });
   }, [appointments, date]);
   
@@ -50,10 +50,13 @@ export const DayView: React.FC<DayViewProps> = ({
         
         // Get all appointments for this time slot regardless of status
         const slotAppointments = dayAppointments.filter(appointment => {
+          // Only consider confirmed appointments for blocking
+          if (appointment.status !== 'confirmed') return false;
+          
           const appointmentDate = new Date(appointment.date);
           const appointmentEndTime = appointment.endTime 
             ? new Date(appointment.endTime)
-            : addMinutes(appointmentDate, appointment.service?.durationMinutes || 60);
+            : new Date(appointmentDate.getTime() + (appointment.service?.durationMinutes || 60) * 60000);
             
           return isWithinInterval(slotTime, {
             start: appointmentDate,

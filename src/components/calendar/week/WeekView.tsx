@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo } from 'react';
 import { useData } from "@/context/DataProvider";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, differenceInDays, getWeekOfMonth, addMonths, startOfMonth, endOfMonth, setMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, getWeekOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,20 +92,12 @@ export const WeekView: React.FC<WeekViewProps> = ({
     setIsWeekDialogOpen(false);
   };
 
-  // Updated handleMonthChange to maintain week view
+  // Updated handleMonthChange to correctly set month and maintain day view
   const handleMonthChange = (monthIndex: number) => {
     setSelectedMonth(monthIndex);
     
-    // Update the current date to the selected month but keep the day
-    const newDate = new Date(date);
-    newDate.setMonth(monthIndex);
-    newDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-    
-    // If the day doesn't exist in the new month, set to last day of month
-    const maxDaysInMonth = new Date(date.getFullYear(), monthIndex + 1, 0).getDate();
-    if (date.getDate() > maxDaysInMonth) {
-      newDate.setDate(maxDaysInMonth);
-    }
+    // Create a new date at the first day of the selected month with time set to noon
+    const newDate = new Date(date.getFullYear(), monthIndex, 1, 12, 0, 0, 0);
     
     // Set view mode to week and notify parent
     localStorage.setItem('calendarViewMode', 'week');
@@ -118,29 +109,29 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return new Date(date.getFullYear(), selectedMonth, 1, 12, 0, 0, 0);
   }, [selectedMonth, date]);
 
-  // Fixed week generation to avoid duplication
+  // Fixed week generation to avoid duplication and ensure correct month filtering
   const weeks = useMemo(() => {
-    const monthStart = startOfMonth(filteredMonth);
-    const monthEnd = endOfMonth(filteredMonth);
+    const result = [];
+    const processedWeekStartTimes = new Set<number>();
     
-    // Get the first day of the first week that contains a day of the month
+    // Start with the first day of selected month
+    const monthStart = new Date(filteredMonth.getFullYear(), filteredMonth.getMonth(), 1, 12, 0, 0, 0);
+    const monthEnd = new Date(filteredMonth.getFullYear(), filteredMonth.getMonth() + 1, 0, 12, 0, 0, 0);
+    
+    // Get the start of the first week containing the first day of the month
     const firstWeekStart = startOfWeek(monthStart, { locale: ptBR });
     
-    // Track processed week start times to avoid duplication
-    const processedWeekStartTimes = new Set<number>();
-    const result = [];
-    
-    // Start with the first week and go through at most 6 weeks
+    // Process at most 6 weeks (max number of weeks in a month view)
     for (let i = 0; i < 6; i++) {
-      // Safely calculate the start of the current week
+      // Calculate the start of the current week (noon time)
       const currentWeekStart = i === 0 ? 
-        firstWeekStart : 
-        new Date(firstWeekStart.getFullYear(), firstWeekStart.getMonth(), firstWeekStart.getDate() + (7 * i), 12, 0, 0);
-      
+        new Date(firstWeekStart.getFullYear(), firstWeekStart.getMonth(), firstWeekStart.getDate(), 12, 0, 0, 0) : 
+        new Date(firstWeekStart.getFullYear(), firstWeekStart.getMonth(), firstWeekStart.getDate() + (7 * i), 12, 0, 0, 0);
+        
       // Calculate the end of the week
       const weekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
       
-      // Check if we've gone past the end of the month
+      // If we've gone past the end of the month, break
       if (currentWeekStart > monthEnd) break;
       
       // Generate days in the current week
@@ -160,7 +151,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
       // Add this week's timestamp to our set of processed weeks
       processedWeekStartTimes.add(weekStartTimestamp);
       
-      // Format date range for display
+      // Format date range for display, avoiding duplicate month names
       const startMonth = currentWeekStart.getMonth();
       const endMonth = weekEnd.getMonth();
       let weekTitle = '';
@@ -190,14 +181,13 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   // Fixed function to properly handle day view navigation
   const handleViewDay = (weekStart: Date) => {
-    console.log("Switching to day view from week:", weekStart);
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
       const normalizedDate = new Date(
         weekStart.getFullYear(),
         weekStart.getMonth(),
         weekStart.getDate(),
-        12, 0, 0, 0 // Set to noon (12:00) to avoid timezone issues
+        12, 0, 0, 0
       );
       
       // Close the dialog and save view mode preference

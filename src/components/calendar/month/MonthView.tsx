@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
@@ -18,21 +19,31 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const [currentMonth, setCurrentMonth] = useState<Date>(date);
   const { appointments, blockedDates } = useData();
   
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  // Always use noon (12:00) for month start and end
+  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1, 12, 0, 0, 0);
+  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 12, 0, 0, 0);
+  
   const monthDays = eachDayOfInterval({
     start: monthStart,
     end: monthEnd
-  });
+  }).map(day => new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12, 0, 0, 0));
   
   const startWeekday = getDay(monthStart);
   const daysToDisplay = [
-    ...Array(startWeekday).fill(null).map((_, i) => addDays(monthStart, i - startWeekday)), 
+    ...Array(startWeekday).fill(null).map((_, i) => {
+      const prevMonthDay = addDays(monthStart, i - startWeekday);
+      return new Date(prevMonthDay.getFullYear(), prevMonthDay.getMonth(), prevMonthDay.getDate(), 12, 0, 0, 0);
+    }), 
     ...monthDays
   ];
   
+  // Fill remaining cells in the grid, ensuring noon time
   while (daysToDisplay.length < 42) {
-    daysToDisplay.push(addDays(daysToDisplay[daysToDisplay.length - 1], 1));
+    const lastDay = daysToDisplay[daysToDisplay.length - 1];
+    const nextDay = lastDay ? addDays(lastDay, 1) : addDays(monthEnd, 1);
+    // Set time to noon
+    const normalizedNextDay = new Date(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 12, 0, 0, 0);
+    daysToDisplay.push(normalizedNextDay);
   }
 
   // Business hours configuration
@@ -48,11 +59,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
       isFullDayBlocked: false
     };
 
+    // Use isSameDay for more reliable date comparison
     const dayAppointments = appointments.filter(appt => 
-      isSameDay(new Date(appt.date), day) && appt.status !== 'canceled'
+      appt && isSameDay(new Date(appt.date), day) && appt.status !== 'canceled'
     );
     const dayBlocks = blockedDates.filter(block => 
-      isSameDay(new Date(block.date), day)
+      block && isSameDay(new Date(block.date), day)
     );
     const isFullDayBlocked = dayBlocks.some(block => block.allDay);
 
@@ -96,11 +108,22 @@ export const MonthView: React.FC<MonthViewProps> = ({
   
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-  // Fixed month navigation functions using addMonths instead of addDays
-  const goToPreviousMonth = () => setCurrentMonth(prev => addMonths(prev, -1));
-  const goToNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
+  // Fixed month navigation functions using addMonths with noon time
+  const goToPreviousMonth = () => {
+    const prevMonth = addMonths(currentMonth, -1);
+    // Create new date with noon time
+    const normalizedDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1, 12, 0, 0, 0);
+    setCurrentMonth(normalizedDate);
+  };
+  
+  const goToNextMonth = () => {
+    const nextMonth = addMonths(currentMonth, 1);
+    // Create new date with noon time
+    const normalizedDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1, 12, 0, 0, 0);
+    setCurrentMonth(normalizedDate);
+  };
 
-  // Fixed handler for day click with correct date handling
+  // Fixed handler for day click with correct date handling and noon time
   const handleDayClick = useCallback((day: Date | null) => {
     if (day && isSameMonth(day, currentMonth)) {
       // Set calendar view mode to day
@@ -111,10 +134,8 @@ export const MonthView: React.FC<MonthViewProps> = ({
         day.getFullYear(),
         day.getMonth(),
         day.getDate(),
-        12, 0, 0, 0  // Set to noon (12:00) to avoid timezone issues
+        12, 0, 0, 0
       );
-      
-      console.log("Day clicked, redirecting to day view with date:", selectedDate);
       
       // Call the onDaySelect with the normalized date
       onDaySelect(selectedDate);
