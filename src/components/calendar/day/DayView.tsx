@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useData } from '@/context/DataProvider';
 import { isSameDay, addDays, isWithinInterval, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -10,6 +10,7 @@ import { TimeSlot } from '@/components/calendar/day/TimeSlot';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { EditAppointmentModal } from '@/components/EditAppointmentModal';
+import { normalizeDate } from '@/lib/dateUtils';
 
 export interface DayViewProps {
   date: Date;
@@ -86,12 +87,12 @@ export const DayView: React.FC<DayViewProps> = ({
     setTimeSlots(slots);
   }, [date, dayAppointments, blockedDates]);
 
-  const handleAppointmentClick = (appointment: Appointment) => {
+  const handleAppointmentClick = useCallback((appointment: Appointment) => {
     setEditingAppointment(appointment);
-  };
+  }, []);
 
   // Fixed day navigation to properly handle exactly one day at a time
-  const handlePreviousDay = () => {
+  const handlePreviousDay = useCallback(() => {
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
       const baseDate = new Date(
@@ -107,10 +108,10 @@ export const DayView: React.FC<DayViewProps> = ({
       // Call the onDaySelect handler with the normalized date
       onDaySelect(previousDay);
     }
-  };
+  }, [date, onDaySelect]);
 
   // Fixed next day navigation to properly handle exactly one day at a time
-  const handleNextDay = () => {
+  const handleNextDay = useCallback(() => {
     if (onDaySelect) {
       // Create a normalized date with noon time to avoid timezone issues
       const baseDate = new Date(
@@ -126,7 +127,7 @@ export const DayView: React.FC<DayViewProps> = ({
       // Call the onDaySelect handler with the normalized date
       onDaySelect(nextDay);
     }
-  };
+  }, [date, onDaySelect]);
 
   return (
     <div className="day-view-container px-2 pt-4">

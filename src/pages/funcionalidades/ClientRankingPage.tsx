@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
+import { createDateWithNoon } from '@/lib/dateUtils';
 
 // Badge mapping for top clients
 const clientBadges = ["🥇", "🥈", "🥉"];
@@ -21,6 +22,7 @@ interface ClientWithRank extends Client {
   rank: number;
   badge: string | null;
   appointmentsCount: number;
+  totalSpent: number;
 }
 
 type PeriodFilter = "current" | "last" | "last3" | "last6" | "year" | "all";
@@ -34,54 +36,63 @@ const ClientRankingPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Calculate date ranges based on selected period
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    let startDate = createDateWithNoon(now.getFullYear(), now.getMonth());
+    let endDate = createDateWithNoon(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (period) {
+      case "current":
+        startDate = startOfMonth(createDateWithNoon(now.getFullYear(), now.getMonth()));
+        endDate = endOfMonth(startDate);
+        break;
+      case "last":
+        startDate = startOfMonth(subMonths(createDateWithNoon(now.getFullYear(), now.getMonth()), 1));
+        endDate = endOfMonth(startDate);
+        break;
+      case "last3":
+        startDate = startOfMonth(subMonths(createDateWithNoon(now.getFullYear(), now.getMonth()), 3));
+        endDate = now;
+        break;
+      case "last6":
+        startDate = startOfMonth(subMonths(createDateWithNoon(now.getFullYear(), now.getMonth()), 6));
+        endDate = now;
+        break;
+      case "year":
+        startDate = new Date(now.getFullYear(), 0, 1, 12, 0, 0, 0);
+        endDate = now;
+        break;
+      case "all":
+        startDate = new Date(0); // Beginning of time
+        startDate.setHours(12, 0, 0, 0);
+        endDate = now;
+        break;
+    }
+    
+    return { startDate, endDate };
+  }, [period]);
+
+  // Memoized filtered appointments
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter(appt => {
+      const appointmentDate = new Date(appt.date);
+      return appt.status === "confirmed" && 
+        isWithinInterval(appointmentDate, { start: dateRange.startDate, end: dateRange.endDate });
+    });
+  }, [appointments, dateRange]);
+
+  // Calculate client stats
   useEffect(() => {
     setLoading(true);
     
     try {
-      // Calculate date ranges based on selected period
-      const now = new Date();
-      let startDate = new Date();
-      let endDate = new Date();
-      
-      switch (period) {
-        case "current":
-          startDate = startOfMonth(now);
-          endDate = endOfMonth(now);
-          break;
-        case "last":
-          startDate = startOfMonth(subMonths(now, 1));
-          endDate = endOfMonth(subMonths(now, 1));
-          break;
-        case "last3":
-          startDate = startOfMonth(subMonths(now, 3));
-          endDate = now;
-          break;
-        case "last6":
-          startDate = startOfMonth(subMonths(now, 6));
-          endDate = now;
-          break;
-        case "year":
-          startDate = new Date(now.getFullYear(), 0, 1);
-          endDate = now;
-          break;
-        case "all":
-          startDate = new Date(0); // Beginning of time
-          endDate = now;
-          break;
-      }
-      
-      // Get confirmed appointments for the selected period
-      const filteredAppointments = appointments.filter(appt => {
-        const appointmentDate = new Date(appt.date);
-        return appt.status === "confirmed" && 
-          isWithinInterval(appointmentDate, { start: startDate, end: endDate });
-      });
-      
       // Count appointments per client and calculate total spent
       const clientStats: Record<string, { count: number, spent: number }> = {};
       
       filteredAppointments.forEach(appt => {
         if (appt.clientId) {
+          // Initialize if client not in stats yet
           if (!clientStats[appt.clientId]) {
             clientStats[appt.clientId] = { count: 0, spent: 0 };
           }
@@ -119,9 +130,9 @@ const ClientRankingPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [clients, appointments, period, isMobile, toast]);
+  }, [clients, filteredAppointments, isMobile, toast]);
 
-  const handleSendWhatsApp = async (client: Client) => {
+  const handleSendWhatsApp = useCallback(async (client: Client) => {
     try {
       // Create a special message for the ranked client
       const message = {
@@ -141,9 +152,9 @@ const ClientRankingPage: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [generateWhatsAppLink, toast]);
 
-  const getPeriodLabel = () => {
+  const getPeriodLabel = useCallback(() => {
     switch (period) {
       case "current": return "Mês Atual";
       case "last": return "Mês Anterior";
@@ -153,7 +164,7 @@ const ClientRankingPage: React.FC = () => {
       case "all": return "Todo Período";
       default: return "";
     }
-  };
+  }, [period]);
 
   return (
     <div className="container mx-auto p-3 md:p-4 relative">

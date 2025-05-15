@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { formatCurrency } from '@/lib/formatters';
 import { Appointment } from '@/types';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { createDateWithNoon } from '@/lib/dateUtils';
 
 interface ReportsServicesSectionProps {
   selectedMonth: number;
@@ -16,32 +17,34 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
   const { appointments, services } = useData();
   const [serviceStats, setServiceStats] = useState<{ name: string; value: number; count: number }[]>([]);
 
+  // Use useMemo for filtered appointments
+  const filteredAppointments = useMemo(() => {
+    if (!appointments) return [];
+    
+    // Filter appointments for the selected month and year
+    const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
+    const monthEnd = endOfMonth(monthStart);
+    
+    return appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return isWithinInterval(appointmentDate, {
+          start: monthStart,
+          end: monthEnd
+        }) && 
+        appointment.status === 'confirmed';
+    });
+  }, [appointments, selectedMonth, selectedYear]);
+  
   useEffect(() => {
-    if (appointments && services) {
-      // Filter appointments for the selected month and year
-      const monthStart = startOfMonth(new Date(selectedYear, selectedMonth, 1));
-      const monthEnd = endOfMonth(new Date(selectedYear, selectedMonth, 1));
-      
-      const filteredAppointments = appointments.filter(appointment => {
-        const appointmentDate = new Date(appointment.date);
-        return appointmentDate >= monthStart && 
-               appointmentDate <= monthEnd && 
-               appointment.status === 'confirmed';
-      });
-      
+    if (filteredAppointments.length > 0 && services) {
       setServiceStats(calculateServiceStats(filteredAppointments));
+    } else {
+      setServiceStats([]);
     }
-  }, [appointments, services, selectedMonth, selectedYear]);
+  }, [filteredAppointments, services]);
 
-  // Add a helper function to ensure dates are processed correctly
-  const processDateString = (dateValue: string | Date): string => {
-    if (dateValue instanceof Date) {
-      return format(dateValue, 'yyyy-MM-dd');
-    }
-    return dateValue;
-  };
-
-  const calculateServiceStats = (appointmentsData: Appointment[]) => {
+  // Memoized calculation of service stats
+  const calculateServiceStats = useMemo(() => (appointmentsData: Appointment[]) => {
     const serviceRevenue: { [key: string]: { value: number; count: number; name: string } } = {};
 
     appointmentsData.forEach(appointment => {
@@ -70,7 +73,7 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
     serviceStatsArray.sort((a, b) => b.value - a.value);
 
     return serviceStatsArray;
-  };
+  }, []);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 

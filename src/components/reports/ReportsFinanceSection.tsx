@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, subMonths, addMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils";
+import { createDateWithNoon } from '@/lib/dateUtils';
 
 interface ReportsFinanceSectionProps {
   selectedMonth: number;
@@ -16,39 +17,59 @@ interface ReportsFinanceSectionProps {
 }
 
 export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFinanceSectionProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(selectedYear, selectedMonth, 1));
+  const [selectedDate, setSelectedDate] = useState<Date>(() => createDateWithNoon(selectedYear, selectedMonth));
   const { appointments } = useData();
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
   const [previousMonthRevenue, setPreviousMonthRevenue] = useState<number>(0);
 
-  const filterAppointmentsByMonth = (monthStart: Date, monthEnd: Date) => {
+  // Use useMemo to optimize filtering of appointments
+  const filteredAppointmentsByMonth = useMemo(() => {
+    const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
+    const monthEnd = endOfMonth(monthStart);
+
     return appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
       return (
-        appointmentDate >= monthStart &&
-        appointmentDate <= monthEnd &&
+        isWithinInterval(appointmentDate, {
+          start: monthStart,
+          end: monthEnd
+        }) &&
         appointment.status === 'confirmed'
       );
     });
-  };
+  }, [appointments, selectedMonth, selectedYear]);
 
-  useEffect(() => {
-    // Update the selectedDate when the props change
-    setSelectedDate(new Date(selectedYear, selectedMonth, 1));
-    
-    const monthStart = startOfMonth(new Date(selectedYear, selectedMonth, 1));
-    const monthEnd = endOfMonth(new Date(selectedYear, selectedMonth, 1));
-    const filteredAppointments = filterAppointmentsByMonth(monthStart, monthEnd);
-    const totalRevenue = filteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
-    setMonthlyRevenue(totalRevenue);
-
+  // Use useMemo for previous month appointments
+  const previousMonthFilteredAppointments = useMemo(() => {
+    const monthStart = startOfMonth(createDateWithNoon(selectedYear, selectedMonth));
     const previousMonth = subMonths(monthStart, 1);
     const previousMonthStart = startOfMonth(previousMonth);
     const previousMonthEnd = endOfMonth(previousMonth);
-    const previousMonthFilteredAppointments = filterAppointmentsByMonth(previousMonthStart, previousMonthEnd);
+
+    return appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return (
+        isWithinInterval(appointmentDate, {
+          start: previousMonthStart,
+          end: previousMonthEnd
+        }) &&
+        appointment.status === 'confirmed'
+      );
+    });
+  }, [appointments, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    // Update the selectedDate when the props change
+    setSelectedDate(createDateWithNoon(selectedYear, selectedMonth));
+    
+    // Calculate current month revenue
+    const totalRevenue = filteredAppointmentsByMonth.reduce((sum, appointment) => sum + appointment.price, 0);
+    setMonthlyRevenue(totalRevenue);
+
+    // Calculate previous month revenue
     const previousMonthTotalRevenue = previousMonthFilteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
     setPreviousMonthRevenue(previousMonthTotalRevenue);
-  }, [selectedMonth, selectedYear, appointments]);
+  }, [selectedMonth, selectedYear, filteredAppointmentsByMonth, previousMonthFilteredAppointments]);
 
   const handleMonthChange = (date: Date | undefined) => {
     if (date) {
@@ -56,35 +77,36 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
     }
   };
 
-  const getRevenueData = () => {
+  const getRevenueData = useMemo(() => {
     // Create a new Date object using selectedYear instead of calling getFullYear() on selectedMonth
     const months = Array.from({ length: 12 }, (_, i) => {
       const monthDate = new Date(selectedYear, i, 1);
       return format(monthDate, 'MMMM', { locale: ptBR });
     });
 
-    const revenueData = months.map((month, index) => {
-      const monthStart = startOfMonth(new Date(selectedYear, index, 1));
-      const monthEnd = endOfMonth(new Date(selectedYear, index, 1));
-      const filteredAppointments = filterAppointmentsByMonth(monthStart, monthEnd);
-      const totalRevenue = filteredAppointments.reduce((sum, appointment) => sum + appointment.price, 0);
-
-      // Ensure dateStr is always a string
-      const processDateString = (dateValue: string | Date): string => {
-        if (dateValue instanceof Date) {
-          return format(dateValue, 'yyyy-MM-dd');
-        }
-        return dateValue;
-      };
+    return months.map((month, index) => {
+      const monthStart = startOfMonth(createDateWithNoon(selectedYear, index));
+      const monthEnd = endOfMonth(monthStart);
+      
+      const filteredAppts = appointments.filter(appointment => {
+        const appointmentDate = new Date(appointment.date);
+        return (
+          isWithinInterval(appointmentDate, {
+            start: monthStart,
+            end: monthEnd
+          }) &&
+          appointment.status === 'confirmed'
+        );
+      });
+      
+      const totalRevenue = filteredAppts.reduce((sum, appointment) => sum + appointment.price, 0);
 
       return {
-        date: processDateString(monthStart),
+        date: format(monthStart, 'yyyy-MM-dd'),
         revenue: totalRevenue,
       };
     });
-
-    return revenueData;
-  };
+  }, [appointments, selectedYear]);
 
   return (
     <Card>

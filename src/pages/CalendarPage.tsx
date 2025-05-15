@@ -1,7 +1,8 @@
+
 // ATENÇÃO: O botão QuickAppointment foi removido DEFINITIVAMENTE
 // Nunca reimporte AppointmentModalOpener ou QuickAppointmentModal
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -12,6 +13,7 @@ import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarViewTabs } from "@/components/calendar/CalendarViewTabs";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useData } from "@/context/DataProvider";
+import { createDateWithNoon } from "@/lib/dateUtils";
 
 export default function CalendarPage() {
   const { openModal } = useAppointmentsModal();
@@ -19,7 +21,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     // Initialize with current date at noon to avoid timezone issues
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+    return createDateWithNoon(now.getFullYear(), now.getMonth(), now.getDate());
   });
   const [openBlockedDateDialog, setOpenBlockedDateDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,8 +83,8 @@ export default function CalendarPage() {
   }, [fetchBlockedDates, fetchAppointments, toast]);
 
   // Fixed handleDaySelect to use the date directly without re-normalizing
-  const handleDaySelect = (date: Date) => {
-    // Use the date directly as it should already be normalized to noon (12:00)
+  const handleDaySelect = useCallback((date: Date) => {
+    // Date already should be normalized with noon time (12:00), use it directly
     setCurrentDate(date);
     
     // Get the source view - if coming from month view, switch to day view
@@ -103,13 +105,13 @@ export default function CalendarPage() {
     
     // Force a refresh of appointments
     refetchAppointments();
-  };
+  }, [calendarView, navigate, refetchAppointments]);
   
   useEffect(() => {
     refetchAppointments();
   }, [currentDate, refetchAppointments]);
   
-  const handleViewChange = (value: string) => {
+  const handleViewChange = useCallback((value: string) => {
     setIsLoading(true);
     toast({
       title: "Carregando...",
@@ -128,16 +130,15 @@ export default function CalendarPage() {
       navigate(`/calendario?${searchParams.toString()}`);
       setIsLoading(false);
     }, 100);
-  };
+  }, [location.search, currentDate, navigate, toast]);
 
   // Handle the suggested time selection by opening the appointment modal
-  const handleSuggestedTimeSelect = (date: Date, timeString: string) => {
+  const handleSuggestedTimeSelect = useCallback((date: Date, timeString: string) => {
     // Create a new date object with the selected time, ensuring noon base
-    const selectedDateTime = new Date(
+    const selectedDateTime = createDateWithNoon(
       date.getFullYear(),
       date.getMonth(), 
-      date.getDate(),
-      12, 0, 0, 0
+      date.getDate()
     );
     
     // Then set the specific hours and minutes
@@ -146,7 +147,7 @@ export default function CalendarPage() {
     
     // Open the modal with this date/time
     openModal(null, selectedDateTime);
-  };
+  }, [openModal]);
 
   const handleBlockedDateSuccess = async () => {
     setOpenBlockedDateDialog(false);

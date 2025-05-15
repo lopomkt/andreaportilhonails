@@ -1,11 +1,12 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useData } from '@/context/DataProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayCell } from './DayCell';
+import { createDateWithNoon } from '@/lib/dateUtils';
 
 interface MonthViewProps {
   date: Date;
@@ -20,38 +21,43 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const { appointments, blockedDates } = useData();
   
   // Always use noon (12:00) for month start and end
-  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1, 12, 0, 0, 0);
-  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 12, 0, 0, 0);
+  const monthStart = useMemo(() => createDateWithNoon(currentMonth.getFullYear(), currentMonth.getMonth(), 1), [currentMonth]);
+  const monthEnd = useMemo(() => endOfMonth(monthStart), [monthStart]);
   
-  const monthDays = eachDayOfInterval({
-    start: monthStart,
-    end: monthEnd
-  }).map(day => new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12, 0, 0, 0));
-  
-  const startWeekday = getDay(monthStart);
-  const daysToDisplay = [
-    ...Array(startWeekday).fill(null).map((_, i) => {
-      const prevMonthDay = addDays(monthStart, i - startWeekday);
-      return new Date(prevMonthDay.getFullYear(), prevMonthDay.getMonth(), prevMonthDay.getDate(), 12, 0, 0, 0);
-    }), 
-    ...monthDays
-  ];
-  
-  // Fill remaining cells in the grid, ensuring noon time
-  while (daysToDisplay.length < 42) {
-    const lastDay = daysToDisplay[daysToDisplay.length - 1];
-    const nextDay = lastDay ? addDays(lastDay, 1) : addDays(monthEnd, 1);
-    // Set time to noon
-    const normalizedNextDay = new Date(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 12, 0, 0, 0);
-    daysToDisplay.push(normalizedNextDay);
-  }
+  // Calculate all days to display in the month grid
+  const daysToDisplay = useMemo(() => {
+    const monthDays = eachDayOfInterval({
+      start: monthStart,
+      end: monthEnd
+    }).map(day => createDateWithNoon(day.getFullYear(), day.getMonth(), day.getDate()));
+    
+    const startWeekday = getDay(monthStart);
+    const result = [
+      ...Array(startWeekday).fill(null).map((_, i) => {
+        const prevMonthDay = addDays(monthStart, i - startWeekday);
+        return createDateWithNoon(prevMonthDay.getFullYear(), prevMonthDay.getMonth(), prevMonthDay.getDate());
+      }), 
+      ...monthDays
+    ];
+    
+    // Fill remaining cells in the grid, ensuring noon time
+    while (result.length < 42) {
+      const lastDay = result[result.length - 1];
+      const nextDay = lastDay ? addDays(lastDay, 1) : addDays(monthEnd, 1);
+      // Set time to noon
+      const normalizedNextDay = createDateWithNoon(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate());
+      result.push(normalizedNextDay);
+    }
+    
+    return result;
+  }, [monthStart, monthEnd]);
 
   // Business hours configuration
   const businessStartHour = 7;
   const businessEndHour = 19;
   const totalBusinessMinutes = (businessEndHour - businessStartHour) * 60;
   
-  const getDayStats = (day: Date) => {
+  const getDayStats = useCallback((day: Date) => {
     if (!day) return {
       appointmentsCount: 0,
       blocksCount: 0,
@@ -104,24 +110,24 @@ export const MonthView: React.FC<MonthViewProps> = ({
       occupancyPercentage,
       isFullDayBlocked
     };
-  };
+  }, [appointments, blockedDates]);
   
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   // Fixed month navigation functions using addMonths with noon time
-  const goToPreviousMonth = () => {
+  const goToPreviousMonth = useCallback(() => {
     const prevMonth = addMonths(currentMonth, -1);
     // Create new date with noon time
-    const normalizedDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1, 12, 0, 0, 0);
+    const normalizedDate = createDateWithNoon(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
     setCurrentMonth(normalizedDate);
-  };
+  }, [currentMonth]);
   
-  const goToNextMonth = () => {
+  const goToNextMonth = useCallback(() => {
     const nextMonth = addMonths(currentMonth, 1);
     // Create new date with noon time
-    const normalizedDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1, 12, 0, 0, 0);
+    const normalizedDate = createDateWithNoon(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
     setCurrentMonth(normalizedDate);
-  };
+  }, [currentMonth]);
 
   // Fixed handler for day click with correct date handling and noon time
   const handleDayClick = useCallback((day: Date | null) => {
@@ -130,11 +136,10 @@ export const MonthView: React.FC<MonthViewProps> = ({
       localStorage.setItem('calendarViewMode', 'day');
       
       // Create normalized date with noon time to avoid timezone issues
-      const selectedDate = new Date(
+      const selectedDate = createDateWithNoon(
         day.getFullYear(),
         day.getMonth(),
-        day.getDate(),
-        12, 0, 0, 0
+        day.getDate()
       );
       
       // Call the onDaySelect with the normalized date

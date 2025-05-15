@@ -8,6 +8,17 @@ export const normalizeDate = (date: Date): Date => {
 };
 
 /**
+ * Creates a new date with noon (12:00) time setting to avoid timezone issues
+ * @param year The year
+ * @param month The month (0-11)
+ * @param day The day of month, defaults to 1
+ * @returns A new Date object set to noon time
+ */
+export const createDateWithNoon = (year: number, month: number, day: number = 1): Date => {
+  return new Date(year, month, day, 12, 0, 0, 0);
+};
+
+/**
  * Creates a clone of a date to prevent mutation issues
  */
 export const cloneDate = (date: Date): Date => {
