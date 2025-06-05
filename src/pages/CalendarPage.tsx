@@ -8,60 +8,93 @@ import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { normalizeDateNoon } from "@/lib/dateUtils";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 export default function CalendarPage() {
+  const { handleError } = useErrorHandler();
+  
   // Use noon-normalized current date to avoid timezone issues
-  const [selectedDate, setSelectedDate] = useState<Date>(normalizeDateNoon(new Date()));
+  const [selectedDate, setSelectedDate] = useState<Date>(() => normalizeDateNoon(new Date()));
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const { openModal } = useAppointmentsModal();
   
   // Load the view preference from localStorage on component mount
   useEffect(() => {
-    const savedViewMode = localStorage.getItem("calendarViewMode") as "day" | "week" | "month" | null;
-    if (savedViewMode) {
-      setViewMode(savedViewMode);
+    try {
+      const savedViewMode = localStorage.getItem("calendarViewMode") as "day" | "week" | "month" | null;
+      if (savedViewMode && ["day", "week", "month"].includes(savedViewMode)) {
+        setViewMode(savedViewMode);
+      }
+    } catch (error) {
+      handleError(error, 'Erro ao carregar preferências');
     }
-  }, []);
+  }, [handleError]);
   
   // Save the view preference to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem("calendarViewMode", viewMode);
-  }, [viewMode]);
+    try {
+      localStorage.setItem("calendarViewMode", viewMode);
+    } catch (error) {
+      handleError(error, 'Erro ao salvar preferências');
+    }
+  }, [viewMode, handleError]);
 
   const handleViewChange = useCallback((value: string) => {
-    setViewMode(value as "day" | "week" | "month");
-    localStorage.setItem("calendarViewMode", value);
-  }, []);
+    try {
+      if (["day", "week", "month"].includes(value)) {
+        setViewMode(value as "day" | "week" | "month");
+        localStorage.setItem("calendarViewMode", value);
+      }
+    } catch (error) {
+      handleError(error, 'Erro ao alterar visualização');
+    }
+  }, [handleError]);
 
   const handleDaySelect = useCallback((date: Date) => {
-    // The date is already normalized by the calling component,
-    // so we just use it directly without re-normalizing
-    setSelectedDate(date);
-    
-    // Check stored view mode preference when day is selected from week or month view
-    const savedViewMode = localStorage.getItem("calendarViewMode") as "day" | "week" | "month" | null;
-    if (savedViewMode === "day") {
-      setViewMode("day");
+    try {
+      // Ensure the date is properly normalized
+      const normalizedDay = normalizeDateNoon(date);
+      setSelectedDate(normalizedDay);
+      
+      // Check stored view mode preference when day is selected from week or month view
+      const savedViewMode = localStorage.getItem("calendarViewMode") as "day" | "week" | "month" | null;
+      if (savedViewMode === "day") {
+        setViewMode("day");
+      }
+    } catch (error) {
+      handleError(error, 'Erro ao selecionar data');
     }
-  }, []);
+  }, [handleError]);
 
   const handleNewAppointment = useCallback(() => {
-    // Pass null for a new appointment, with the selected date
-    openModal(null, selectedDate);
-  }, [openModal, selectedDate]);
+    try {
+      // Pass null for a new appointment, with the selected date
+      openModal(null, selectedDate);
+    } catch (error) {
+      handleError(error, 'Erro ao criar agendamento');
+    }
+  }, [openModal, selectedDate, handleError]);
 
   const handleSuggestedTimeSelect = useCallback((date: Date, time: string) => {
-    // Extract hours and minutes from time string (format: "HH:mm")
-    const [hours, minutes] = time.split(":").map(Number);
-    
-    // Create a new date object with the selected date and time
-    const appointmentDate = new Date(date);
-    appointmentDate.setHours(hours);
-    appointmentDate.setMinutes(minutes);
-    
-    // Open modal with the suggested time
-    openModal(null, appointmentDate);
-  }, [openModal]);
+    try {
+      // Extract hours and minutes from time string (format: "HH:mm")
+      const [hours, minutes] = time.split(":").map(Number);
+      
+      if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        throw new Error('Horário inválido');
+      }
+      
+      // Create a new date object with the selected date and time
+      const appointmentDate = normalizeDateNoon(date);
+      appointmentDate.setHours(hours);
+      appointmentDate.setMinutes(minutes);
+      
+      // Open modal with the suggested time
+      openModal(null, appointmentDate);
+    } catch (error) {
+      handleError(error, 'Erro ao selecionar horário sugerido');
+    }
+  }, [openModal, handleError]);
 
   return (
     <div className="px-4 py-6 animate-fade-in">

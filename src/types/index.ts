@@ -38,24 +38,22 @@ export interface Service {
   description?: string;
 }
 
+// Unified BlockedDate interface - removing duplication
 export interface BlockedDate {
   id: string;
   date: string; // ISO format string
   reason?: string;
   description?: string;
   value?: string;
-  dia_todo: boolean;
-  allDay: boolean;
+  allDay: boolean; // Single field for all-day blocking
   motivo?: string;
 }
-
-export type CalendarView = 'day' | 'week' | 'month';
 
 export interface MessageTemplate {
   id: string;
   type: string;
   message: string;
-  active?: boolean; // Make active optional since it doesn't exist in our database
+  active?: boolean;
 }
 
 export interface AbsenceRule {
@@ -118,3 +116,7 @@ export interface ServiceResponse<T> {
   error?: any;
   success: boolean;
 }
+
+// Re-export specific types
+export * from './calendar';
+export * from './reports';

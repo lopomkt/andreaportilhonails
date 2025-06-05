@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createDateWithNoon } from "@/lib/dateUtils";
+import { normalizeDateNoon } from "@/lib/dateUtils";
 
 interface MonthYearFilterProps {
   selectedMonth: number;
@@ -16,8 +16,8 @@ export function MonthYearFilter({
   onMonthChange,
   onYearChange,
 }: MonthYearFilterProps) {
-  // Current date for reference
-  const currentDate = new Date();
+  // Current date for reference with noon normalization
+  const currentDate = normalizeDateNoon(new Date());
   
   // Generate months for select
   const months = Array.from({ length: 12 }, (_, i) => ({
@@ -35,7 +35,7 @@ export function MonthYearFilter({
     <div className="flex gap-2">
       <Select 
         value={selectedMonth.toString()} 
-        onValueChange={(value) => onMonthChange(parseInt(value))}
+        onValueChange={(value) => onMonthChange(parseInt(value, 10))}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Mês" />
@@ -51,7 +51,7 @@ export function MonthYearFilter({
       
       <Select 
         value={selectedYear.toString()} 
-        onValueChange={(value) => onYearChange(parseInt(value))}
+        onValueChange={(value) => onYearChange(parseInt(value, 10))}
       >
         <SelectTrigger className="w-[120px]">
           <SelectValue placeholder="Ano" />

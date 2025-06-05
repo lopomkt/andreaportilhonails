@@ -1,25 +1,52 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportsFinanceSection } from "@/components/reports/ReportsFinanceSection";
 import { ReportsServicesSection } from "@/components/reports/ReportsServicesSection";
 import { MonthYearFilter } from "@/components/reports/filters/MonthYearFilter";
-import { createDateWithNoon, normalizeDateNoon } from "@/lib/dateUtils";
+import { normalizeDateNoon } from "@/lib/dateUtils";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 export default function ReportsPage() {
-  // Current month and year for filters
-  const currentDate = normalizeDateNoon(new Date());
+  const { handleError } = useErrorHandler();
+  
+  // Current month and year for filters with safe initialization
+  const currentDate = useMemo(() => normalizeDateNoon(new Date()), []);
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   
-  // Handle month and year changes
+  // Handle month and year changes with validation
   const handleMonthChange = (month: number) => {
-    setSelectedMonth(month);
+    try {
+      if (month >= 0 && month <= 11) {
+        setSelectedMonth(month);
+      } else {
+        throw new Error('Mês inválido selecionado');
+      }
+    } catch (error) {
+      handleError(error, 'Erro ao alterar mês');
+    }
   };
   
   const handleYearChange = (year: number) => {
-    setSelectedYear(year);
+    try {
+      const currentYear = new Date().getFullYear();
+      if (year >= 2020 && year <= currentYear + 1) {
+        setSelectedYear(year);
+      } else {
+        throw new Error('Ano inválido selecionado');
+      }
+    } catch (error) {
+      handleError(error, 'Erro ao alterar ano');
+    }
   };
+
+  // Reset to current month/year on component mount
+  useEffect(() => {
+    const current = normalizeDateNoon(new Date());
+    setSelectedMonth(current.getMonth());
+    setSelectedYear(current.getFullYear());
+  }, []);
 
   return (
     <div className="space-y-6 px-4 md:px-6 animate-fade-in">

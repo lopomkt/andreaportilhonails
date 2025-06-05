@@ -6,7 +6,8 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayCell } from './DayCell';
-import { createDateWithNoon, normalizeDateNoon } from '@/lib/dateUtils';
+import { normalizeDateNoon, createDateWithNoon } from '@/lib/dateUtils';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
 
 interface MonthViewProps {
   date: Date;
@@ -17,6 +18,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
   date,
   onDaySelect
 }) => {
+  const { handleError } = useErrorHandler();
   const normalizedDate = normalizeDateNoon(date);
   const [currentMonth, setCurrentMonth] = useState<Date>(normalizedDate);
   const { appointments, blockedDates } = useData();
@@ -27,31 +29,36 @@ export const MonthView: React.FC<MonthViewProps> = ({
   
   // Calculate all days to display in the month grid
   const daysToDisplay = useMemo(() => {
-    const monthDays = eachDayOfInterval({
-      start: monthStart,
-      end: monthEnd
-    }).map(day => createDateWithNoon(day.getFullYear(), day.getMonth(), day.getDate()));
-    
-    const startWeekday = getDay(monthStart);
-    const result = [
-      ...Array(startWeekday).fill(null).map((_, i) => {
-        const prevMonthDay = addDays(monthStart, i - startWeekday);
-        return createDateWithNoon(prevMonthDay.getFullYear(), prevMonthDay.getMonth(), prevMonthDay.getDate());
-      }), 
-      ...monthDays
-    ];
-    
-    // Fill remaining cells in the grid, ensuring noon time
-    while (result.length < 42) {
-      const lastDay = result[result.length - 1];
-      const nextDay = lastDay ? addDays(lastDay, 1) : addDays(monthEnd, 1);
-      // Set time to noon
-      const normalizedNextDay = createDateWithNoon(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate());
-      result.push(normalizedNextDay);
+    try {
+      const monthDays = eachDayOfInterval({
+        start: monthStart,
+        end: monthEnd
+      }).map(day => createDateWithNoon(day.getFullYear(), day.getMonth(), day.getDate()));
+      
+      const startWeekday = getDay(monthStart);
+      const result = [
+        ...Array(startWeekday).fill(null).map((_, i) => {
+          const prevMonthDay = addDays(monthStart, i - startWeekday);
+          return createDateWithNoon(prevMonthDay.getFullYear(), prevMonthDay.getMonth(), prevMonthDay.getDate());
+        }), 
+        ...monthDays
+      ];
+      
+      // Fill remaining cells in the grid, ensuring noon time
+      while (result.length < 42) {
+        const lastDay = result[result.length - 1];
+        const nextDay = lastDay ? addDays(lastDay, 1) : addDays(monthEnd, 1);
+        // Set time to noon
+        const normalizedNextDay = createDateWithNoon(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate());
+        result.push(normalizedNextDay);
+      }
+      
+      return result;
+    } catch (error) {
+      handleError(error, 'Erro ao calcular dias do mês');
+      return [];
     }
-    
-    return result;
-  }, [monthStart, monthEnd]);
+  }, [monthStart, monthEnd, handleError]);
 
   // Business hours configuration
   const businessStartHour = 7;
@@ -66,74 +73,96 @@ export const MonthView: React.FC<MonthViewProps> = ({
       isFullDayBlocked: false
     };
 
-    // Normalize the input day to noon
-    const normalizedDay = normalizeDateNoon(day);
+    try {
+      // Normalize the input day to noon
+      const normalizedDay = normalizeDateNoon(day);
 
-    // Use isSameDay for more reliable date comparison
-    const dayAppointments = appointments.filter(appt => 
-      appt && isSameDay(normalizeDateNoon(new Date(appt.date)), normalizedDay) && appt.status !== 'canceled'
-    );
-    const dayBlocks = blockedDates.filter(block => 
-      block && isSameDay(normalizeDateNoon(new Date(block.date)), normalizedDay)
-    );
-    const isFullDayBlocked = dayBlocks.some(block => block.allDay);
+      // Use isSameDay for more reliable date comparison
+      const dayAppointments = appointments.filter(appt => 
+        appt && isSameDay(normalizeDateNoon(new Date(appt.date)), normalizedDay) && appt.status !== 'canceled'
+      );
+      const dayBlocks = blockedDates.filter(block => 
+        block && isSameDay(normalizeDateNoon(new Date(block.date)), normalizedDay)
+      );
+      const isFullDayBlocked = dayBlocks.some(block => block.allDay);
 
-    // Calculate occupied minutes
-    let occupiedMinutes = isFullDayBlocked ? totalBusinessMinutes : 0;
+      // Calculate occupied minutes
+      let occupiedMinutes = isFullDayBlocked ? totalBusinessMinutes : 0;
 
-    if (!isFullDayBlocked) {
-      dayAppointments.forEach(appt => {
-        if (appt.endTime) {
-          const startTime = new Date(appt.date);
-          const endTime = new Date(appt.endTime);
-          const apptStartHour = Math.max(startTime.getHours(), businessStartHour);
-          const apptEndHour = Math.min(endTime.getHours(), businessEndHour);
-          const apptStartMinutes = startTime.getHours() === apptStartHour ? startTime.getMinutes() : 0;
-          const apptEndMinutes = endTime.getHours() === apptEndHour ? endTime.getMinutes() : 0;
-          
-          occupiedMinutes += (apptEndHour - apptStartHour) * 60 + apptEndMinutes - apptStartMinutes;
-        } else if (appt.service?.durationMinutes) {
-          occupiedMinutes += appt.service.durationMinutes;
-        } else {
-          // Default to 1 hour if no duration specified
-          occupiedMinutes += 60;
-        }
-      });
+      if (!isFullDayBlocked) {
+        dayAppointments.forEach(appt => {
+          if (appt.endTime) {
+            const startTime = new Date(appt.date);
+            const endTime = new Date(appt.endTime);
+            const apptStartHour = Math.max(startTime.getHours(), businessStartHour);
+            const apptEndHour = Math.min(endTime.getHours(), businessEndHour);
+            const apptStartMinutes = startTime.getHours() === apptStartHour ? startTime.getMinutes() : 0;
+            const apptEndMinutes = endTime.getHours() === apptEndHour ? endTime.getMinutes() : 0;
+            
+            occupiedMinutes += (apptEndHour - apptStartHour) * 60 + apptEndMinutes - apptStartMinutes;
+          } else if (appt.service?.durationMinutes) {
+            occupiedMinutes += appt.service.durationMinutes;
+          } else {
+            // Default to 1 hour if no duration specified
+            occupiedMinutes += 60;
+          }
+        });
+      }
+      
+      // Calculate occupancy percentage (0-100)
+      const occupancyPercentage = Math.min(Math.round((occupiedMinutes / totalBusinessMinutes) * 100), 100);
+      
+      return {
+        appointmentsCount: dayAppointments.length,
+        blocksCount: dayBlocks.length,
+        occupancyPercentage,
+        isFullDayBlocked
+      };
+    } catch (error) {
+      handleError(error, 'Erro ao calcular estatísticas do dia');
+      return {
+        appointmentsCount: 0,
+        blocksCount: 0,
+        occupancyPercentage: 0,
+        isFullDayBlocked: false
+      };
     }
-    
-    // Calculate occupancy percentage (0-100)
-    const occupancyPercentage = Math.min(Math.round((occupiedMinutes / totalBusinessMinutes) * 100), 100);
-    
-    return {
-      appointmentsCount: dayAppointments.length,
-      blocksCount: dayBlocks.length,
-      occupancyPercentage,
-      isFullDayBlocked
-    };
-  }, [appointments, blockedDates, totalBusinessMinutes, businessStartHour, businessEndHour]);
+  }, [appointments, blockedDates, totalBusinessMinutes, businessStartHour, businessEndHour, handleError]);
 
   const handlePrevMonth = useCallback(() => {
-    setCurrentMonth(prevMonth => {
-      const newDate = addMonths(prevMonth, -1);
-      return createDateWithNoon(newDate.getFullYear(), newDate.getMonth(), 1);
-    });
-  }, []);
+    try {
+      setCurrentMonth(prevMonth => {
+        const newDate = addMonths(prevMonth, -1);
+        return createDateWithNoon(newDate.getFullYear(), newDate.getMonth(), 1);
+      });
+    } catch (error) {
+      handleError(error, 'Erro ao navegar para mês anterior');
+    }
+  }, [handleError]);
 
   const handleNextMonth = useCallback(() => {
-    setCurrentMonth(prevMonth => {
-      const newDate = addMonths(prevMonth, 1);
-      return createDateWithNoon(newDate.getFullYear(), newDate.getMonth(), 1);
-    });
-  }, []);
+    try {
+      setCurrentMonth(prevMonth => {
+        const newDate = addMonths(prevMonth, 1);
+        return createDateWithNoon(newDate.getFullYear(), newDate.getMonth(), 1);
+      });
+    } catch (error) {
+      handleError(error, 'Erro ao navegar para próximo mês');
+    }
+  }, [handleError]);
 
   const handleDayClick = useCallback((day: Date) => {
-    // Set localStorage to remember day view preference
-    localStorage.setItem('calendarViewMode', 'day');
-    
-    // Use normalizeDateNoon to ensure consistent noon time for all date operations
-    const normalizedDay = normalizeDateNoon(day);
-    onDaySelect(normalizedDay);
-  }, [onDaySelect]);
+    try {
+      // Set localStorage to remember day view preference
+      localStorage.setItem('calendarViewMode', 'day');
+      
+      // Use normalizeDateNoon to ensure consistent noon time for all date operations
+      const normalizedDay = normalizeDateNoon(day);
+      onDaySelect(normalizedDay);
+    } catch (error) {
+      handleError(error, 'Erro ao selecionar dia');
+    }
+  }, [onDaySelect, handleError]);
 
   return (
     <div className="month-view-container p-4">
