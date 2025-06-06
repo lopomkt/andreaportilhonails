@@ -23,8 +23,7 @@ export function useBlockedDates() {
         reason: item.reason || '',
         motivo: item.reason || '',
         description: item.description || '', 
-        allDay: item.allDay || item.dia_todo || false,
-        dia_todo: item.dia_todo || item.allDay || false, // Make sure dia_todo is included
+        allDay: item.allDay || false,
       }));
       
       setBlockedDates(formattedBlockedDates);
@@ -52,11 +51,10 @@ export function useBlockedDates() {
         ? (blockedDate.date as Date).toISOString() 
         : blockedDate.date;
       
-      // Ensure dia_todo is set when using allDay
       const success = await BlockedDateService.create({
         date: dateValue,
         reason: blockedDate.reason,
-        allDay: blockedDate.allDay || blockedDate.dia_todo || false
+        allDay: blockedDate.allDay || false
       });
       
       if (success) {

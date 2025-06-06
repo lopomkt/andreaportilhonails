@@ -472,7 +472,7 @@ export const useSupabaseData = () => {
       const newBlockedDate = await appointmentService.createBlockedDate({
         date: dateObj,
         reason: blockedDate.reason,
-        allDay: blockedDate.allDay || blockedDate.dia_todo
+        allDay: blockedDate.allDay
       });
       
       if (newBlockedDate) {

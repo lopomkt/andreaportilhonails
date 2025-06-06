@@ -10,7 +10,6 @@ export function mapDbBlockedDateToApp(dbBlockedDate: DbBlockedDate): BlockedDate
     motivo: dbBlockedDate.motivo || undefined,
     description: dbBlockedDate.descricao || undefined,
     allDay: dbBlockedDate.dia_todo,
-    dia_todo: dbBlockedDate.dia_todo
   };
 }
 
@@ -32,7 +31,6 @@ export function mapAppBlockedDateToDb(blockedDate: Partial<BlockedDate>): Partia
   if (blockedDate.motivo !== undefined) dbBlockedDate.motivo = blockedDate.motivo;
   if (blockedDate.description !== undefined) dbBlockedDate.descricao = blockedDate.description;
   if (blockedDate.allDay !== undefined) dbBlockedDate.dia_todo = blockedDate.allDay;
-  if (blockedDate.dia_todo !== undefined) dbBlockedDate.dia_todo = blockedDate.dia_todo;
   
   return dbBlockedDate;
 }

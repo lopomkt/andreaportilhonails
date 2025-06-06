@@ -24,7 +24,7 @@ export const useBlockedDateContext = (
       const created = await BlockedDateService.create({
         date: dateObj.toISOString(),
         reason: blockedDate.reason,
-        allDay: blockedDate.allDay || blockedDate.dia_todo
+        allDay: blockedDate.allDay
       });
       
       if (created) {
