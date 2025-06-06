@@ -2,73 +2,67 @@
 import { BlockedDate } from '@/types';
 import { BlockedDateService } from '@/integrations/supabase/blockedDateService';
 import { useCallback } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { normalizeDateNoon } from '@/lib/dateUtils';
 
 export const useBlockedDateContext = (
   setBlockedDates: React.Dispatch<React.SetStateAction<BlockedDate[]>>,
   blockedDates: BlockedDate[]
 ) => {
+  const { handleError, handleSuccess } = useErrorHandler();
+
   const fetchBlockedDates = async (): Promise<void> => {
     try {
       const blockedDates = await BlockedDateService.getAll();
       setBlockedDates(blockedDates);
     } catch (error) {
       console.error("Error fetching blocked dates:", error);
+      handleError(error, "Erro ao buscar datas bloqueadas");
     }
   };
 
   const addBlockedDate = useCallback(async (blockedDate: Omit<BlockedDate, "id">) => {
     try {
-      const dateObj = typeof blockedDate.date === 'string' ? new Date(blockedDate.date) : blockedDate.date;
+      const dateObj = typeof blockedDate.date === 'string' 
+        ? new Date(blockedDate.date) 
+        : blockedDate.date;
+      
+      const normalizedDate = normalizeDateNoon(dateObj);
       
       const created = await BlockedDateService.create({
-        date: dateObj.toISOString(),
+        date: normalizedDate.toISOString(),
         reason: blockedDate.reason,
-        allDay: blockedDate.allDay
+        allDay: blockedDate.allDay || false
       });
       
       if (created) {
-        await fetchBlockedDates(); // Refresh blocked dates after adding a new one
-        toast({
-          title: 'Data bloqueada',
-          description: 'Data bloqueada com sucesso!',
-        });
+        await fetchBlockedDates();
+        handleSuccess('Data bloqueada', 'Data bloqueada com sucesso!');
         return { success: true };
       }
       return { success: false, error: "Failed to block date" };
     } catch (error) {
       console.error('Error adding blocked date:', error);
-      toast({
-        title: 'Erro ao bloquear data',
-        description: 'Ocorreu um erro ao bloquear a data. Por favor, tente novamente.',
-        variant: 'destructive',
-      });
+      handleError(error, 'Erro ao bloquear data');
       return { success: false, error };
     }
-  }, [fetchBlockedDates]);
+  }, [fetchBlockedDates, handleError, handleSuccess]);
 
   const deleteBlockedDate = useCallback(async (id: string) => {
     try {
       const success = await BlockedDateService.delete(id);
       if (success) {
-        await fetchBlockedDates(); // Refresh blocked dates after deletion
-        toast({
-          title: 'Data desbloqueada',
-          description: 'Data desbloqueada com sucesso!',
-        });
+        await fetchBlockedDates();
+        handleSuccess('Data desbloqueada', 'Data desbloqueada com sucesso!');
         return { success: true };
       }
       return { success: false, error: "Failed to unblock date" };
     } catch (error) {
       console.error('Error deleting blocked date:', error);
-      toast({
-        title: 'Erro ao desbloquear data',
-        description: 'Ocorreu um erro ao desbloquear a data. Por favor, tente novamente.',
-        variant: 'destructive',
-      });
+      handleError(error, 'Erro ao desbloquear data');
       return { success: false, error };
     }
-  }, [fetchBlockedDates]);
+  }, [fetchBlockedDates, handleError, handleSuccess]);
 
   return {
     blockedDates,

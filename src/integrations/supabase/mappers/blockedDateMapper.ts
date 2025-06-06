@@ -7,7 +7,6 @@ export function mapDbBlockedDateToApp(dbBlockedDate: DbBlockedDate): BlockedDate
     id: dbBlockedDate.id,
     date: dbBlockedDate.data,
     reason: dbBlockedDate.motivo || undefined,
-    motivo: dbBlockedDate.motivo || undefined,
     description: dbBlockedDate.descricao || undefined,
     allDay: dbBlockedDate.dia_todo,
   };
@@ -28,7 +27,6 @@ export function mapAppBlockedDateToDb(blockedDate: Partial<BlockedDate>): Partia
     }
   }
   if (blockedDate.reason !== undefined) dbBlockedDate.motivo = blockedDate.reason;
-  if (blockedDate.motivo !== undefined) dbBlockedDate.motivo = blockedDate.motivo;
   if (blockedDate.description !== undefined) dbBlockedDate.descricao = blockedDate.description;
   if (blockedDate.allDay !== undefined) dbBlockedDate.dia_todo = blockedDate.allDay;
   

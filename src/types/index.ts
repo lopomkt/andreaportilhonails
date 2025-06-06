@@ -38,15 +38,13 @@ export interface Service {
   description?: string;
 }
 
-// Unified BlockedDate interface - removing duplication
+// Unified BlockedDate interface - clean and consistent
 export interface BlockedDate {
   id: string;
   date: string; // ISO format string
   reason?: string;
   description?: string;
-  value?: string;
   allDay: boolean; // Single field for all-day blocking
-  motivo?: string;
 }
 
 export interface MessageTemplate {
