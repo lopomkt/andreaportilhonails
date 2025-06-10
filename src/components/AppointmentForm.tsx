@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { useServices } from "@/context/ServiceContext";
-import { useAppointments } from "@/hooks/useAppointments";
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -46,11 +46,12 @@ export function AppointmentForm({
 }: AppointmentFormProps) {
   const isEditMode = !!appointment;
   const { toast } = useToast();
-  const { createAppointment, updateAppointment, deleteAppointment, refetchAppointments } = useAppointments();
   const { 
     clients, 
     appointments, 
     blockedDates,
+    addAppointment,
+    updateAppointment
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();
@@ -285,7 +286,7 @@ export function AppointmentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Chamou handleSubmit");
+    console.log("AppointmentForm: handleSubmit iniciado");
     
     if (!validateForm()) {
       toast({
@@ -319,365 +320,250 @@ export function AppointmentForm({
       const [hours, minutes] = time.split(":").map(Number);
       appointmentDate.setHours(hours, minutes, 0, 0);
       
-      const selectedServiceObj = services.find(s => s.id === serviceId);
-      const serviceDuration = selectedServiceObj?.durationMinutes || 60;
+      // Calculate end time based on service duration
+      const service = services.find(s => s.id === serviceId);
+      const duration = service?.durationMinutes || 60;
+      const endTime = addMinutes(appointmentDate, duration);
       
-      // Calculate end time by adding service duration to start time
-      const endDateTime = addMinutes(appointmentDate, serviceDuration);
+      const appointmentData = {
+        clientId,
+        serviceId,
+        date: appointmentDate,
+        endTime,
+        price,
+        status,
+        notes: notes || null,
+      };
       
-      // Build appointment object with new table structure in mind
-      const result = await createAppointment({
-        clientId: clientId,
-        serviceId: serviceId,
-        date: appointmentDate,              // Using 'date' instead of 'data'
-        endTime: endDateTime,               // This will become data_fim
-        price: price,
-        status: status, 
-        notes: notes || ""
-      });
+      console.log("AppointmentForm: Dados do agendamento:", appointmentData);
       
-      if (result.success) {
-        await refetchAppointments(); // Update dashboard data
-        closeModal();
+      let result;
+      if (isEditMode && appointment) {
+        console.log("AppointmentForm: Atualizando agendamento existente");
+        result = await updateAppointment(appointment.id, appointmentData);
+      } else {
+        console.log("AppointmentForm: Criando novo agendamento");
+        result = await addAppointment(appointmentData);
       }
       
-      console.log("Resultado do agendamento:", result);
-      console.log("Resultado Final:", result);
+      console.log("AppointmentForm: Resultado da operação:", result);
       
-      if (result.success) {
+      if (result.success || !result.error) {
         toast({
-          title: "Agendamento criado com sucesso!",
-          description: "O agendamento foi criado com sucesso.",
-          variant: "default"
+          title: isEditMode ? "Agendamento atualizado!" : "Agendamento criado!",
+          description: isEditMode ? "Agendamento atualizado com sucesso." : "Agendamento criado com sucesso.",
         });
         
-        resetForm();
+        if (!isEditMode) {
+          resetForm();
+        }
         
-        if (onSuccess) onSuccess();
-        closeModal();
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        console.error("Error creating appointment:", result.error);
+        console.error("AppointmentForm: Erro na operação:", result.error);
         toast({
-          title: "Erro ao agendar",
-          description: result.error?.message || "Erro desconhecido ao agendar",
+          title: "Erro",
+          description: result.error || `Erro ao ${isEditMode ? 'atualizar' : 'criar'} agendamento`,
           variant: "destructive",
         });
-        
-        focusFirstInvalidField();
       }
     } catch (error: any) {
-      console.error("Erro inesperado:", error);
+      console.error("AppointmentForm: Erro inesperado:", error);
       toast({
-        title: "Erro ao agendar",
-        description: error?.message || "Erro inesperado ao agendar.",
+        title: "Erro",
+        description: error.message || `Erro inesperado ao ${isEditMode ? 'atualizar' : 'criar'} agendamento`,
         variant: "destructive",
       });
-      
-      focusFirstInvalidField();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleClientSelect = (client: Client) => {
-    setClientId(client.id);
-    setSelectedClientState(client);
-  };
-
-  const handleUpdate = async () => {
-    if (!appointment || !date) return;
-    try {
-      // Create appointment date object
-      const appointmentDate = new Date(date);
-      const [hours, minutes] = time.split(":").map(Number);
-      appointmentDate.setHours(hours, minutes, 0, 0);
-      
-      // Calculate end time
-      const selectedServiceObj = services.find(s => s.id === serviceId);
-      const serviceDuration = selectedServiceObj?.durationMinutes || 60;
-      const endDateTime = addMinutes(appointmentDate, serviceDuration);
-      
-      const result = await updateAppointment(appointment.id, {
-        clientId,
-        serviceId,
-        date: appointmentDate,
-        endTime: endDateTime,
-        price,
-        status,
-        notes,
-      });
-      
-      if (result && result.success) {
-        toast({
-          title: "Sucesso",
-          description: "Agendamento atualizado com sucesso!",
-        });
-
-        await refetchAppointments();
-        closeModal();
-      } else {
-        toast({
-          title: "Erro",
-          description: "Erro ao atualizar agendamento",
-          variant: "destructive",
-        });
-        console.error(result?.error || "Erro desconhecido");
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar agendamento",
-        variant: "destructive",
-      });
-      console.error(error);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!appointment) return;
-    try {
-      const result = await deleteAppointment(appointment.id);
-      if (result) {
-        toast({
-          title: "Agendamento Excluido",
-          description: "Agendamento excluido com sucesso!",
-        });
-
-        await refetchAppointments();
-        closeModal();
-      } else {
-        toast({
-          title: "Erro ao Excluir",
-          description: "Erro ao excluir agendamento",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erro ao Excluir",
-        description: "Erro ao excluir agendamento",
-        variant: "destructive",
-      });
-      console.error(error);
-    }
-  };
-  
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="client" className={errors.clientId ? "text-red-500" : ""}>
-          Cliente <span className="text-red-500">*</span>
-        </Label>
-        <ClientAutocomplete 
-          onClientSelect={handleClientSelect} 
-          selectedClient={selectedClientState}
-          className={errors.clientId ? "border-red-500" : ""}
-          autofocus={errors.clientId}
-        />
-        {errors.clientId && (
-          <p className="text-sm text-red-500">Selecione um cliente</p>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div className="space-y-2">
-          <Label htmlFor="service" className={errors.serviceId ? "text-red-500" : ""}>
-            Serviço <span className="text-red-500">*</span>
-          </Label>
-          {servicesLoading ? (
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Carregando serviços...</span>
-            </div>
-          ) : (
-            <Select 
-              value={serviceId} 
-              onValueChange={setServiceId}
-            >
-              <SelectTrigger id="service" className={errors.serviceId ? "border-red-500" : ""}>
-                <SelectValue placeholder="Selecione um serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {services && services.length > 0 ? (
-                  services.map(service => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - {formatCurrency(service.price)}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="loading" disabled>
-                    Nenhum serviço disponível
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          )}
-          {errors.serviceId && (
-            <p className="text-sm text-red-500">Selecione um serviço</p>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="client-autocomplete">Cliente *</Label>
+          <ClientAutocomplete 
+            onClientSelect={(client) => {
+              if (client) {
+                setClientId(client.id);
+                setSelectedClientState(client);
+              }
+            }}
+            selectedClient={selectedClientState}
+          />
+          {errors.clientId && (
+            <p className="text-sm text-destructive mt-1">Cliente é obrigatório</p>
           )}
         </div>
-      </div>
-      
-      {selectedService && (
-        <div className="text-sm mt-1 p-2 bg-primary/10 rounded-md">
-          <p className="font-medium">{selectedService.name}</p>
-          <div className="flex justify-between mt-1">
-            <span>Preço: {formatCurrency(selectedService.price)}</span>
-            <span>Duração: {formatDuration(selectedService.durationMinutes)}</span>
-          </div>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className={errors.date ? "text-red-500" : ""}>
-            Data <span className="text-red-500">*</span>
-          </Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !date && "text-muted-foreground",
-                  errors.date && "border-red-500"
-                )}
-              >
-                {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(date) => date && setDate(date)}
-                initialFocus
-                disabled={date => 
-                  blockedDates.some(bd => 
-                    bd.allDay && isSameDay(new Date(bd.date), date)
-                  )
-                }
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-          {errors.date && (
-            <p className="text-sm text-red-500">Selecione uma data</p>
-          )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="time" className={errors.time ? "text-red-500" : ""}>
-            Horário <span className="text-red-500">*</span>
-          </Label>
+
+        <div>
+          <Label htmlFor="service">Serviço *</Label>
           <Select 
-            value={time}
-            onValueChange={setTime}
+            value={serviceId} 
+            onValueChange={setServiceId}
           >
-            <SelectTrigger id="time" className={cn("w-full", errors.time && "border-red-500")}>
-              <SelectValue placeholder="Selecione um horário" />
+            <SelectTrigger id="service" className={cn(errors.serviceId && "border-destructive")}>
+              <SelectValue placeholder="Selecione um serviço" />
             </SelectTrigger>
             <SelectContent>
-              {availableTimeSlots.map((slot) => (
-                <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-              ))}
+              {servicesLoading ? (
+                <SelectItem value="loading" disabled>Carregando serviços...</SelectItem>
+              ) : services.length === 0 ? (
+                <SelectItem value="no-services" disabled>Nenhum serviço cadastrado</SelectItem>
+              ) : (
+                services.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    <div className="flex justify-between items-center w-full">
+                      <span>{service.name}</span>
+                      <div className="text-sm text-muted-foreground ml-4">
+                        {formatCurrency(service.price)} • {formatDuration(service.durationMinutes)}
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
-          {errors.time && (
-            <p className="text-sm text-red-500">Selecione um horário</p>
+          {errors.serviceId && (
+            <p className="text-sm text-destructive mt-1">Serviço é obrigatório</p>
           )}
         </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select 
-          value={status} 
-          onValueChange={(value) => setStatus(value as AppointmentStatus)}
-        >
-          <SelectTrigger id="status">
-            <SelectValue placeholder="Selecione um status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="confirmed">Confirmado</SelectItem>
-            {isEditMode && <SelectItem value="canceled">Cancelado</SelectItem>}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="price">Preço</Label>
-        <Input 
-          id="price" 
-          type="number" 
-          min="0" 
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="notes">Observações</Label>
-        <Textarea 
-          id="notes" 
-          placeholder="Observações ou detalhes adicionais..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-        />
-      </div>
-      
-      {hasConflict && (
-        <div className="flex items-start gap-2 p-3 text-amber-800 bg-amber-50 rounded-md border border-amber-200">
-          <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-500" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h4 className="font-medium">Conflito de horário</h4>
-            <p className="text-sm">{conflictDetails}</p>
+            <Label htmlFor="date">Data *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground",
+                    errors.date && "border-destructive"
+                  )}
+                >
+                  {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  locale={ptBR}
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date < today;
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.date && (
+              <p className="text-sm text-destructive mt-1">Data é obrigatória</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="time">Horário *</Label>
+            <Select value={time} onValueChange={setTime}>
+              <SelectTrigger id="time" className={cn(errors.time && "border-destructive")}>
+                <SelectValue placeholder="Selecione um horário" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTimeSlots.map((slot) => (
+                  <SelectItem key={slot} value={slot}>
+                    {slot}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.time && (
+              <p className="text-sm text-destructive mt-1">Horário é obrigatório</p>
+            )}
           </div>
         </div>
-      )}
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => closeModal()}
-          disabled={isSubmitting}
-        >
-          Cancelar
-        </Button>
+
+        {hasConflict && (
+          <div className="flex items-center space-x-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <p className="text-sm text-destructive">{conflictDetails}</p>
+          </div>
+        )}
+
+        <div>
+          <Label htmlFor="price">Preço</Label>
+          <Input
+            id="price"
+            type="number"
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            placeholder="0,00"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select value={status} onValueChange={(value: AppointmentStatus) => setStatus(value)}>
+            <SelectTrigger id="status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="confirmed">Confirmado</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="canceled">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="notes">Observações</Label>
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Observações sobre o agendamento..."
+            rows={3}
+          />
+        </div>
+      </div>
+
+      <div className="flex space-x-2 pt-4">
         <Button 
           type="submit" 
-          className="bg-primary hover:bg-primary/90"
-          disabled={isSubmitting}
+          disabled={isSubmitting || hasConflict}
+          className="flex-1"
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Agendando...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isEditMode ? "Atualizando..." : "Criando..."}
             </>
-          ) : appointment ? (
-            "Atualizar Agendamento"
           ) : (
-            "Criar Agendamento"
+            <>
+              <Check className="mr-2 h-4 w-4" />
+              {isEditMode ? "Atualizar Agendamento" : "Criar Agendamento"}
+            </>
           )}
         </Button>
+        
+        {!isEditMode && (
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={resetForm}
+            disabled={isSubmitting}
+          >
+            Limpar
+          </Button>
+        )}
       </div>
-
-      {isEditMode && (
-        <div className="flex justify-between mt-6">
-          <Button type="button" onClick={handleUpdate} variant="default">
-            Salvar Alterações
-          </Button>
-
-          <Button type="button" onClick={handleDelete} variant="destructive">
-            Excluir Agendamento
-          </Button>
-        </div>
-      )}
     </form>
   );
 }
