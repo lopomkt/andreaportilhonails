@@ -151,7 +151,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     loading: appointmentsLoading,
     error: appointmentsError,
     fetchAppointments,
-    addAppointment,
+    addAppointment: baseAddAppointment,
     updateAppointment,
     getAppointmentsForDate,
     calculateDailyRevenue,
@@ -204,15 +204,25 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [appointments, updateDashboardStats]);
   
-  // Calculate expected revenue from future confirmed appointments
-  const calculateExpectedRevenue = useCallback(() => {
-    const now = new Date();
-    
-    return appointments
-      .filter(appointment => appointment.status === "confirmed" && 
-              new Date(appointment.date) > now)
-      .reduce((sum, appointment) => sum + appointment.price, 0);
-  }, [appointments]);
+  // Wrapper for addAppointment to ensure proper error handling and refresh
+  const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
+    console.log("DataProvider: addAppointment called with:", appointment);
+    try {
+      const result = await baseAddAppointment(appointment);
+      console.log("DataProvider: addAppointment result:", result);
+      
+      // Force refresh appointments after successful creation
+      if (result.success || result.data) {
+        console.log("DataProvider: Refreshing appointments after successful creation");
+        await fetchAppointments();
+      }
+      
+      return result;
+    } catch (error: any) {
+      console.error("DataProvider: Error in addAppointment wrapper:", error);
+      return { error: error.message || 'Erro ao criar agendamento', success: false };
+    }
+  }, [baseAddAppointment, fetchAppointments]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -274,6 +284,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         return sum;
       }, 0);
+  }, [appointments]);
+
+  // Calculate expected revenue from future confirmed appointments
+  const calculateExpectedRevenue = useCallback(() => {
+    const now = new Date();
+    
+    return appointments
+      .filter(appointment => appointment.status === "confirmed" && 
+              new Date(appointment.date) > now)
+      .reduce((sum, appointment) => sum + appointment.price, 0);
   }, [appointments]);
 
   return (

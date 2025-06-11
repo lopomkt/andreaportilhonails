@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -361,6 +360,9 @@ export function AppointmentForm({
         if (onSuccess) {
           onSuccess();
         }
+        
+        // Close modal after successful operation
+        closeModal();
       } else {
         console.error("AppointmentForm: Erro na operação:", result.error);
         toast({
