@@ -1,9 +1,10 @@
 
 import React, { useMemo } from "react";
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachWeekOfInterval, isSameMonth, addDays } from "date-fns";
-import { WeekView } from "./WeekView";
+import { WeekView } from "../WeekView";
 import { ptBR } from "date-fns/locale";
 import { createDateWithNoon } from "@/lib/dateUtils";
+import { useData } from "@/context/DataProvider";
 
 interface WeekGridProps {
   month: Date;
@@ -11,6 +12,8 @@ interface WeekGridProps {
 }
 
 export const WeekGrid: React.FC<WeekGridProps> = ({ month, onDaySelect }) => {
+  const { appointments } = useData();
+  
   // Get the valid weeks for the current month using useMemo for optimization
   const validWeeks = useMemo(() => {
     // Get the first day of the month with noon time
@@ -60,8 +63,9 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ month, onDaySelect }) => {
       {validWeeks.map((weekStart) => (
         <WeekView 
           key={weekStart.toISOString()} 
-          date={weekStart} 
-          onDaySelect={onDaySelect} 
+          appointments={appointments}
+          selectedDate={weekStart} 
+          onDateSelect={onDaySelect} 
         />
       ))}
     </div>

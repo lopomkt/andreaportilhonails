@@ -136,25 +136,30 @@ export function useDashboardStats(month?: number, year?: number) {
     };
   }, [confirmedAppointments, filterDate]);
 
-  // Projected future revenue - REWRITING THIS TO FIX ISSUE #1
+  // Projected future revenue - CORRECTED CALCULATION
   const projectedRevenue = useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
     
     // Use filterDate for month/year if provided, otherwise use current
-    const targetMonth = month !== undefined ? month : currentMonth;
-    const targetYear = year !== undefined ? year : currentYear;
+    const targetDate = month !== undefined && year !== undefined 
+      ? new Date(year, month, 1) 
+      : new Date();
     
-    const monthEnd = endOfMonth(new Date(targetYear, targetMonth));
+    const monthStart = startOfMonth(targetDate);
+    const monthEnd = endOfMonth(targetDate);
     
-    // Filter for confirmed appointments from today until end of current month
+    // Filter for confirmed appointments from today (or month start if future month) until end of target month
     const futureAppointments = confirmedAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
+      
+      // If filtering for current month, start from today
+      // If filtering for future month, start from beginning of that month
+      const startFilter = month !== undefined && year !== undefined 
+        ? (targetDate > now ? monthStart : now)
+        : now;
+      
       return (
-        // Is future or today
-        (isFuture(appointmentDate) || isToday(appointmentDate)) &&
-        // Is within this month
+        appointmentDate >= startFilter &&
         appointmentDate <= monthEnd
       );
     });

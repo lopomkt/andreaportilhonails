@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DayView } from "@/components/calendar/day/DayView";
-import { WeekView } from "@/components/calendar/week/WeekView";
+import { WeekView } from "@/components/calendar/WeekView";
 import { MonthView } from "@/components/calendar/month/MonthView";
+import { useData } from "@/context/DataProvider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 export default function CalendarPage() {
   const { handleError } = useErrorHandler();
+  const { appointments } = useData();
   
   // Use noon-normalized current date to avoid timezone issues
   const [selectedDate, setSelectedDate] = useState<Date>(() => normalizeDateNoon(new Date()));
@@ -131,8 +133,10 @@ export default function CalendarPage() {
         )}
         {viewMode === "week" && (
           <WeekView 
-            date={selectedDate} 
-            onDaySelect={handleDaySelect}
+            appointments={appointments}
+            selectedDate={selectedDate} 
+            onDateSelect={handleDaySelect}
+            onAppointmentClick={(appointment) => openModal(appointment)}
           />
         )}
         {viewMode === "month" && (

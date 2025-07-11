@@ -112,9 +112,7 @@ export const appointmentService = {
         data_fim: endTimeString,
         preco: appointment.price,
         status: appointment.status ? mapAppStatusToDbStatus(appointment.status) : 'pendente',
-        observacoes: appointment.notes,
-        status_confirmacao: appointment.confirmationStatus,
-        motivo_cancelamento: appointment.cancellationReason
+        observacoes: appointment.notes
       };
 
       const { data, error } = await supabase
