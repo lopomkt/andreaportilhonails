@@ -20,10 +20,11 @@ export function mapDbAppointmentToApp(
     status = 'canceled';
   }
 
+  // confirmationStatus não existe na tabela, usar status padrão
   let confirmationStatus: ConfirmationStatus = 'not_confirmed';
-  if (dbAppointment.status_confirmacao === 'confirmed') {
+  if (status === 'confirmed') {
     confirmationStatus = 'confirmed';
-  } else if (dbAppointment.status_confirmacao === 'canceled') {
+  } else if (status === 'canceled') {
     confirmationStatus = 'canceled';
   }
 
@@ -66,9 +67,7 @@ export function mapAppAppointmentToDb(appointment: Partial<Appointment>): Partia
   if (appointment.status !== undefined) dbAppointment.status = mapAppStatusToDbStatus(appointment.status);
   if (appointment.cancellationReason !== undefined) dbAppointment.motivo_cancelamento = appointment.cancellationReason;
   if (appointment.notes !== undefined) dbAppointment.observacoes = appointment.notes;
-  if (appointment.confirmationStatus !== undefined) {
-    dbAppointment.status_confirmacao = appointment.confirmationStatus;
-  }
+  // status_confirmacao não existe na tabela atual
 
   return dbAppointment;
 }
