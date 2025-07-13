@@ -195,24 +195,24 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
   const currentMonthName = format(createDateWithNoon(selectedYear, selectedMonth), 'MMMM yyyy', { locale: ptBR });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle>Receita por Serviço</CardTitle>
-          <div className="flex space-x-2 items-center">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
+          <CardTitle className="text-lg">Receita por Serviço</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:space-x-2 items-start sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-sm text-muted-foreground">Comparando com:</span>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-[180px] justify-start text-left font-normal",
+                    "w-full sm:w-[180px] justify-start text-left font-normal text-xs sm:text-sm",
                     !comparisonDate && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   {comparisonDate ? (
-                    format(comparisonDate, "MMMM yyyy", { locale: ptBR })
+                    format(comparisonDate, "MMM yyyy", { locale: ptBR })
                   ) : (
                     <span>Selecionar mês</span>
                   )}
@@ -231,11 +231,11 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
             </Popover>
           </div>
         </CardHeader>
-        <CardContent className="pl-2">
+        <CardContent className="p-2 sm:p-6">
           {serviceStats.length > 0 ? (
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="w-full lg:w-1/2">
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250} className="md:!h-[300px]">
                   <PieChart>
                     <Pie
                       data={serviceStats}
@@ -286,14 +286,14 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Distribuição por Dia da Semana</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             {dayOfWeekData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200} className="md:!h-[250px]">
                 <BarChart data={dayOfWeekData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
@@ -312,9 +312,9 @@ export function ReportsServicesSection({ selectedMonth, selectedYear }: ReportsS
           <CardHeader>
             <CardTitle>Horários Mais Populares</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             {hourDistributionData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200} className="md:!h-[250px]">
                 <BarChart data={hourDistributionData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="hour" />

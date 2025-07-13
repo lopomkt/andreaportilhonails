@@ -204,39 +204,11 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
   }, [appointments, expenses, selectedYear]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="space-y-4 md:space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[200px] justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? (
-                    format(selectedDate, "MMMM yyyy", { locale: ptBR })
-                  ) : (
-                    <span>Selecionar mês</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={handleMonthChange}
-                  initialFocus
-                  locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -295,8 +267,8 @@ export function ReportsFinanceSection({ selectedMonth, selectedYear }: ReportsFi
         <CardHeader>
           <CardTitle>Receita e Despesas Mensais ({selectedYear})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
+        <CardContent className="p-2 sm:p-6">
+          <ResponsiveContainer width="100%" height={300} className="md:!h-[400px]">
             <BarChart
               data={yearlyFinanceData}
               margin={{

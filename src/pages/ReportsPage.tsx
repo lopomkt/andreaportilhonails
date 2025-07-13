@@ -49,32 +49,34 @@ export default function ReportsPage() {
   }, []);
 
   return (
-    <div className="space-y-6 px-4 md:px-6 animate-fade-in">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Relatórios</h2>
+    <div className="space-y-4 md:space-y-6 p-3 md:p-6 animate-fade-in overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold">Relatórios</h2>
         
-        <MonthYearFilter 
-          selectedMonth={selectedMonth} 
-          selectedYear={selectedYear}
-          onMonthChange={handleMonthChange}
-          onYearChange={handleYearChange}
-        />
+        <div className="w-full sm:w-auto">
+          <MonthYearFilter 
+            selectedMonth={selectedMonth} 
+            selectedYear={selectedYear}
+            onMonthChange={handleMonthChange}
+            onYearChange={handleYearChange}
+          />
+        </div>
       </div>
 
-      <Tabs defaultValue="financeiro" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="financeiro" className="space-y-4 w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
           <TabsTrigger value="servicos">Serviços</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="financeiro" className="space-y-4">
+        <TabsContent value="financeiro" className="space-y-4 w-full">
           <ReportsFinanceSection 
             selectedMonth={selectedMonth} 
             selectedYear={selectedYear} 
           />
         </TabsContent>
 
-        <TabsContent value="servicos" className="space-y-4">
+        <TabsContent value="servicos" className="space-y-4 w-full">
           <ReportsServicesSection 
             selectedMonth={selectedMonth} 
             selectedYear={selectedYear} 
