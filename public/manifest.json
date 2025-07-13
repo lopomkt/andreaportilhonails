@@ -1,0 +1,64 @@
+{
+  "name": "Andrea Portilho Nail Designer CRM",
+  "short_name": "AP Nails CRM",
+  "description": "Sistema de gerenciamento para nail designer - agendamentos, clientes e relatórios",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#d2769d",
+  "theme_color": "#d2769d",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["productivity", "business"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Novo Agendamento",
+      "short_name": "Agendar",
+      "description": "Criar novo agendamento",
+      "url": "/calendar",
+      "icons": [
+        {
+          "src": "/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "short_name": "Clientes",
+      "description": "Gerenciar clientes",
+      "url": "/clients",
+      "icons": [
+        {
+          "src": "/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

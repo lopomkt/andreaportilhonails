@@ -2,19 +2,41 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>unhas-agendamento-perfeito</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Andrea Portilho Nail Designer CRM</title>
+    <meta name="description" content="Sistema de gerenciamento para nail designer - agendamentos, clientes e relatórios" />
+    <meta name="author" content="Andrea Portilho" />
+    <meta name="keywords" content="nail designer, CRM, agendamentos, clientes, manicure, pedicure" />
+    <meta name="theme-color" content="#d2769d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AP Nails CRM" />
+    <meta name="application-name" content="AP Nails CRM" />
+    <meta name="msapplication-TileColor" content="#d2769d" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
 
-    <meta property="og:title" content="unhas-agendamento-perfeito" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Favicons and Icons -->
+    <link rel="icon" href="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Andrea Portilho Nail Designer CRM" />
+    <meta property="og:description" content="Sistema de gerenciamento para nail designer - agendamentos, clientes e relatórios" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" />
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:title" content="Andrea Portilho Nail Designer CRM" />
+    <meta name="twitter:description" content="Sistema de gerenciamento para nail designer" />
+    <meta name="twitter:image" content="/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png" />
   </head>
 
   <body>
@@ -22,5 +44,82 @@
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New content is available, notify user
+                    if (confirm('Nova versão disponível! Recarregar para atualizar?')) {
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+
+      // Install prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button or banner after user engagement
+        setTimeout(() => {
+          if (deferredPrompt) {
+            const installBanner = document.createElement('div');
+            installBanner.innerHTML = `
+              <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: #d2769d; color: white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; font-family: system-ui;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <strong>Instalar AP Nails CRM</strong>
+                    <div style="font-size: 14px; opacity: 0.9;">Adicione à tela inicial para acesso rápido</div>
+                  </div>
+                  <div>
+                    <button onclick="installApp()" style="background: white; color: #d2769d; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 8px; cursor: pointer;">Instalar</button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 8px 12px; border-radius: 4px; cursor: pointer;">×</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(installBanner);
+          }
+        }, 3000);
+      });
+
+      window.installApp = () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the install prompt');
+            }
+            deferredPrompt = null;
+            // Remove install banner
+            const banner = document.querySelector('[style*="position: fixed"]');
+            if (banner) banner.remove();
+          });
+        }
+      };
+
+      // Track app usage for analytics
+      window.addEventListener('appinstalled', (evt) => {
+        console.log('App was installed successfully');
+      });
+    </script>
   </body>
 </html>
