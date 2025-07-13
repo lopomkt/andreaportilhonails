@@ -12,7 +12,7 @@ export function useAppointmentOperations() {
   // Function to delete appointment in Supabase
   const deleteAppointment = useCallback(async (id: string) => {
     try {
-      console.log("Deleting appointment with ID:", id);
+      console.log("useAppointmentOperations: Deleting appointment with ID:", id);
       
       const { error } = await supabase
         .from('agendamentos_novo')
@@ -20,7 +20,7 @@ export function useAppointmentOperations() {
         .eq('id', id);
 
       if (error) {
-        console.error("Error deleting appointment:", error);
+        console.error("useAppointmentOperations: Error deleting appointment:", error);
         toast({ 
           title: "Erro", 
           description: "Não foi possível excluir o agendamento: " + error.message, 
@@ -29,6 +29,7 @@ export function useAppointmentOperations() {
         return false;
       }
 
+      console.log("useAppointmentOperations: Delete successful, refreshing appointments...");
       toast({ 
         title: "Sucesso", 
         description: "Agendamento excluído com sucesso!" 
@@ -36,10 +37,11 @@ export function useAppointmentOperations() {
       
       // Refresh the appointments list
       await refetchAppointments();
+      console.log("useAppointmentOperations: Appointments refreshed after delete");
       
       return true;
     } catch (err: any) {
-      console.error("Unexpected error deleting appointment:", err);
+      console.error("useAppointmentOperations: Unexpected error deleting appointment:", err);
       toast({ 
         title: "Erro", 
         description: "Erro inesperado ao excluir agendamento: " + (err.message || "Erro desconhecido"), 
@@ -138,7 +140,7 @@ export function useAppointmentOperations() {
   // Function to update appointment in Supabase
   const updateAppointment = useCallback(async (id: string, data: Partial<Appointment>) => {
     try {
-      console.log("Updating appointment:", id, data);
+      console.log("useAppointmentOperations: Updating appointment:", id, data);
       
       // Map status from app to database format
       let dbData: Record<string, any> = { ...data };
@@ -189,7 +191,7 @@ export function useAppointmentOperations() {
         dbFields.status = mapAppStatusToDbStatus(data.status);
       }
 
-      console.log("Sending update with fields:", dbFields);
+      console.log("useAppointmentOperations: Sending update with fields:", dbFields);
       
       const { error } = await supabase
         .from('agendamentos_novo')
@@ -197,7 +199,7 @@ export function useAppointmentOperations() {
         .eq('id', id);
 
       if (error) {
-        console.error("Error updating appointment:", error);
+        console.error("useAppointmentOperations: Error updating appointment:", error);
         toast({ 
           title: "Erro", 
           description: "Não foi possível atualizar o agendamento: " + error.message, 
@@ -206,6 +208,7 @@ export function useAppointmentOperations() {
         return { success: false, error };
       }
 
+      console.log("useAppointmentOperations: Update successful, refreshing appointments...");
       toast({ 
         title: "Sucesso", 
         description: "Agendamento atualizado com sucesso!" 
@@ -213,11 +216,12 @@ export function useAppointmentOperations() {
       
       // Refresh appointments list
       await refetchAppointments();
+      console.log("useAppointmentOperations: Appointments refreshed after update");
       
       return { success: true };
       
     } catch (err: any) {
-      console.error("Unexpected error updating appointment:", err);
+      console.error("useAppointmentOperations: Unexpected error updating appointment:", err);
       toast({ 
         title: "Erro", 
         description: "Erro inesperado ao atualizar agendamento: " + (err.message || "Erro desconhecido"), 

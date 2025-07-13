@@ -263,7 +263,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Define refetchAppointments for DataContext
   const refetchAppointments = useCallback(async (): Promise<Appointment[]> => {
     console.log("DataProvider: refetchAppointments called");
-    return await fetchAppointments();
+    
+    // Add cache-busting timestamp to ensure fresh data
+    const timestamp = new Date().getTime();
+    console.log("DataProvider: Fetching with cache-bust timestamp:", timestamp);
+    
+    const result = await fetchAppointments();
+    console.log("DataProvider: refetchAppointments completed, got", result?.length || 0, "appointments");
+    return result;
   }, [fetchAppointments]);
 
   // Modified to use the enhanced monthly revenue calculation

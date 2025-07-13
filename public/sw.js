@@ -1,6 +1,6 @@
-const CACHE_NAME = 'ap-nails-crm-v1';
-const STATIC_CACHE = 'ap-nails-static-v1';
-const DYNAMIC_CACHE = 'ap-nails-dynamic-v1';
+const CACHE_NAME = 'ap-nails-crm-v2';
+const STATIC_CACHE = 'ap-nails-static-v2';
+const DYNAMIC_CACHE = 'ap-nails-dynamic-v2';
 
 // App Shell - recursos essenciais para funcionalidade offline
 const APP_SHELL = [
@@ -10,12 +10,15 @@ const APP_SHELL = [
   '/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png'
 ];
 
-// URLs de API que devem usar network-first strategy
-const API_URLS = [
-  '/api/',
+// URLs que NUNCA devem ser cacheadas (sempre usar network)
+const NEVER_CACHE_URLS = [
   'supabase.co',
   'supabase.io',
-  'lovableproject.com'
+  'lovableproject.com',
+  '/api/',
+  'rest/v1/',
+  'auth/v1/',
+  'storage/v1/'
 ];
 
 self.addEventListener('install', event => {
@@ -61,22 +64,14 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  // NEVER cache or interfere with API calls - let them pass through completely
+  if (NEVER_CACHE_URLS.some(apiUrl => request.url.includes(apiUrl))) {
+    // For ALL API calls (GET, POST, PUT, DELETE, PATCH), bypass service worker completely
     return;
   }
 
-  // Handle API requests with network-first strategy - always use network for API calls
-  if (API_URLS.some(apiUrl => request.url.includes(apiUrl)) || 
-      request.url.includes('/api/') || 
-      request.url.includes('supabase')) {
-    // For API calls, always try network first and don't cache if it fails
-    event.respondWith(
-      fetch(request).catch(() => {
-        // For API failures, don't serve cached version to avoid stale data
-        return new Response('Network Error', { status: 503 });
-      })
-    );
+  // Skip non-GET requests for non-API calls
+  if (request.method !== 'GET') {
     return;
   }
 
@@ -146,7 +141,7 @@ function cacheFirstStrategy(request) {
     });
 }
 
-// Network-first strategy for API calls
+// Network-first strategy for non-API calls only
 function networkFirstStrategy(request) {
   return fetch(request)
     .then(response => {
@@ -160,7 +155,7 @@ function networkFirstStrategy(request) {
     });
 }
 
-// Stale-while-revalidate strategy
+// Stale-while-revalidate strategy for non-API calls only
 function staleWhileRevalidateStrategy(request) {
   return caches.match(request)
     .then(response => {
