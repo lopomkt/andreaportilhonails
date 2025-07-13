@@ -149,7 +149,7 @@ export function useAppointments() {
         dbStatus = 'cancelado';
       }
       
-      // Create data object with required fields
+      // Create data object with required fields (status_confirmacao removed as it doesn't exist)
       const dataToInsert = {
         cliente_id: dbAppointmentData.cliente_id,
         servico_id: dbAppointmentData.servico_id,
@@ -157,8 +157,7 @@ export function useAppointments() {
         preco: dbAppointmentData.preco || 0,
         status: dbStatus,
         data_fim: dbAppointmentData.data_fim,
-        observacoes: dbAppointmentData.observacoes || null,
-        status_confirmacao: dbAppointmentData.status_confirmacao || 'not_confirmed'
+        observacoes: dbAppointmentData.observacoes || null
       };
       
       console.log("Inserting appointment data:", dataToInsert);
@@ -273,7 +272,7 @@ export function useAppointments() {
         dbStatus = dbAppointmentData.status;
       }
       
-      // Only include fields that are actually provided
+      // Only include fields that are actually provided (status_confirmacao removed as it doesn't exist)
       const updateData: Record<string, any> = {};
       if (dbAppointmentData.cliente_id !== undefined) updateData.cliente_id = dbAppointmentData.cliente_id;
       if (dbAppointmentData.servico_id !== undefined) updateData.servico_id = dbAppointmentData.servico_id;
@@ -282,7 +281,6 @@ export function useAppointments() {
       if (dbStatus !== undefined) updateData.status = dbStatus;
       if (dbAppointmentData.data_fim !== undefined) updateData.data_fim = dbAppointmentData.data_fim;
       if (dbAppointmentData.observacoes !== undefined) updateData.observacoes = dbAppointmentData.observacoes;
-      if (dbAppointmentData.status_confirmacao !== undefined) updateData.status_confirmacao = dbAppointmentData.status_confirmacao;
       
       console.log("Sending update data to Supabase:", updateData);
       

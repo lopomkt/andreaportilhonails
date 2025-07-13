@@ -4,8 +4,7 @@ import { Database } from './types';
 
 // Type aliases for Supabase tables
 export type DbAppointment = TablesRow<'agendamentos_novo'> & {
-  status_confirmacao?: string;  // Added missing field
-  motivo_cancelamento?: string; // Added missing field
+  motivo_cancelamento?: string; // Added missing field for cancellation reason
 };
 export type DbClient = TablesRow<'clientes'>;
 export type DbService = TablesRow<'servicos'>;
@@ -16,12 +15,10 @@ export type DbMessageTemplate = TablesRow<'mensagens_templates'>;
 
 // Appointment-specific types for insert and update operations
 export type DbAppointmentInsert = TablesInsert<'agendamentos_novo'> & {
-  status_confirmacao?: string;  // Added missing field
-  motivo_cancelamento?: string; // Added missing field
+  motivo_cancelamento?: string; // Added missing field for cancellation reason
 };
 export type DbAppointmentUpdate = TablesUpdate<'agendamentos_novo'> & {
-  status_confirmacao?: string;  // Added missing field
-  motivo_cancelamento?: string; // Added missing field
+  motivo_cancelamento?: string; // Added missing field for cancellation reason
 };
 
 // Define type for blocked dates

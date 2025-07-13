@@ -33,7 +33,7 @@ export const LoginScreen = () => {
       console.log("Tentativa de login com senha");
       
       // Senha fixa para validação
-      const correctPassword = "141226";
+      const correctPassword = "122614";
       
       if (password === correctPassword) {
         console.log("Senha correta, autenticando...");
