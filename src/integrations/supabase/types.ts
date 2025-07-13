@@ -21,6 +21,7 @@ export type Database = {
           data_fim: string
           data_inicio: string
           id: string
+          motivo_cancelamento: string | null
           observacoes: string | null
           preco: number
           servico_id: string
@@ -32,6 +33,7 @@ export type Database = {
           data_fim: string
           data_inicio: string
           id?: string
+          motivo_cancelamento?: string | null
           observacoes?: string | null
           preco: number
           servico_id: string
@@ -43,6 +45,7 @@ export type Database = {
           data_fim?: string
           data_inicio?: string
           id?: string
+          motivo_cancelamento?: string | null
           observacoes?: string | null
           preco?: number
           servico_id?: string
