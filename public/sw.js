@@ -5,8 +5,7 @@ const DYNAMIC_CACHE = 'ap-nails-dynamic-v1';
 // App Shell - recursos essenciais para funcionalidade offline
 const APP_SHELL = [
   '/',
-  '/src/main.tsx',
-  '/src/App.tsx',
+  '/index.html',
   '/src/index.css',
   '/lovable-uploads/f1b44926-72e3-4b1b-8d5b-3c987513bee9.png'
 ];
@@ -14,8 +13,9 @@ const APP_SHELL = [
 // URLs de API que devem usar network-first strategy
 const API_URLS = [
   '/api/',
-  'https://supabase.co/',
-  'https://api.supabase.io/'
+  'supabase.co',
+  'supabase.io',
+  'lovableproject.com'
 ];
 
 self.addEventListener('install', event => {
@@ -66,9 +66,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Handle API requests with network-first strategy
-  if (API_URLS.some(apiUrl => request.url.includes(apiUrl))) {
-    event.respondWith(networkFirstStrategy(request));
+  // Handle API requests with network-first strategy - always use network for API calls
+  if (API_URLS.some(apiUrl => request.url.includes(apiUrl)) || 
+      request.url.includes('/api/') || 
+      request.url.includes('supabase')) {
+    // For API calls, always try network first and don't cache if it fails
+    event.respondWith(
+      fetch(request).catch(() => {
+        // For API failures, don't serve cached version to avoid stale data
+        return new Response('Network Error', { status: 503 });
+      })
+    );
     return;
   }
 
