@@ -5,7 +5,6 @@ import { Appointment } from '@/types';
 import { Loader, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { useAppointments } from '@/hooks/appointments';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useData } from '@/context/DataProvider';
@@ -22,7 +21,7 @@ interface EditAppointmentModalProps {
 }
 
 export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAppointmentModalProps) {
-  const { updateAppointment, deleteAppointment } = useAppointments();
+  const { updateAppointment, deleteAppointment } = useData();
   const { toast } = useToast();
   const { services } = useData();
   const [isLoading, setIsLoading] = useState(false);
@@ -113,7 +112,7 @@ export function EditAppointmentModal({ appointment, onClose, onSuccess }: EditAp
     try {
       console.log("Updating appointment status to:", status);
       const result = await updateAppointment(appointment.id, { 
-        status: status
+        status: status as any
       });
       
       if (result.success) {

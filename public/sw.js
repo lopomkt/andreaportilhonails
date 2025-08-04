@@ -70,65 +70,59 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // COMPLETELY bypass service worker for ALL Supabase calls
-  if (NEVER_CACHE_URLS.some(apiUrl => request.url.includes(apiUrl))) {
-    console.log('SW: Completely bypassing for API URL:', request.url, 'Method:', request.method);
-    // Let the browser handle it directly - don't even respond
+  // COMPLETELY bypass service worker for ALL Supabase and API calls
+  if (NEVER_CACHE_URLS.some(apiUrl => request.url.includes(apiUrl)) || 
+      request.url.includes('supabase') ||
+      request.url.includes('/api/') ||
+      request.url.includes('rest/v1') ||
+      request.url.includes('auth/v1') ||
+      request.url.includes('storage/v1') ||
+      request.url.includes('realtime/v1')) {
+    console.log('SW: COMPLETELY BYPASSING API URL:', request.url);
+    // Don't intercept at all - let browser handle it
     return;
   }
 
-  // Skip non-GET requests for non-API calls
+  // Only handle GET requests for static content
   if (request.method !== 'GET') {
+    console.log('SW: Bypassing non-GET request:', request.method, request.url);
     return;
   }
 
-  // Handle navigation requests
-  if (request.mode === 'navigate') {
+  // Handle navigation requests (HTML pages)
+  if (request.mode === 'navigate' && !request.url.includes('supabase')) {
     event.respondWith(
       fetch(request)
         .then(response => {
-          // Clone response for caching
-          const responseClone = response.clone();
-          caches.open(DYNAMIC_CACHE)
-            .then(cache => cache.put(request, responseClone));
+          // Only cache successful responses
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(DYNAMIC_CACHE)
+              .then(cache => cache.put(request, responseClone))
+              .catch(err => console.log('Cache put failed:', err));
+          }
           return response;
         })
         .catch(() => {
-          // Fallback to cached app shell
+          // Fallback to cached app shell for offline
           return caches.match('/') || caches.match('/index.html');
         })
     );
     return;
   }
 
-  // Handle static assets with cache-first strategy
+  // Handle static assets ONLY (images, CSS, JS, fonts)
   if (request.destination === 'image' || 
       request.destination === 'style' || 
       request.destination === 'script' ||
-      request.destination === 'font') {
+      request.destination === 'font' ||
+      request.destination === 'manifest') {
     event.respondWith(cacheFirstStrategy(request));
     return;
   }
 
-  // Default: try cache first, then network
-  event.respondWith(
-    caches.match(request)
-      .then(response => {
-        return response || fetch(request)
-          .then(fetchResponse => {
-            const responseClone = fetchResponse.clone();
-            caches.open(DYNAMIC_CACHE)
-              .then(cache => cache.put(request, responseClone));
-            return fetchResponse;
-          });
-      })
-      .catch(() => {
-        // Fallback for offline
-        if (request.destination === 'document') {
-          return caches.match('/');
-        }
-      })
-  );
+  // For all other requests, just let them pass through
+  console.log('SW: Letting other request pass through:', request.url);
 });
 
 // Cache-first strategy for static assets

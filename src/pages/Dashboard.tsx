@@ -12,6 +12,7 @@ import { AppointmentsByWeek } from "@/components/AppointmentsByWeek";
 import { BirthdaysCard } from "@/components/dashboard/BirthdaysCard";
 import { RevenueStats } from "@/components/dashboard/RevenueStats";
 import { DashboardFooter } from "@/components/dashboard/DashboardFooter";
+import { PWAFunctionTest } from "@/components/PWAFunctionTest";
 import { useTimeSlotsCalculation } from "@/hooks/dashboard/useTimeSlotsCalculation";
 import { CalendarRange } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
@@ -96,6 +97,10 @@ export default function Dashboard() {
       />
 
       <DashboardFooter />
+      
+      <div className="mt-8">
+        <PWAFunctionTest />
+      </div>
     </div>
   );
 }

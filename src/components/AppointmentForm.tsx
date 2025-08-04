@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { ClientAutocomplete } from "@/components/ClientAutocomplete";
 import { useAppointmentsModal } from "@/context/AppointmentsModalContext";
-import { useServices } from "@/context/ServiceContext";
+// Removed - using services from useData instead
 
 interface AppointmentFormProps {
   onSuccess?: () => void;
@@ -47,14 +47,13 @@ export function AppointmentForm({
   const { toast } = useToast();
   const { 
     clients, 
+    services,
     appointments, 
     blockedDates,
     addAppointment,
     updateAppointment,
     loading
   } = useData();
-  
-  const { services, loading: servicesLoading } = useServices();
   const { selectedClient: contextSelectedClient, selectedDate, closeModal } = useAppointmentsModal();
 
   const [clientId, setClientId] = useState(
@@ -413,7 +412,7 @@ export function AppointmentForm({
               <SelectValue placeholder="Selecione um serviço" />
             </SelectTrigger>
             <SelectContent>
-              {servicesLoading ? (
+              {loading ? (
                 <SelectItem value="loading" disabled>Carregando serviços...</SelectItem>
               ) : services.length === 0 ? (
                 <SelectItem value="no-services" disabled>Nenhum serviço cadastrado</SelectItem>

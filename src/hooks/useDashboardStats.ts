@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useAppointments } from '@/hooks/useAppointments';
 import { useData } from '@/context/DataProvider';
 import { 
   startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, 
@@ -13,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export function useDashboardStats(month?: number, year?: number) {
   const { toast } = useToast();
-  const { appointments, fetchAppointments, error, loading } = useAppointments();
+  const { appointments, fetchAppointments, error, loading } = useData();
   const { clients, blockedDates, expenses } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<any[]>([]);
