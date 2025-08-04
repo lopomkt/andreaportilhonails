@@ -12,13 +12,19 @@ const APP_SHELL = [
 
 // URLs que NUNCA devem ser cacheadas (sempre usar network)
 const NEVER_CACHE_URLS = [
+  'lhopphwobvxrhfjeuyni.supabase.co',
   'supabase.co',
   'supabase.io',
   'lovableproject.com',
   '/api/',
+  '/rest/v1/',
+  '/auth/v1/',
+  '/storage/v1/',
+  '/realtime/v1/',
   'rest/v1/',
   'auth/v1/',
-  'storage/v1/'
+  'storage/v1/',
+  'realtime/v1/'
 ];
 
 self.addEventListener('install', event => {
@@ -64,9 +70,10 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // NEVER cache or interfere with API calls - let them pass through completely
+  // COMPLETELY bypass service worker for ALL Supabase calls
   if (NEVER_CACHE_URLS.some(apiUrl => request.url.includes(apiUrl))) {
-    // For ALL API calls (GET, POST, PUT, DELETE, PATCH), bypass service worker completely
+    console.log('SW: Completely bypassing for API URL:', request.url, 'Method:', request.method);
+    // Let the browser handle it directly - don't even respond
     return;
   }
 

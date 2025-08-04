@@ -50,7 +50,8 @@ export function AppointmentForm({
     appointments, 
     blockedDates,
     addAppointment,
-    updateAppointment
+    updateAppointment,
+    loading
   } = useData();
   
   const { services, loading: servicesLoading } = useServices();

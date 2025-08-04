@@ -1,12 +1,5 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
-import { useClients } from "@/hooks/useClients";
-import { useAppointments } from "@/hooks/useAppointments";
-import { useServices } from "@/hooks/useServices";
-import { useExpenses } from "@/hooks/useExpenses";
-import { useBlockedDates } from "@/hooks/useBlockedDates";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { useToast } from "@/hooks/use-toast";
-import { useClientContext } from "@/hooks/useClientContext";
+import React, { createContext, useCallback } from "react";
+import { useUnifiedData } from "@/hooks/useUnifiedData";
 import { 
   Appointment, 
   Client, 
@@ -18,7 +11,6 @@ import {
   WhatsAppMessageData,
   ServiceResponse
 } from "@/types";
-import { startOfMonth, endOfMonth, isWithinInterval, isFuture } from "date-fns";
 
 interface DataContextType {
   appointments: Appointment[];
@@ -49,6 +41,7 @@ interface DataContextType {
   deleteClient: (clientId: string) => Promise<any>;
   addAppointment: (appointment: Omit<Appointment, "id">) => Promise<any>;
   updateAppointment: (id: string, data: Partial<Appointment>) => Promise<any>;
+  deleteAppointment: (id: string) => Promise<any>;
   addExpense: (expense: Omit<Expense, "id">) => Promise<any>;
   updateExpense: (expense: Expense) => Promise<any>;
   deleteExpense: (id: string) => Promise<any>;
@@ -94,6 +87,7 @@ export const DataContext = createContext<DataContextType>({
   deleteClient: async () => ({}),
   addAppointment: async () => ({}),
   updateAppointment: async () => ({}),
+  deleteAppointment: async () => ({}),
   addExpense: async () => ({}),
   updateExpense: async () => ({}),
   deleteExpense: async () => ({}),
@@ -115,232 +109,18 @@ export const useData = () => {
 };
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use the unified data hook for simplified state management
+  const unifiedData = useUnifiedData();
 
-  const refetchClients = async () => {
-    try {
-      const { toast } = useToast();
-      await fetchClients();
-      
-    } catch (error) {
-      console.error("Erro ao atualizar a lista de clientes:", error);
-      const { toast } = useToast();
-      toast({
-        title: "Erro ao buscar clientes",
-        description: "Não foi possível atualizar os clientes. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Using existing hooks
-  const {
-    clients,
-    loading: clientsLoading,
-    error: clientsError,
-    fetchClients,
-    createClient,
-    updateClient,
-    deleteClient,
-    getTopClients,
-  } = useClients();
-
-  const {
-    appointments,
-    loading: appointmentsLoading,
-    error: appointmentsError,
-    fetchAppointments,
-    addAppointment: baseAddAppointment,
-    updateAppointment,
-    getAppointmentsForDate,
-    calculateDailyRevenue,
-    generateWhatsAppLink,
-  } = useAppointments();
-
-  const {
-    services,
-    loading: servicesLoading,
-    error: servicesError,
-    fetchServices,
-    addService,
-    updateService,
-    deleteService,
-    calculateServiceRevenue,
-  } = useServices();
-
-  const {
-    expenses,
-    loading: expensesLoading,
-    error: expensesError,
-    fetchExpenses,
-    addExpense,
-    updateExpense,
-    deleteExpense,
-  } = useExpenses();
-
-  const {
-    blockedDates,
-    loading: blockedDatesLoading,
-    error: blockedDatesError,
-    fetchBlockedDates,
-    addBlockedDate,
-  } = useBlockedDates();
-
-  // Use the dashboard stats hook
-  const {
-    dashboardStats,
-    revenueData,
-    calculateNetProfit,
-    calculatedMonthlyRevenue,
-    getRevenueData,
-    updateDashboardStats
-  } = useDashboardStats();
-  
-  // Update dashboard stats when appointments change
-  useEffect(() => {
-    if (appointments && appointments.length > 0) {
-      updateDashboardStats(appointments); // Pass appointments as required
-    }
-  }, [appointments, updateDashboardStats]);
-  
-  // Wrapper for addAppointment to ensure proper error handling and refresh
-  const addAppointment = useCallback(async (appointment: Omit<Appointment, "id">) => {
-    console.log("DataProvider: addAppointment called with:", appointment);
-    try {
-      const result = await baseAddAppointment(appointment);
-      console.log("DataProvider: addAppointment result:", result);
-      
-      // Force refresh appointments after successful creation
-      if (result.success || result.data) {
-        console.log("DataProvider: Refreshing appointments after successful creation");
-        await fetchAppointments();
-      }
-      
-      return result;
-    } catch (error: any) {
-      console.error("DataProvider: Error in addAppointment wrapper:", error);
-      return { error: error.message || 'Erro ao criar agendamento', success: false };
-    }
-  }, [baseAddAppointment, fetchAppointments]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        console.log("DataProvider: Loading data...");
-        await Promise.all([
-          fetchAppointments(),
-          fetchClients(),
-          fetchServices(),
-          fetchExpenses(),
-          fetchBlockedDates()
-        ]);
-        console.log("DataProvider: All data loaded");
-      } catch (err: any) {
-        const errorMsg = err.message || "Erro ao carregar os dados.";
-        console.error("DataProvider error:", errorMsg);
-        setError(errorMsg);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    const isLoading = clientsLoading || appointmentsLoading || servicesLoading || expensesLoading || blockedDatesLoading;
-    setLoading(isLoading);
-
-    const firstError = clientsError || appointmentsError || servicesError || expensesError || blockedDatesError;
-    setError(firstError);
-  }, [
-    clientsLoading, appointmentsLoading, servicesLoading, expensesLoading, blockedDatesLoading,
-    clientsError, appointmentsError, servicesError, expensesError, blockedDatesError
-  ]);
-
-  // Define refetchAppointments for DataContext
-  const refetchAppointments = useCallback(async (): Promise<Appointment[]> => {
-    console.log("DataProvider: refetchAppointments called");
-    
-    // Add cache-busting timestamp to ensure fresh data
-    const timestamp = new Date().getTime();
-    console.log("DataProvider: Fetching with cache-bust timestamp:", timestamp);
-    
-    const result = await fetchAppointments();
-    console.log("DataProvider: refetchAppointments completed, got", result?.length || 0, "appointments");
-    return result;
-  }, [fetchAppointments]);
-
-  // Modified to use the enhanced monthly revenue calculation
-  const wrappedCalculatedMonthlyRevenue = useCallback((month?: number, year?: number) => {
-    const targetDate = year && month !== undefined 
-      ? new Date(year, month, 1) 
-      : new Date();
-    
-    const monthStart = startOfMonth(targetDate);
-    const monthEnd = endOfMonth(targetDate);
-    
-    return appointments
-      .filter(appointment => appointment.status === "confirmed")
-      .reduce((sum, appointment) => {
-        const appointmentDate = new Date(appointment.date);
-        if (isWithinInterval(appointmentDate, { start: monthStart, end: monthEnd })) {
-          return sum + appointment.price;
-        }
-        return sum;
-      }, 0);
-  }, [appointments]);
-
-  // Calculate expected revenue from future confirmed appointments
-  const calculateExpectedRevenue = useCallback(() => {
-    const now = new Date();
-    
-    return appointments
-      .filter(appointment => appointment.status === "confirmed" && 
-              new Date(appointment.date) > now)
-      .reduce((sum, appointment) => sum + appointment.price, 0);
-  }, [appointments]);
+  const refetchClients = useCallback(async () => {
+    await unifiedData.refetchClients();
+  }, [unifiedData]);
 
   return (
     <DataContext.Provider
       value={{
-        appointments,
-        clients,
-        services,
-        expenses,
-        blockedDates,
-        dashboardStats,
-        revenueData,
-        loading,
-        error,
-        getAppointmentsForDate,
-        getTopClients,
-        calculateNetProfit,
-        calculateDailyRevenue,
-        calculatedMonthlyRevenue: wrappedCalculatedMonthlyRevenue,
-        calculateServiceRevenue,
-        getRevenueData,
-        calculateExpectedRevenue,
-        generateWhatsAppLink,
-        refetchAppointments,
-        refetchClients,
-        createClient,
-        updateClient,
-        deleteClient,
-        addAppointment,
-        updateAppointment,
-        addExpense,
-        updateExpense,
-        deleteExpense,
-        addService,
-        updateService,
-        deleteService,
-        fetchBlockedDates,
-        fetchAppointments,
-        addBlockedDate,
-        fetchServices,
+        ...unifiedData,
+        refetchClients
       }}
     >
       {children}
