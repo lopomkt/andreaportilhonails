@@ -1,5 +1,5 @@
 
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { Client, Appointment } from "@/types";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";

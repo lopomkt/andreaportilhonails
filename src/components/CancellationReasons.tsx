@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { AlertCircle, PieChartIcon } from "lucide-react";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { useState, useEffect } from "react";
 
 // Types

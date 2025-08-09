@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, Copy, Sparkles } from "lucide-react";
 import { Client, Service } from "@/types";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 export function MagicAppointmentLink() {
   const {
     clients,

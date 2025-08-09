@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { PopoverTrigger, PopoverContent, Popover } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/sonner";
 import { Expense } from "@/types";

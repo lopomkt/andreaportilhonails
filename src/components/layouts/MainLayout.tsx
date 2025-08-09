@@ -5,7 +5,7 @@ import { SidebarNav } from "@/components/layouts/SidebarNav";
 import { MobileNav } from "@/components/layouts/MobileNav";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DataProvider } from "@/context/DataContext";
+// DataProvider removed - using unified DataProvider at app root
 import { ClientProvider } from "@/context/ClientContext";
 import { AppointmentProvider } from "@/context/AppointmentContext";
 import { ServiceProvider } from "@/context/ServiceContext";
@@ -29,7 +29,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <ClientProvider>
       <AppointmentProvider>
         <ServiceProvider>
-          <DataProvider>
+          
             <div className="flex min-h-screen w-full flex-col">
               <MobileNav 
                 isOpen={isMobileNavOpen} 
@@ -62,7 +62,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </main>
               </div>
             </div>
-          </DataProvider>
+          
         </ServiceProvider>
       </AppointmentProvider>
     </ClientProvider>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { Service } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

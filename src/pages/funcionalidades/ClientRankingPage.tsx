@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, MessageCircle, ChevronLeft } from "lucide-react";
 import { Client } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNavigate } from 'react-router-dom';

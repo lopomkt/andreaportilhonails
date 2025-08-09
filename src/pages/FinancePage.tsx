@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/formatters";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, Users, FileText, Trash2, Edit, AlertCircle } from "lucide-react";
 import { format, subMonths, addMonths, isSameMonth, startOfMonth, endOfMonth } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, TrendingUp } from "lucide-react";
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { useEffect, useState, useMemo } from "react";
 import { Appointment, Service } from "@/types";
 import { useDashboardStats } from "@/hooks/useDashboardStats";

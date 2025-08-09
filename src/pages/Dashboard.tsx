@@ -1,7 +1,7 @@
 
 // AVISO: Componente QuickAppointmentButton removido permanentemente por padrão do projeto.
 
-import { useData } from "@/context/DataContext";
+import { useData } from "@/context/DataProvider";
 import { useEffect } from "react";
 import { format } from "date-fns";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
