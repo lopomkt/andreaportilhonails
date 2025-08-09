@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useServices } from "@/hooks/useServices";
+import { useData } from "@/context/DataProvider";
 import { Service } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ interface ServiceFormProps {
 }
 
 export function ServiceForm({ service, onSuccess, onCancel }: ServiceFormProps) {
-  const { addService, updateService } = useServices();
+  const { addService, updateService } = useData();
   const { toast } = useToast();
   
   const [name, setName] = useState(service?.name || "");

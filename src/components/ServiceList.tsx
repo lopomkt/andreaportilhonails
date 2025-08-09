@@ -9,7 +9,7 @@ import { formatCurrency, formatDuration } from "@/lib/formatters";
 import { Clock, Pencil, Trash } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
 import { useToast } from "@/hooks/use-toast";
-import { useServices } from "@/hooks/useServices";
+
 import { Animation } from "@/components/ui/animation";
 interface ServiceListProps {
   refreshTrigger?: number;
@@ -20,12 +20,7 @@ export function ServiceList({
   const {
     toast
   } = useToast();
-  const {
-    services,
-    fetchServices,
-    deleteService,
-    loading
-  } = useServices();
+  const { services, fetchServices, deleteService, loading } = useData();
   const [selectedService, setSelectedService] = useState<Service | undefined>(undefined);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);

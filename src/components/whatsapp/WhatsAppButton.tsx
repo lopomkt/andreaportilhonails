@@ -14,13 +14,13 @@ import { MessageForm } from "./MessageForm";
 import { useWhatsAppMessage } from "@/hooks/useWhatsAppMessage";
 import { whatsappButtonStyles } from "./styles";
 import { Loader2 } from "lucide-react";
-import { useServices } from "@/context/ServiceContext";
+import { useData } from "@/context/DataProvider";
 import { toast } from "@/hooks/use-toast";
 
 export function WhatsAppButton() {
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const { services, fetchServices, loading: servicesLoading } = useServices();
+  const { services, fetchServices, loading: dataLoading } = useData();
   const {
     messageType,
     setMessageType,
@@ -175,7 +175,7 @@ export function WhatsAppButton() {
             </DialogDescription>
           </DialogHeader>
           
-          {loading || messageLoading || servicesLoading ? (
+          {loading || messageLoading || dataLoading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>

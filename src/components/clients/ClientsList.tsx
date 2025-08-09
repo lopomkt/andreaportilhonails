@@ -9,9 +9,7 @@ import ClientForm from './ClientForm';
 import { TrashIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { useClients } from "@/context/ClientContext";
-import { useServices } from "@/context/ServiceContext";
-import { useAppointments } from "@/context/AppointmentContext";
+import { useData } from "@/context/DataProvider";
 
 interface ClientsListProps {
   clients: Client[];
@@ -28,8 +26,7 @@ export function ClientsList({ clients, onClientUpdated, activeTab }: ClientsList
   const [isLoading, setIsLoading] = useState(false);
   const [lastServices, setLastServices] = useState<Record<string, string>>({});
   const { toast } = useToast();
-  const { addAppointment, refetchAppointments } = useAppointments();
-  const { fetchServices, services } = useServices();
+  const { addAppointment, refetchAppointments, fetchServices, services } = useData();
   const [isScheduling, setIsScheduling] = useState(false);
   const [formData, setFormData] = useState({
     serviceId: "",

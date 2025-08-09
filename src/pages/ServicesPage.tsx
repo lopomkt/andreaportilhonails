@@ -8,14 +8,14 @@ import { Plus, RefreshCw } from "lucide-react";
 import { Animation } from "@/components/ui/animation"; 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useServices } from "@/context/ServiceContext";
+import { useData } from "@/context/DataProvider";
 
 export default function ServicesPage() {
   const [showAddService, setShowAddService] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toast } = useToast();
-  const { fetchServices, loading: servicesLoading } = useServices();
+  const { fetchServices, loading: dataLoading } = useData();
   
   // Buscar serviços quando a página carregar ou quando refreshTrigger mudar
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function ServicesPage() {
             onClick={handleRefresh}
             variant="outline"
             className="gap-2"
-            disabled={isLoading || servicesLoading}
+            disabled={isLoading || dataLoading}
           >
             {isLoading ? <Animation className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
             Atualizar
@@ -93,7 +93,7 @@ export default function ServicesPage() {
           <Button 
             onClick={handleAddService} 
             className="bg-nail-500 hover:bg-nail-600 gap-2 w-full sm:w-auto"
-            disabled={isLoading || servicesLoading}
+            disabled={isLoading || dataLoading}
           >
             {isLoading ? <Animation className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             Novo Serviço
@@ -102,7 +102,7 @@ export default function ServicesPage() {
       </div>
       
       <div className="grid gap-6">
-        {isLoading || servicesLoading ? (
+        {isLoading || dataLoading ? (
           <div className="flex justify-center p-8">
             <Animation className="h-8 w-8" />
           </div>
