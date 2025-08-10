@@ -198,6 +198,39 @@ const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Financial helper functions (local, replacing useDashboardStats)
+  const computeMonthlyRevenue = useCallback((apps: Appointment[] = appointments, month?: number, year?: number) => {
+    const now = new Date();
+    const targetMonth = month ?? now.getMonth();
+    const targetYear = year ?? now.getFullYear();
+    return (apps || [])
+      .filter(a => a.status === 'confirmed')
+      .reduce((sum, a) => {
+        const d = new Date(a.date);
+        if (d.getMonth() === targetMonth && d.getFullYear() === targetYear) {
+          return sum + (a.price || 0);
+        }
+        return sum;
+      }, 0);
+  }, [appointments]);
+
+  const calculateNetProfit = useCallback((month?: number, year?: number) => {
+    const revenue = computeMonthlyRevenue(appointments, month, year);
+    const now = new Date();
+    const m = month ?? now.getMonth();
+    const y = year ?? now.getFullYear();
+    const expensesTotal = (expensesHook.expenses || []).reduce((sum, e) => {
+      const d = e.date ? new Date(e.date) : null;
+      if (d && d.getMonth() === m && d.getFullYear() === y) {
+        return sum + (typeof e.amount === 'number' ? e.amount : 0);
+      }
+      return sum;
+    }, 0);
+    return revenue - expensesTotal;
+  }, [appointments, expensesHook.expenses, computeMonthlyRevenue]);
+
+  const getRevenueDataFn = useCallback(() => revenueData, [revenueData]);
+
   return {
     // State
     appointments,
@@ -205,8 +238,8 @@ const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
     services: servicesHook.services,
     expenses: expensesHook.expenses,
     blockedDates: blockedDatesHook.blockedDates,
-    dashboardStats: dashboardStatsHook.dashboardStats,
-    revenueData: dashboardStatsHook.revenueData,
+    dashboardStats: dashboardStats,
+    revenueData: revenueData,
     loading: globalLoading || clientsHook.loading || servicesHook.loading || expensesHook.loading || blockedDatesHook.loading,
     error: globalError || clientsHook.error || servicesHook.error || expensesHook.error || blockedDatesHook.error,
 
@@ -247,10 +280,10 @@ const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
     addBlockedDate: blockedDatesHook.addBlockedDate,
 
     // Dashboard operations
-    calculateNetProfit: dashboardStatsHook.calculateNetProfit,
+    calculateNetProfit: calculateNetProfit,
     calculatedMonthlyRevenue: (month?: number, year?: number) => 
-      dashboardStatsHook.calculatedMonthlyRevenue(appointments, month, year),
-    getRevenueData: dashboardStatsHook.getRevenueData,
+      computeMonthlyRevenue(appointments, month, year),
+    getRevenueData: getRevenueDataFn,
     calculateExpectedRevenue: () => {
       const now = new Date();
       return appointments
