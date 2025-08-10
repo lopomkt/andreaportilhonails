@@ -4,8 +4,8 @@ import { useClients } from './useClients';
 import { useServices } from './useServices';
 import { useExpenses } from './useExpenses';
 import { useBlockedDates } from './useBlockedDates';
-import { useDashboardStats } from './useDashboardStats';
-import { Appointment, Client, Service, WhatsAppMessageData } from '@/types';
+
+import { Appointment, Client, Service, WhatsAppMessageData, DashboardStats, RevenueData } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useUnifiedData() {
@@ -18,7 +18,15 @@ export function useUnifiedData() {
   const servicesHook = useServices();
   const expensesHook = useExpenses();
   const blockedDatesHook = useBlockedDates();
-  const dashboardStatsHook = useDashboardStats();
+const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+  monthRevenue: 0,
+  newClients: 0,
+  totalAppointments: 0,
+  inactiveClients: 0,
+  todayAppointments: 0,
+  weekAppointments: 0
+});
+const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
   // Unified state
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -42,9 +50,42 @@ export function useUnifiedData() {
 
       setAppointments(appointmentsData);
       
-      // Update dashboard stats with fresh appointment data
+      // Update dashboard stats with fresh appointment data (local calculation)
       if (appointmentsData.length > 0) {
-        dashboardStatsHook.updateDashboardStats(appointmentsData);
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+        const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        const weekStart = new Date(todayStart);
+        const dayOfWeek = (todayStart.getDay() + 6) % 7; // Monday=0
+        weekStart.setDate(weekStart.getDate() - dayOfWeek);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        const confirmed = appointmentsData.filter(a => a.status === 'confirmed');
+        const todayAppointments = confirmed.filter(a => {
+          const d = new Date(a.date);
+          return d >= todayStart && d <= todayEnd;
+        }).length;
+        const weekAppointments = confirmed.filter(a => {
+          const d = new Date(a.date);
+          return d >= weekStart && d <= weekEnd;
+        }).length;
+        const monthRevenue = confirmed.reduce((sum, a) => {
+          const d = new Date(a.date);
+          return d >= monthStart && d <= monthEnd ? sum + a.price : sum;
+        }, 0);
+
+        setDashboardStats({
+          monthRevenue,
+          newClients: 0,
+          totalAppointments: appointmentsData.length,
+          inactiveClients: 0,
+          todayAppointments,
+          weekAppointments
+        });
       }
       
       console.log("useUnifiedData: All data loaded successfully");
