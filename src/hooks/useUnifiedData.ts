@@ -6,6 +6,7 @@ import { useExpenses } from './useExpenses';
 import { useBlockedDates } from './useBlockedDates';
 import { useDashboardStats } from './useDashboardStats';
 import { Appointment, Client, Service, WhatsAppMessageData } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useUnifiedData() {
   const [globalLoading, setGlobalLoading] = useState(true);
@@ -53,7 +54,7 @@ export function useUnifiedData() {
     } finally {
       setGlobalLoading(false);
     }
-  }, [appointmentService.fetchAppointments, clientsHook.fetchClients, servicesHook.fetchServices, expensesHook.fetchExpenses, blockedDatesHook.fetchBlockedDates, dashboardStatsHook.updateDashboardStats]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initial data load
   useEffect(() => {
@@ -135,6 +136,26 @@ export function useUnifiedData() {
   const fetchAppointments = useCallback(async (): Promise<Appointment[]> => {
     return refetchAppointments();
   }, [refetchAppointments]);
+
+  // Realtime subscriptions for appointments and services
+  useEffect(() => {
+    const channel = supabase
+      .channel('app-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agendamentos_novo' }, () => {
+        console.log('useUnifiedData: Realtime change on agendamentos_novo, refetching appointments');
+        refetchAppointments();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'servicos' }, () => {
+        console.log('useUnifiedData: Realtime change on servicos, refetching services');
+        servicesHook.fetchServices();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     // State
