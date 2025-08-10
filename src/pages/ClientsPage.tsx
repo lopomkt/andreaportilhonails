@@ -9,40 +9,31 @@ import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/clients/ClientForm";
 import { supabase } from '@/integrations/supabase/client';
 import { ClientsList } from "@/components/clients/ClientsList";
-import { fetchClientsFromApi, createClientInApi } from "@/services/clientApi";
-import { addDays } from "date-fns";
 import { ClientImportDialog } from "@/components/clients/ClientImportDialog";
+import { addDays } from "date-fns";
+import { useData } from "@/context/DataProvider";
+
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
+  const { clients: ctxClients, refetchClients, loading, createClient } = useData();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
-  const {
-    toast
-  } = useToast();
-  const fetchClients = async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      console.log("ClientsPage: Fetching clients...");
-      const fetchedClients = await fetchClientsFromApi();
-      console.log("ClientsPage: Clients fetched successfully", fetchedClients);
-      setClients(fetchedClients);
-      return;
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-      toast({
-        title: "Erro ao carregar clientes",
-        description: "Ocorreu um erro ao buscar a lista de clientes.",
-        variant: "destructive"
-      });
-      return;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { toast } = useToast();
+const fetchClients = async (): Promise<void> => {
+  try {
+    console.log("ClientsPage: Refetching clients via context...");
+    await refetchClients();
+  } catch (error) {
+    console.error("Error refetching clients:", error);
+    toast({
+      title: "Erro ao carregar clientes",
+      description: "Ocorreu um erro ao buscar a lista de clientes.",
+      variant: "destructive"
+    });
+  }
+};
   useEffect(() => {
     fetchClients();
 
@@ -60,11 +51,11 @@ export default function ClientsPage() {
     };
   }, []);
   useEffect(() => {
-    if (!clients) {
+    if (!ctxClients) {
       setFilteredClients([]);
       return;
     }
-    let filtered = [...clients];
+    let filtered = [...ctxClients];
 
     // Filtrar por termo de busca
     if (searchTerm) {
@@ -95,15 +86,15 @@ export default function ClientsPage() {
       });
     }
     setFilteredClients(filtered);
-  }, [clients, searchTerm, activeTab]);
+  }, [ctxClients, searchTerm, activeTab]);
   const handleNewClientSubmit = async (clientData: Partial<Client>) => {
     console.log("Creating new client with data:", clientData);
     try {
-      const result = await createClientInApi(clientData);
-      if (result.error) {
-        throw new Error(result.error);
+      const result = await createClient(clientData);
+      if ((result as any)?.error) {
+        throw new Error((result as any).error);
       }
-      console.log("Client created successfully:", result.data);
+      console.log("Client created successfully:", (result as any)?.data || clientData);
       setShowNewClientModal(false);
       await fetchClients();
       toast({

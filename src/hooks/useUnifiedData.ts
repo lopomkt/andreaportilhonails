@@ -53,7 +53,7 @@ export function useUnifiedData() {
     } finally {
       setGlobalLoading(false);
     }
-  }, [appointmentService, clientsHook, servicesHook, expensesHook, blockedDatesHook, dashboardStatsHook]);
+  }, [appointmentService.fetchAppointments, clientsHook.fetchClients, servicesHook.fetchServices, expensesHook.fetchExpenses, blockedDatesHook.fetchBlockedDates, dashboardStatsHook.updateDashboardStats]);
 
   // Initial data load
   useEffect(() => {
