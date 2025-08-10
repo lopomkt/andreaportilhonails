@@ -132,7 +132,7 @@ const fetchClients = async (): Promise<void> => {
       description: "Clientes importados com sucesso!"
     });
   };
-  if (isLoading) {
+  if (loading) {
     return <div className="flex items-center justify-center min-h-[50vh]">
         <div className="flex flex-col items-center gap-2">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-rose-200 border-t-rose-500"></div>
