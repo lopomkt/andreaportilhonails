@@ -1,10 +1,10 @@
 
 import { useCallback } from 'react';
-import { useDataContext } from './useDataContext';
+import { useData } from '@/context/DataProvider';
 import { useToast } from '@/hooks/use-toast';
 
 export function useDataMutations() {
-  const { 
+  const {
     addAppointment, 
     updateAppointment,
     addExpense,
@@ -15,7 +15,7 @@ export function useDataMutations() {
     createClient,
     updateClient,
     deleteClient 
-  } = useDataContext();
+  } = useData();
   const { toast } = useToast();
 
   const handleAppointmentAdd = useCallback(async (data: any) => {

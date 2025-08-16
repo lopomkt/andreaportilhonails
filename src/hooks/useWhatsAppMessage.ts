@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Client, MessageTemplate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useDataContext } from "./useDataContext";
+import { useData } from '@/context/DataProvider';
 import { supabase } from "@/integrations/supabase/client";
 
 export function useWhatsAppMessage() {
@@ -11,7 +11,7 @@ export function useWhatsAppMessage() {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
-  const { generateWhatsAppLink } = useDataContext();
+  const { generateWhatsAppLink } = useData();
 
   const fetchTemplates = useCallback(async () => {
     try {

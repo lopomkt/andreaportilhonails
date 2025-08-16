@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Client } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { useData } from "@/context/DataProvider";
 export default function ClientsPage() {
   const { clients: ctxClients, refetchClients, loading, createClient } = useData();
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
@@ -50,16 +50,20 @@ const fetchClients = async (): Promise<void> => {
       supabase.removeChannel(channel);
     };
   }, []);
-  useEffect(() => {
+
+  // Optimize filtering with useMemo to prevent unnecessary re-renders
+  const filteredClients = useMemo(() => {
     if (!ctxClients) {
-      setFilteredClients([]);
-      return;
+      return [];
     }
     let filtered = [...ctxClients];
 
     // Filtrar por termo de busca
     if (searchTerm) {
-      filtered = filtered.filter(client => client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || client.phone?.includes(searchTerm));
+      filtered = filtered.filter(client => 
+        client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        client.phone?.includes(searchTerm)
+      );
     }
 
     // Filtrar por status (ativo/inativo)
@@ -85,7 +89,7 @@ const fetchClients = async (): Promise<void> => {
         }
       });
     }
-    setFilteredClients(filtered);
+    return filtered;
   }, [ctxClients, searchTerm, activeTab]);
   const handleNewClientSubmit = async (clientData: Partial<Client>) => {
     console.log("Creating new client with data:", clientData);

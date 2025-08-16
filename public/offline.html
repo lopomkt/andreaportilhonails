@@ -18,7 +18,7 @@
             text-align: center;
         }
         .container {
-            max-width: 400px;
+            max-width: 450px;
             padding: 2rem;
         }
         .icon {
@@ -31,28 +31,71 @@
             align-items: center;
             justify-content: center;
             font-size: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
         h1 {
             margin: 0 0 1rem;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
+            font-weight: 600;
         }
         p {
             margin: 0 0 2rem;
             opacity: 0.9;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+        .status {
+            margin: 1rem 0;
+            padding: 0.75rem 1rem;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .status.show {
+            display: block;
         }
         .retry-btn {
             background: white;
             color: #d2769d;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 14px 28px;
+            border-radius: 8px;
             font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         .retry-btn:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .retry-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .features {
+            margin: 2rem 0 1rem;
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            text-align: left;
+        }
+        .features h3 {
+            margin: 0 0 1rem;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        .features ul {
+            margin: 0;
+            padding: 0 0 0 1.2rem;
+            opacity: 0.9;
+        }
+        .features li {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -60,10 +103,91 @@
     <div class="container">
         <div class="icon">📱</div>
         <h1>Você está offline</h1>
-        <p>Parece que você perdeu a conexão com a internet. Algumas funcionalidades podem estar limitadas, mas você ainda pode navegar pelo app.</p>
-        <button class="retry-btn" onclick="window.location.reload()">
+        <p>Parece que você perdeu a conexão com a internet. Não se preocupe, você ainda pode navegar pelo app, mas algumas funcionalidades podem estar limitadas.</p>
+        
+        <div class="features">
+            <h3>Funcionalidades Offline Limitadas:</h3>
+            <ul>
+                <li>✓ Navegação pelas páginas existentes</li>
+                <li>✗ Criar ou editar agendamentos</li>
+                <li>✗ Adicionar ou modificar clientes</li>
+                <li>✗ Sincronizar dados em tempo real</li>
+                <li>✗ Enviar mensagens do WhatsApp</li>
+            </ul>
+        </div>
+
+        <div class="status" id="connectionStatus">
+            🔄 Tentando reconectar...
+        </div>
+
+        <button class="retry-btn" id="retryBtn" onclick="checkConnection()">
             Tentar Novamente
         </button>
     </div>
+
+    <script>
+        let isChecking = false;
+        
+        function updateStatus(message, show = true) {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = message;
+            status.className = show ? 'status show' : 'status';
+        }
+        
+        function updateButton(text, disabled = false) {
+            const btn = document.getElementById('retryBtn');
+            btn.textContent = text;
+            btn.disabled = disabled;
+        }
+        
+        async function checkConnection() {
+            if (isChecking) return;
+            
+            isChecking = true;
+            updateStatus('🔄 Verificando conexão...', true);
+            updateButton('Verificando...', true);
+            
+            try {
+                // Try to fetch a small resource to test connection
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(window.location.origin + '/manifest.json', {
+                    method: 'HEAD',
+                    cache: 'no-cache',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    updateStatus('✅ Conexão restaurada! Recarregando...', true);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                updateStatus('❌ Ainda sem conexão', true);
+                updateButton('Tentar Novamente', false);
+                setTimeout(() => {
+                    updateStatus('', false);
+                }, 3000);
+            } finally {
+                isChecking = false;
+            }
+        }
+        
+        // Auto-check connection every 30 seconds
+        setInterval(() => {
+            if (!isChecking) {
+                checkConnection();
+            }
+        }, 30000);
+        
+        // Initial connection check after 3 seconds
+        setTimeout(checkConnection, 3000);
+    </script>
 </body>
 </html>
