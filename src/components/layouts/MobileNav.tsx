@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
       "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm transition-all duration-100",
       isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
     )}>
-      <div className="fixed inset-y-0 left-0 z-50 w-3/4 max-w-xs bg-white shadow-xl">
+      <div className="fixed inset-y-0 left-0 z-50 w-3/4 max-w-xs bg-white shadow-xl flex flex-col">
         <div className="flex h-16 items-center justify-between px-4 border-b">
           <div className="font-semibold text-lg">Menu</div>
           <button 
@@ -44,7 +45,7 @@ export function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
             <span className="sr-only">Fechar menu</span>
           </button>
         </div>
-        <nav className="flex flex-col p-4 space-y-1">
+        <nav className="flex flex-col p-4 space-y-1 flex-1">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -61,6 +62,9 @@ export function MobileNav({ isOpen, setIsOpen }: MobileNavProps) {
             </Link>
           ))}
         </nav>
+        <div className="p-4 border-t">
+          <LogoutButton />
+        </div>
       </div>
       <div 
         className="fixed inset-0 z-40 bg-black/20" 

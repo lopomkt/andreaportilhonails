@@ -1,5 +1,4 @@
 
-import { useEffect, useState } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -21,34 +20,6 @@ import ClientRankingPage from "@/pages/ClientRankingPage";
 import NotFound from "@/pages/NotFound";
 
 export const CRMContent = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = () => {
-      const storedAccess = localStorage.getItem("acessoAndrea");
-      if (storedAccess) {
-        try {
-          const lastAccess = new Date(JSON.parse(storedAccess));
-          const now = new Date();
-          const hoursDiff = (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60);
-          setIsAuthenticated(hoursDiff < 48);
-        } catch (error) {
-          console.error("Error parsing date from localStorage:", error);
-          setIsAuthenticated(false);
-        }
-      } else {
-        setIsAuthenticated(false);
-      }
-    };
-
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
-    return () => window.removeEventListener("storage", checkAuth);
-  }, []);
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return (
     <AppointmentsModalProvider>

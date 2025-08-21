@@ -3,6 +3,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Calendar, Users, BarChart, Settings, Trophy } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 interface SidebarNavProps {
   isCollapsed: boolean;
@@ -49,7 +50,7 @@ const navItems = [
 export function SidebarNav({ isCollapsed }: SidebarNavProps) {
   return (
     <nav className="flex flex-col h-full">
-      <div className="px-3 py-4">
+      <div className="px-3 py-4 flex-1">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -65,6 +66,9 @@ export function SidebarNav({ isCollapsed }: SidebarNavProps) {
             {!isCollapsed && <span>{item.label}</span>}
           </NavLink>
         ))}
+      </div>
+      <div className="px-3 py-4 border-t">
+        <LogoutButton />
       </div>
     </nav>
   );
