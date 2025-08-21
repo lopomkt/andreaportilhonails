@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment, AppointmentStatus } from '@/types';
 import { mapDbAppointmentToApp, mapAppStatusToDbStatus } from '@/integrations/supabase/mappers/appointmentMapper';

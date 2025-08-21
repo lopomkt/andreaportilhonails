@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Client } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { 

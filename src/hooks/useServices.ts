@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Service, Appointment, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbServiceToApp, mapAppServiceToDb } from '@/integrations/supabase/mappers';
