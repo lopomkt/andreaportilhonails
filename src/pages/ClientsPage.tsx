@@ -151,10 +151,12 @@ const fetchClients = async (): Promise<void> => {
           <Input placeholder="Buscar cliente..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 mx-[19px] px-[20px]">
+          {/* TODO: Implementar a lógica de importação de clientes via CSV/XLS no componente ClientImportDialog.tsx
           <Button onClick={() => setShowImportModal(true)} className="gap-1 whitespace-nowrap bg-rose-400 hover:bg-rose-300 text-slate-950 text-sm">
             <Upload className="h-4 w-4" />
             Importar
           </Button>
+          */}
           <Button onClick={() => setShowNewClientModal(true)} className="gap-1 bg-nail-500 hover:bg-nail-600 whitespace-nowrap">
             <Plus className="h-4 w-4" />
             Novo Cliente

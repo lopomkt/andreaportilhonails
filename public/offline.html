@@ -5,114 +5,202 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline - AP Nails CRM</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
             padding: 0;
-            font-family: system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #d2769d, #b8628a);
-            color: white;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            color: #881337;
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             text-align: center;
+            line-height: 1.6;
         }
+        
         .container {
-            max-width: 450px;
+            max-width: 480px;
             padding: 2rem;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
-        .icon {
-            width: 80px;
-            height: 80px;
+        
+        .logo {
+            width: 120px;
+            height: 120px;
             margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #be185d, #ec4899);
             border-radius: 50%;
-            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            font-size: 3rem;
+            color: white;
+            box-shadow: 0 10px 25px rgba(190, 24, 93, 0.3);
         }
+        
         h1 {
             margin: 0 0 1rem;
-            font-size: 1.75rem;
-            font-weight: 600;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #be185d;
         }
-        p {
+        
+        .subtitle {
             margin: 0 0 2rem;
+            color: #831843;
+            font-size: 1.1rem;
             opacity: 0.9;
-            line-height: 1.6;
-            font-size: 1rem;
         }
+        
+        .message {
+            margin: 0 0 2rem;
+            color: #9f1239;
+            font-size: 1rem;
+            background: rgba(190, 24, 93, 0.05);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #be185d;
+        }
+        
         .status {
-            margin: 1rem 0;
-            padding: 0.75rem 1rem;
-            background: rgba(255,255,255,0.15);
-            border-radius: 8px;
-            font-size: 0.9rem;
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background: rgba(190, 24, 93, 0.1);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: #be185d;
+            font-weight: 500;
             display: none;
         }
+        
         .status.show {
             display: block;
         }
+        
         .retry-btn {
-            background: white;
-            color: #d2769d;
+            background: linear-gradient(135deg, #be185d, #ec4899);
+            color: white;
             border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
+            padding: 16px 32px;
+            border-radius: 12px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(190, 24, 93, 0.4);
+            min-width: 180px;
         }
+        
         .retry-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 25px rgba(190, 24, 93, 0.5);
         }
+        
         .retry-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: 0 4px 15px rgba(190, 24, 93, 0.2);
         }
+        
         .features {
-            margin: 2rem 0 1rem;
+            margin: 2rem 0 1.5rem;
             padding: 1.5rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
+            background: rgba(190, 24, 93, 0.05);
+            border-radius: 16px;
             text-align: left;
         }
+        
         .features h3 {
             margin: 0 0 1rem;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             text-align: center;
+            color: #be185d;
+            font-weight: 600;
         }
+        
         .features ul {
             margin: 0;
-            padding: 0 0 0 1.2rem;
-            opacity: 0.9;
+            padding: 0;
+            list-style: none;
         }
+        
         .features li {
-            margin-bottom: 0.5rem;
-            line-height: 1.4;
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #9f1239;
+            font-size: 0.95rem;
+        }
+        
+        .features li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.4rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #be185d;
+        }
+        
+        .features li.unavailable {
+            opacity: 0.6;
+        }
+        
+        .features li.unavailable::before {
+            background: #d1d5db;
+        }
+        
+        @media (max-width: 640px) {
+            .container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .logo {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon">📱</div>
+        <div class="logo">💅</div>
         <h1>Você está offline</h1>
-        <p>Parece que você perdeu a conexão com a internet. Não se preocupe, você ainda pode navegar pelo app, mas algumas funcionalidades podem estar limitadas.</p>
+        <p class="subtitle">Sem conexão com a internet</p>
+        
+        <div class="message">
+            <strong>Não se preocupe!</strong> Seus dados estão seguros e serão sincronizados assim que a conexão for restabelecida. Você ainda pode navegar pelas páginas já carregadas.
+        </div>
         
         <div class="features">
-            <h3>Funcionalidades Offline Limitadas:</h3>
+            <h3>Status das Funcionalidades:</h3>
             <ul>
-                <li>✓ Navegação pelas páginas existentes</li>
-                <li>✗ Criar ou editar agendamentos</li>
-                <li>✗ Adicionar ou modificar clientes</li>
-                <li>✗ Sincronizar dados em tempo real</li>
-                <li>✗ Enviar mensagens do WhatsApp</li>
+                <li>Navegação pelas páginas carregadas</li>
+                <li>Visualização de dados já sincronizados</li>
+                <li class="unavailable">Criar ou editar agendamentos</li>
+                <li class="unavailable">Adicionar ou modificar clientes</li>
+                <li class="unavailable">Sincronização em tempo real</li>
+                <li class="unavailable">Envio de mensagens WhatsApp</li>
             </ul>
         </div>
 

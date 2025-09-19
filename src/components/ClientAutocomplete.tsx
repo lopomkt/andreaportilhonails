@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Search, Loader2, Phone, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import ClientForm from "@/components/ClientForm";
+import ClientForm from "@/components/clients/ClientForm";
 import { supabase } from '@/integrations/supabase/client';
 import { Client } from '@/types';
 import { formatPhone } from '@/lib/formatters';
@@ -168,15 +168,12 @@ export function ClientAutocomplete({
     setIsOpen(false);
   };
   
-  const handleNewClientSuccess = (newClient: Client | null) => {
+  const handleNewClientSuccess = () => {
     setShowNewClientDialog(false);
-    if (newClient) {
-      handleSelectClient(newClient);
-      toast({
-        title: "Cliente cadastrado com sucesso!",
-        description: "Cliente adicionado ao sistema."
-      });
-    }
+    toast({
+      title: "Cliente cadastrado com sucesso!",
+      description: "Cliente adicionado ao sistema."
+    });
   };
 
   return (
