@@ -26,6 +26,7 @@ export type Database = {
           preco: number
           servico_id: string
           status: string | null
+          user_id: string | null
         }
         Insert: {
           cliente_id: string
@@ -38,6 +39,7 @@ export type Database = {
           preco: number
           servico_id: string
           status?: string | null
+          user_id?: string | null
         }
         Update: {
           cliente_id?: string
@@ -50,6 +52,7 @@ export type Database = {
           preco?: number
           servico_id?: string
           status?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -79,6 +82,7 @@ export type Database = {
           observacoes: string | null
           telefone: string
           ultimo_agendamento: string | null
+          user_id: string | null
           valor_total: number | null
         }
         Insert: {
@@ -91,6 +95,7 @@ export type Database = {
           observacoes?: string | null
           telefone: string
           ultimo_agendamento?: string | null
+          user_id?: string | null
           valor_total?: number | null
         }
         Update: {
@@ -103,6 +108,7 @@ export type Database = {
           observacoes?: string | null
           telefone?: string
           ultimo_agendamento?: string | null
+          user_id?: string | null
           valor_total?: number | null
         }
         Relationships: []
@@ -152,6 +158,39 @@ export type Database = {
           id?: string
           motivo?: string | null
           valor?: string | null
+        }
+        Relationships: []
+      }
+      despesas: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          data_despesa: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          data_despesa?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          data_despesa?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          user_id?: string
+          valor?: number
         }
         Relationships: []
       }
