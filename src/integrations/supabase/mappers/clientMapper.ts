@@ -1,4 +1,3 @@
-
 import { DbClient } from '../database-types';
 import { Client } from '@/types';
 
@@ -16,9 +15,9 @@ export function mapDbClientToApp(dbClient: DbClient): Client {
   };
 }
 
-export function mapAppClientToDb(client: Client): DbClient {
+export function mapAppClientToDb(client: Client, userId?: string): Omit<DbClient, 'id'> & { id?: string; user_id?: string } {
   return {
-    id: client.id,
+    id: client.id || undefined,
     nome: client.name,
     telefone: client.phone,
     email: client.email || null,
@@ -28,5 +27,6 @@ export function mapAppClientToDb(client: Client): DbClient {
     data_ultimo_agendamento: client.lastAppointment || null,
     valor_total: client.totalSpent || 0,
     data_criacao: client.createdAt || new Date().toISOString(),
+    user_id: userId || undefined,
   };
 }

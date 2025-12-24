@@ -1,4 +1,3 @@
-
 import { supabase } from './client';
 import { Appointment, AppointmentStatus, BlockedDate, Client, Service, WhatsAppMessageData } from '@/types';
 import {
@@ -18,6 +17,11 @@ import {
   DbBlockedDate,
   DbBlockedDateInsert
 } from './database-types';
+
+async function getCurrentUserId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
 
 interface AppointmentWithRelations extends DbAppointment {
   clientes: DbClient;
@@ -93,6 +97,12 @@ export const appointmentService = {
 
   async create(appointment: Omit<Appointment, 'id'>): Promise<Appointment | null> {
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.error('User not authenticated for appointment creation');
+        return null;
+      }
+
       const appointmentDate = new Date(appointment.date);
       const endTime = new Date(appointmentDate);
       
@@ -112,7 +122,8 @@ export const appointmentService = {
         data_fim: endTimeString,
         preco: appointment.price,
         status: appointment.status ? mapAppStatusToDbStatus(appointment.status) : 'pendente',
-        observacoes: appointment.notes
+        observacoes: appointment.notes,
+        user_id: userId
       };
 
       const { data, error } = await supabase

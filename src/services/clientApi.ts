@@ -1,7 +1,11 @@
-
 import { Client, ServiceResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { mapDbClientToApp, mapAppClientToDb } from '@/integrations/supabase/mappers';
+
+async function getCurrentUserId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
 
 export async function fetchClientsFromApi(): Promise<Client[]> {
   console.log("Fetching clients from API...");
@@ -37,20 +41,27 @@ export async function createClientInApi(clientData: Partial<Client>): Promise<Se
     console.error("Missing required fields");
     return { error: 'Nome e telefone são obrigatórios', success: false };
   }
+
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    console.error("User not authenticated");
+    return { error: 'Usuário não autenticado', success: false };
+  }
   
-  const dataToInsert = mapAppClientToDb({
+  const mappedData = mapAppClientToDb({
     id: '',
     name: clientData.name,
     phone: clientData.phone,
     email: clientData.email || '',
     notes: clientData.notes || '',
-    birthdate: clientData.birthdate || null,
+    birthdate: clientData.birthdate || undefined,
     totalSpent: 0,
-    lastAppointment: null,
+    lastAppointment: undefined,
     createdAt: new Date().toISOString()
-  });
+  }, userId);
   
-  delete dataToInsert.id;
+  // Remove id para inserção
+  const { id, ...dataToInsert } = mappedData;
   
   try {
     const { data, error } = await supabase
@@ -84,21 +95,26 @@ export async function updateClientInApi(clientId: string, clientData: Partial<Cl
   if (!clientId) {
     return { error: 'ID do cliente não fornecido', success: false };
   }
+
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    console.error("User not authenticated");
+    return { error: 'Usuário não autenticado', success: false };
+  }
   
-  // Ensure required fields are present to avoid TypeScript errors
-  const updateData = mapAppClientToDb({
-    id: clientId,
-    name: clientData.name || '',  // Ensure required fields have default values
-    phone: clientData.phone || '', // Ensure required fields have default values
-    email: clientData.email || '',
-    notes: clientData.notes || '',
-    birthdate: clientData.birthdate || null,
-    totalSpent: clientData.totalSpent || 0,
-    lastAppointment: clientData.lastAppointment || null,
-    createdAt: new Date().toISOString()
-  });
+  // Monta apenas os campos que foram passados para atualização
+  const updateData: Record<string, any> = {};
   
-  delete updateData.id;
+  if (clientData.name !== undefined) updateData.nome = clientData.name;
+  if (clientData.phone !== undefined) updateData.telefone = clientData.phone;
+  if (clientData.email !== undefined) updateData.email = clientData.email || null;
+  if (clientData.notes !== undefined) updateData.observacoes = clientData.notes || null;
+  if (clientData.birthdate !== undefined) updateData.data_nascimento = clientData.birthdate || null;
+  if (clientData.totalSpent !== undefined) updateData.valor_total = clientData.totalSpent;
+  if (clientData.lastAppointment !== undefined) {
+    updateData.ultimo_agendamento = clientData.lastAppointment || null;
+    updateData.data_ultimo_agendamento = clientData.lastAppointment || null;
+  }
   
   try {
     const { data, error } = await supabase

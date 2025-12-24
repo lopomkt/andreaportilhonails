@@ -1,8 +1,13 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment, AppointmentStatus } from '@/types';
 import { mapDbAppointmentToApp, mapAppStatusToDbStatus } from '@/integrations/supabase/mappers/appointmentMapper';
 import { useToast } from '@/hooks/use-toast';
+
+async function getCurrentUserId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
 
 export function useAppointmentService() {
   const { toast } = useToast();
@@ -66,6 +71,19 @@ export function useAppointmentService() {
         console.error("useAppointmentService: Missing required fields:", errorMsg);
         return { success: false, error: errorMsg };
       }
+
+      // Get current user ID for RLS
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        const errorMsg = 'Usuário não autenticado';
+        console.error("useAppointmentService:", errorMsg);
+        toast({
+          title: "Erro",
+          description: errorMsg,
+          variant: "destructive"
+        });
+        return { success: false, error: errorMsg };
+      }
       
       // Calculate end time if not provided
       const endTime = appointmentData.horaFim || new Date(appointmentData.data.getTime() + 60 * 60 * 1000);
@@ -80,7 +98,8 @@ export function useAppointmentService() {
         status: appointmentData.status === 'confirmed' ? 'confirmado' : 
                 appointmentData.status === 'canceled' ? 'cancelado' : 'pendente',
         observacoes: appointmentData.observacoes || null,
-        motivo_cancelamento: appointmentData.motivoCancelamento || null
+        motivo_cancelamento: appointmentData.motivoCancelamento || null,
+        user_id: userId
       };
 
       const { data, error } = await supabase

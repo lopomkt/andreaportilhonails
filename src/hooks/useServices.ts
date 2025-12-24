@@ -55,9 +55,8 @@ export function useServices() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
+  // Removido useEffect que causava chamadas duplicadas
+  // O fetchServices será chamado pelo useUnifiedData no loadAllData
 
   const addService = async (service: Omit<Service, "id">): Promise<ServiceResponse<Service>> => {
     try {
